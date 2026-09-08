@@ -3,8 +3,9 @@
 
     python3 tools/build.py
 
-Runs spritecook and mapcook first, then inlines atlas.png as a data URI so the
-finished index.html opens straight off the filesystem with no server.
+Runs every cook step first (sprites, maps, rules, Godot staging), then inlines
+atlas.png as a data URI so the finished index.html opens straight off the
+filesystem with no server.
 """
 
 import base64
@@ -23,10 +24,13 @@ def sh(*args):
 def main():
     sh(os.path.join("tools", "spritecook.py"))
     sh(os.path.join("tools", "mapcook.py"))
+    sh(os.path.join("tools", "datacook.py"))
+    sh(os.path.join("tools", "godotcook.py"))
 
     png = open(os.path.join(ROOT, "assets", "atlas.png"), "rb").read()
     meta = json.load(open(os.path.join(ROOT, "assets", "atlas.json")))
     maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
+    gamedata = json.load(open(os.path.join(ROOT, "assets", "gamedata.json")))
     font = open(os.path.join(ROOT, "src", "font.js"), encoding="utf-8").read()
     game = open(os.path.join(ROOT, "src", "game.js"), encoding="utf-8").read()
     html = open(os.path.join(ROOT, "src", "index.html"), encoding="utf-8").read()
@@ -37,6 +41,7 @@ def main():
         "const ATLAS_PNG = %s;" % json.dumps(data_uri),
         "const ATLAS_META = %s;" % json.dumps(meta, separators=(",", ":")),
         "const MAPS = %s;" % json.dumps(maps, separators=(",", ":")),
+        "const GAMEDATA = %s;" % json.dumps(gamedata, separators=(",", ":")),
     ])
 
     out = html.replace("/*__ASSETS__*/", assets)

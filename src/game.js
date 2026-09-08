@@ -322,154 +322,21 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
 /* ============================================================== game data */
+/* Every table below is cooked by tools/datacook.py into assets/gamedata.json
+   and inlined at build time, so the browser build and the Godot project share
+   one set of rules. Edit tools/datacook.py, not this file. */
 
-const SPELLS = {
-  fire:  { name: 'Fire',   mp: 4,  power: 22, kind: 'attack', element: 'fire',  target: 'enemy', fx: 'fire' },
-  ice:   { name: 'Blizzard', mp: 4, power: 20, kind: 'attack', element: 'ice',  target: 'enemy', fx: 'ice' },
-  bolt:  { name: 'Thunder', mp: 6, power: 28, kind: 'attack', element: 'bolt',  target: 'enemy', fx: 'bolt' },
-  flare: { name: 'Flare',  mp: 18, power: 62, kind: 'attack', element: null,    target: 'enemy', fx: 'flare' },
-  quake: { name: 'Quake',  mp: 14, power: 30, kind: 'attack', element: 'earth', target: 'enemies', fx: 'quake' },
-  cure:  { name: 'Cure',   mp: 4,  power: 46, kind: 'heal',   target: 'ally',   fx: 'heal' },
-  cura:  { name: 'Cura',   mp: 10, power: 110, kind: 'heal',  target: 'ally',   fx: 'heal' },
-  vigil: { name: 'Vigil',  mp: 8,  power: 40, kind: 'healAll', target: 'allies', fx: 'heal' },
-  life:  { name: 'Raise',  mp: 16, power: 0.5, kind: 'revive', target: 'ally',  fx: 'holy' },
-  holy:  { name: 'Radiance', mp: 20, power: 58, kind: 'attack', element: 'holy', target: 'enemy', fx: 'holy' }
-};
-
-const ITEMS = {
-  potion:  { name: 'Potion',   icon: 'i_potion',  price: 40,  kind: 'heal',   power: 70,  desc: 'Restores 70 HP.' },
-  hipotion:{ name: 'Hi-Potion',icon: 'i_potion',  price: 150, kind: 'heal',   power: 250, desc: 'Restores 250 HP.' },
-  ether:   { name: 'Ether',    icon: 'i_ether',   price: 200, kind: 'mp',     power: 40,  desc: 'Restores 40 MP.' },
-  phoenix: { name: 'Phoenix Down', icon: 'i_phoenix', price: 260, kind: 'revive', power: 0.4, desc: 'Revives a fallen ally.' },
-  bomb:    { name: 'Fire Bomb', icon: 'i_phoenix', price: 120, kind: 'damage', power: 90, desc: 'Hurls fire at one foe.' }
-};
-
-/* Growth is flat per level and deliberately readable; no hidden curves. */
-const CLASSES = {
-  aldric: {
-    name: 'Aldric', title: 'Knight', sprite: 'aldric',
-    base: { hp: 130, mp: 0, atk: 16, def: 12, mag: 4, spd: 9 },
-    grow: { hp: 22, mp: 0, atk: 3.1, def: 2.4, mag: 0.5, spd: 0.8 },
-    spells: [], skill: null
-  },
-  lyra: {
-    name: 'Lyra', title: 'Black Mage', sprite: 'lyra',
-    base: { hp: 74, mp: 34, atk: 8, def: 6, mag: 17, spd: 11 },
-    grow: { hp: 12, mp: 7, atk: 1.1, def: 1.2, mag: 3.4, spd: 1.1 },
-    spells: [{ id: 'fire', lv: 1 }, { id: 'ice', lv: 1 }, { id: 'bolt', lv: 3 },
-             { id: 'quake', lv: 6 }, { id: 'flare', lv: 9 }]
-  },
-  mira: {
-    name: 'Mira', title: 'White Mage', sprite: 'mira',
-    base: { hp: 88, mp: 30, atk: 9, def: 8, mag: 15, spd: 10 },
-    grow: { hp: 15, mp: 6, atk: 1.3, def: 1.6, mag: 3.0, spd: 1.0 },
-    spells: [{ id: 'cure', lv: 1 }, { id: 'cura', lv: 4 }, { id: 'vigil', lv: 6 },
-             { id: 'life', lv: 5 }, { id: 'holy', lv: 8 }]
-  }
-};
-
-const ENEMIES = {
-  slime:  { name: 'Bog Slime', sprite: 'e_slime', hp: 34, atk: 10, def: 6, mag: 4, spd: 5, exp: 8, gil: 7,
-            weak: 'bolt', ai: [{ w: 100, act: 'attack' }] },
-  bat:    { name: 'Cave Bat', sprite: 'e_bat', hp: 26, atk: 12, def: 4, mag: 5, spd: 15, exp: 9, gil: 9,
-            weak: 'fire', ai: [{ w: 80, act: 'attack' }, { w: 20, act: 'drain' }] },
-  goblin: { name: 'Goblin', sprite: 'e_goblin', hp: 52, atk: 15, def: 9, mag: 4, spd: 9, exp: 14, gil: 16,
-            ai: [{ w: 85, act: 'attack' }, { w: 15, act: 'rally' }] },
-  wolf:   { name: 'Direwolf', sprite: 'e_wolf', hp: 68, atk: 19, def: 10, mag: 4, spd: 14, exp: 20, gil: 18,
-            weak: 'fire', ai: [{ w: 70, act: 'attack' }, { w: 30, act: 'pounce' }] },
-  wisp:   { name: 'Marsh Wisp', sprite: 'e_wisp', hp: 58, atk: 11, def: 8, mag: 18, spd: 12, exp: 22, gil: 24,
-            weak: 'holy', ai: [{ w: 45, act: 'attack' }, { w: 55, act: 'spell', spell: 'fire' }] },
-  bandit: { name: 'Road Bandit', sprite: 'e_bandit', hp: 92, atk: 22, def: 12, mag: 6, spd: 12, exp: 30, gil: 45,
-            ai: [{ w: 70, act: 'attack' }, { w: 30, act: 'steal' }] },
-  ogre:   { name: 'Ogre Chieftain', sprite: 'e_ogre', boss: true, hp: 520, atk: 30, def: 16, mag: 12, spd: 10,
-            exp: 260, gil: 500, weak: 'ice',
-            ai: [{ w: 55, act: 'attack' }, { w: 25, act: 'smash' }, { w: 20, act: 'spell', spell: 'quake' }] }
-};
-
-/* Encounter tables are weighted; deeper in the wilds means nastier company. */
-const ENCOUNTERS = [
-  { w: 26, group: ['slime'] },
-  { w: 20, group: ['bat', 'bat'] },
-  { w: 18, group: ['goblin'] },
-  { w: 14, group: ['slime', 'slime', 'bat'] },
-  { w: 12, group: ['wolf'] },
-  { w: 10, group: ['goblin', 'goblin'] },
-  { w: 8,  group: ['wisp'] },
-  { w: 7,  group: ['wolf', 'goblin'] },
-  { w: 5,  group: ['bandit'] },
-  { w: 4,  group: ['wisp', 'bat', 'bat'] }
-];
-
-/* ----------------------------------------------------------------- NPCs -- */
-const NPCS = {
-  town: [
-    { x: 20, y: 17, sprite: 'elder', dir: 'down', name: 'Elder Halvard', wander: false,
-      lines: ["Rivenbrook has stood a hundred years, {name}.",
-              "But something stirs in the Thornwilds. A chieftain, the scouts say.",
-              "Take the south gate. And take care."] },
-    { x: 16, y: 21, sprite: 'villager', dir: 'right', name: 'Gardener Pell', wander: true,
-      lines: ["These beds were carrots last spring.",
-              "Now? Weeds and worry. Nothing grows with monsters at the fence."] },
-    { x: 24, y: 14, sprite: 'child', dir: 'left', name: 'Tam', wander: true,
-      lines: ["I saw a wolf as big as a cart!", "Mum says I made it up. I did not."] },
-    { x: 19, y: 26, sprite: 'guard', dir: 'down', name: 'Gate Guard', wander: false,
-      lines: ["Beyond the gate is the Thornwilds. Fight or flee, but never dawdle.",
-              "Press {menu} any time to open your journal."] },
-    { x: 21, y: 26, sprite: 'guard', dir: 'down', name: 'Gate Guard', wander: false,
-      lines: ["The Amber Lantern keeps a bed and a stocked shelf.",
-              "Rest before you go. Only a fool walks the wilds tired."] },
-    { x: 9, y: 12, sprite: 'villager', dir: 'down', name: 'Smith Orla', wander: true,
-      lines: ["Steel I can give you. Courage you bring yourself.",
-              "Lyra's fire and Mira's mercy - that's a party worth its salt."] },
-    { x: 33, y: 16, sprite: 'merchant', dir: 'left', name: 'Pedlar Voss', wander: true,
-      lines: ["Buying? The inn keeps my stock these days.",
-              "Too many bandits on the south road for an honest cart."] }
-  ],
-  inn: [
-    { x: 4, y: 4, sprite: 'merchant', dir: 'down', name: 'Innkeeper Bryn', wander: false, service: 'inn',
-      lines: ["Welcome to the Amber Lantern."] },
-    { x: 6, y: 6, sprite: 'villager', dir: 'down', name: 'Quartermaster', wander: false, service: 'shop',
-      lines: ["Potions, ethers, and a bomb or two."] },
-    { x: 12, y: 9, sprite: 'child', dir: 'left', name: 'Nib', wander: true,
-      lines: ["If you press {cancel} you can run! Grown-ups always forget."] }
-  ],
-  wild: []
-};
-
-const SHOP_STOCK = ['potion', 'hipotion', 'ether', 'phoenix', 'bomb'];
-
-/* --------------------------------------------------------- tile legend -- */
-/* char -> [sprite, solid, tag] */
-const LEGEND = {
-  '.': ['t_grass', 0], 'F': ['t_plank', 0], ',': ['t_grass2', 0], '*': ['t_flowers', 0], '"': ['t_tallgrass', 0],
-  '-': ['t_path', 0], '=': ['t_cobble', 0], 'x': ['t_sand', 0],
-  'B': ['t_bridge', 0], 'D': ['t_door', 0, 'door'],
-  '~': ['t_water0', 1, 'water'], 'T': ['t_tree', 1], 'b': ['t_bush', 1], 'r': ['t_rock', 1],
-  'K': ['t_counter', 1], 'A': ['t_barrel', 1], 'H': ['t_shelf', 1],
-  '1': ['t_bedtop', 1, 'bed'], '2': ['t_bedbot', 1, 'bed'], 'U': ['t_rug', 0],
-  'M': ['t_mountain', 1], 'W': ['t_wall', 1], 'R': ['t_roof', 1], '^': ['t_rooftop', 1],
-  'G': ['t_window', 1], 'f': ['t_fence', 1], 's': ['t_sign', 1, 'sign'],
-  'o': ['t_well', 1, 'well'], 'c': ['t_chest', 1, 'chest'], 'l': ['t_lamp', 1, 'lamp']
-};
-/* What sits under a prop, so props never float on a void. 'ground' resolves
-   to each map's own ground tile (grass outdoors, floorboards indoors). */
-const UNDERLAY = {
-  'T': 'ground', 'b': 'ground', 'r': 'ground', 'f': 'ground', 's': 'ground',
-  'c': 'ground', 'A': 'ground', 'l': 't_cobble', 'o': 't_cobble', 'B': 't_water0',
-  '1': 'ground', '2': 'ground', 'U': 'ground'
-};
-
-const SIGN_TEXT = {
-  town: 'RIVENBROOK - The Amber Lantern, rooms and remedies.',
-  wild: 'THORNWILDS SHRINE - Turn back. The chieftain does not sleep.'
-};
-
-const CHEST_LOOT = {
-  'town:4,5': { item: 'potion', n: 2 },
-  'town:35,24': { item: 'ether', n: 1 },
-  'inn:11,2': { gil: 120 },
-  'wild:43,39': { item: 'hipotion', n: 2 }
-};
+const SPELLS = GAMEDATA.spells;
+const ITEMS = GAMEDATA.items;
+const CLASSES = GAMEDATA.classes;
+const ENEMIES = GAMEDATA.enemies;
+const ENCOUNTERS = GAMEDATA.encounters;
+const NPCS = GAMEDATA.npcs;
+const SHOP_STOCK = GAMEDATA.shop_stock;
+const LEGEND = GAMEDATA.legend;
+const UNDERLAY = GAMEDATA.underlay;
+const SIGN_TEXT = GAMEDATA.sign_text;
+const CHEST_LOOT = GAMEDATA.chest_loot;
 
 /* ============================================================ party model */
 
@@ -2194,7 +2061,7 @@ function drawShop() {
   }
 }
 
-const INN_COST = 50;
+const INN_COST = GAMEDATA.inn_cost;
 function openInn(npc) {
   const dead = G.party.some(h => !h.alive);
   Field.msg = makeMessage([

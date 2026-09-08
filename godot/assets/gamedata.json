@@ -1,0 +1,770 @@
+{
+ "chest_loot": {
+  "inn:11,2": {
+   "gil": 120
+  },
+  "town:35,24": {
+   "item": "ether",
+   "n": 1
+  },
+  "town:4,5": {
+   "item": "potion",
+   "n": 2
+  },
+  "wild:43,39": {
+   "item": "hipotion",
+   "n": 2
+  }
+ },
+ "classes": {
+  "aldric": {
+   "base": {
+    "atk": 16,
+    "def": 12,
+    "hp": 130,
+    "mag": 4,
+    "mp": 0,
+    "spd": 9
+   },
+   "grow": {
+    "atk": 3.1,
+    "def": 2.4,
+    "hp": 22,
+    "mag": 0.5,
+    "mp": 0,
+    "spd": 0.8
+   },
+   "name": "Aldric",
+   "skill": null,
+   "spells": [],
+   "sprite": "aldric",
+   "title": "Knight"
+  },
+  "lyra": {
+   "base": {
+    "atk": 8,
+    "def": 6,
+    "hp": 74,
+    "mag": 17,
+    "mp": 34,
+    "spd": 11
+   },
+   "grow": {
+    "atk": 1.1,
+    "def": 1.2,
+    "hp": 12,
+    "mag": 3.4,
+    "mp": 7,
+    "spd": 1.1
+   },
+   "name": "Lyra",
+   "spells": [
+    {
+     "id": "fire",
+     "lv": 1
+    },
+    {
+     "id": "ice",
+     "lv": 1
+    },
+    {
+     "id": "bolt",
+     "lv": 3
+    },
+    {
+     "id": "quake",
+     "lv": 6
+    },
+    {
+     "id": "flare",
+     "lv": 9
+    }
+   ],
+   "sprite": "lyra",
+   "title": "Black Mage"
+  },
+  "mira": {
+   "base": {
+    "atk": 9,
+    "def": 8,
+    "hp": 88,
+    "mag": 15,
+    "mp": 30,
+    "spd": 10
+   },
+   "grow": {
+    "atk": 1.3,
+    "def": 1.6,
+    "hp": 15,
+    "mag": 3,
+    "mp": 6,
+    "spd": 1
+   },
+   "name": "Mira",
+   "spells": [
+    {
+     "id": "cure",
+     "lv": 1
+    },
+    {
+     "id": "cura",
+     "lv": 4
+    },
+    {
+     "id": "vigil",
+     "lv": 6
+    },
+    {
+     "id": "life",
+     "lv": 5
+    },
+    {
+     "id": "holy",
+     "lv": 8
+    }
+   ],
+   "sprite": "mira",
+   "title": "White Mage"
+  }
+ },
+ "encounters": [
+  {
+   "group": [
+    "slime"
+   ],
+   "w": 26
+  },
+  {
+   "group": [
+    "bat",
+    "bat"
+   ],
+   "w": 20
+  },
+  {
+   "group": [
+    "goblin"
+   ],
+   "w": 18
+  },
+  {
+   "group": [
+    "slime",
+    "slime",
+    "bat"
+   ],
+   "w": 14
+  },
+  {
+   "group": [
+    "wolf"
+   ],
+   "w": 12
+  },
+  {
+   "group": [
+    "goblin",
+    "goblin"
+   ],
+   "w": 10
+  },
+  {
+   "group": [
+    "wisp"
+   ],
+   "w": 8
+  },
+  {
+   "group": [
+    "wolf",
+    "goblin"
+   ],
+   "w": 7
+  },
+  {
+   "group": [
+    "bandit"
+   ],
+   "w": 5
+  },
+  {
+   "group": [
+    "wisp",
+    "bat",
+    "bat"
+   ],
+   "w": 4
+  }
+ ],
+ "enemies": {
+  "bandit": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 70
+    },
+    {
+     "act": "steal",
+     "w": 30
+    }
+   ],
+   "atk": 22,
+   "def": 12,
+   "exp": 30,
+   "gil": 45,
+   "hp": 92,
+   "mag": 6,
+   "name": "Road Bandit",
+   "spd": 12,
+   "sprite": "e_bandit"
+  },
+  "bat": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 80
+    },
+    {
+     "act": "drain",
+     "w": 20
+    }
+   ],
+   "atk": 12,
+   "def": 4,
+   "exp": 9,
+   "gil": 9,
+   "hp": 26,
+   "mag": 5,
+   "name": "Cave Bat",
+   "spd": 15,
+   "sprite": "e_bat",
+   "weak": "fire"
+  },
+  "goblin": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 85
+    },
+    {
+     "act": "rally",
+     "w": 15
+    }
+   ],
+   "atk": 15,
+   "def": 9,
+   "exp": 14,
+   "gil": 16,
+   "hp": 52,
+   "mag": 4,
+   "name": "Goblin",
+   "spd": 9,
+   "sprite": "e_goblin"
+  },
+  "ogre": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "smash",
+     "w": 25
+    },
+    {
+     "act": "spell",
+     "spell": "quake",
+     "w": 20
+    }
+   ],
+   "atk": 30,
+   "boss": true,
+   "def": 16,
+   "exp": 260,
+   "gil": 500,
+   "hp": 520,
+   "mag": 12,
+   "name": "Ogre Chieftain",
+   "spd": 10,
+   "sprite": "e_ogre",
+   "weak": "ice"
+  },
+  "slime": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 100
+    }
+   ],
+   "atk": 10,
+   "def": 6,
+   "exp": 8,
+   "gil": 7,
+   "hp": 34,
+   "mag": 4,
+   "name": "Bog Slime",
+   "spd": 5,
+   "sprite": "e_slime",
+   "weak": "bolt"
+  },
+  "wisp": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 45
+    },
+    {
+     "act": "spell",
+     "spell": "fire",
+     "w": 55
+    }
+   ],
+   "atk": 11,
+   "def": 8,
+   "exp": 22,
+   "gil": 24,
+   "hp": 58,
+   "mag": 18,
+   "name": "Marsh Wisp",
+   "spd": 12,
+   "sprite": "e_wisp",
+   "weak": "holy"
+  },
+  "wolf": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 70
+    },
+    {
+     "act": "pounce",
+     "w": 30
+    }
+   ],
+   "atk": 19,
+   "def": 10,
+   "exp": 20,
+   "gil": 18,
+   "hp": 68,
+   "mag": 4,
+   "name": "Direwolf",
+   "spd": 14,
+   "sprite": "e_wolf",
+   "weak": "fire"
+  }
+ },
+ "inn_cost": 50,
+ "items": {
+  "bomb": {
+   "desc": "Hurls fire at one foe.",
+   "icon": "i_phoenix",
+   "kind": "damage",
+   "name": "Fire Bomb",
+   "power": 90,
+   "price": 120
+  },
+  "ether": {
+   "desc": "Restores 40 MP.",
+   "icon": "i_ether",
+   "kind": "mp",
+   "name": "Ether",
+   "power": 40,
+   "price": 200
+  },
+  "hipotion": {
+   "desc": "Restores 250 HP.",
+   "icon": "i_potion",
+   "kind": "heal",
+   "name": "Hi-Potion",
+   "power": 250,
+   "price": 150
+  },
+  "phoenix": {
+   "desc": "Revives a fallen ally.",
+   "icon": "i_phoenix",
+   "kind": "revive",
+   "name": "Phoenix Down",
+   "power": 0.4,
+   "price": 260
+  },
+  "potion": {
+   "desc": "Restores 70 HP.",
+   "icon": "i_potion",
+   "kind": "heal",
+   "name": "Potion",
+   "power": 70,
+   "price": 40
+  }
+ },
+ "legend": {
+  "\"": [
+   "t_tallgrass",
+   0
+  ],
+  "*": [
+   "t_flowers",
+   0
+  ],
+  ",": [
+   "t_grass2",
+   0
+  ],
+  "-": [
+   "t_path",
+   0
+  ],
+  ".": [
+   "t_grass",
+   0
+  ],
+  "1": [
+   "t_bedtop",
+   1,
+   "bed"
+  ],
+  "2": [
+   "t_bedbot",
+   1,
+   "bed"
+  ],
+  "=": [
+   "t_cobble",
+   0
+  ],
+  "A": [
+   "t_barrel",
+   1
+  ],
+  "B": [
+   "t_bridge",
+   0
+  ],
+  "D": [
+   "t_door",
+   0,
+   "door"
+  ],
+  "F": [
+   "t_plank",
+   0
+  ],
+  "G": [
+   "t_window",
+   1
+  ],
+  "H": [
+   "t_shelf",
+   1
+  ],
+  "K": [
+   "t_counter",
+   1
+  ],
+  "M": [
+   "t_mountain",
+   1
+  ],
+  "R": [
+   "t_roof",
+   1
+  ],
+  "T": [
+   "t_tree",
+   1
+  ],
+  "U": [
+   "t_rug",
+   0
+  ],
+  "W": [
+   "t_wall",
+   1
+  ],
+  "^": [
+   "t_rooftop",
+   1
+  ],
+  "b": [
+   "t_bush",
+   1
+  ],
+  "c": [
+   "t_chest",
+   1,
+   "chest"
+  ],
+  "f": [
+   "t_fence",
+   1
+  ],
+  "l": [
+   "t_lamp",
+   1,
+   "lamp"
+  ],
+  "o": [
+   "t_well",
+   1,
+   "well"
+  ],
+  "r": [
+   "t_rock",
+   1
+  ],
+  "s": [
+   "t_sign",
+   1,
+   "sign"
+  ],
+  "x": [
+   "t_sand",
+   0
+  ],
+  "~": [
+   "t_water0",
+   1,
+   "water"
+  ]
+ },
+ "npcs": {
+  "inn": [
+   {
+    "dir": "down",
+    "lines": [
+     "Welcome to the Amber Lantern."
+    ],
+    "name": "Innkeeper Bryn",
+    "service": "inn",
+    "sprite": "merchant",
+    "wander": false,
+    "x": 4,
+    "y": 4
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Potions, ethers, and a bomb or two."
+    ],
+    "name": "Quartermaster",
+    "service": "shop",
+    "sprite": "villager",
+    "wander": false,
+    "x": 6,
+    "y": 6
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "If you press {cancel} you can run! Grown-ups always forget."
+    ],
+    "name": "Nib",
+    "sprite": "child",
+    "wander": true,
+    "x": 12,
+    "y": 9
+   }
+  ],
+  "town": [
+   {
+    "dir": "down",
+    "lines": [
+     "Rivenbrook has stood a hundred years, {name}.",
+     "But something stirs in the Thornwilds. A chieftain, the scouts say.",
+     "Take the south gate. And take care."
+    ],
+    "name": "Elder Halvard",
+    "sprite": "elder",
+    "wander": false,
+    "x": 20,
+    "y": 17
+   },
+   {
+    "dir": "right",
+    "lines": [
+     "These beds were carrots last spring.",
+     "Now? Weeds and worry. Nothing grows with monsters at the fence."
+    ],
+    "name": "Gardener Pell",
+    "sprite": "villager",
+    "wander": true,
+    "x": 16,
+    "y": 21
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "I saw a wolf as big as a cart!",
+     "Mum says I made it up. I did not."
+    ],
+    "name": "Tam",
+    "sprite": "child",
+    "wander": true,
+    "x": 24,
+    "y": 14
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Beyond the gate is the Thornwilds. Fight or flee, but never dawdle.",
+     "Press {menu} any time to open your journal."
+    ],
+    "name": "Gate Guard",
+    "sprite": "guard",
+    "wander": false,
+    "x": 19,
+    "y": 26
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "The Amber Lantern keeps a bed and a stocked shelf.",
+     "Rest before you go. Only a fool walks the wilds tired."
+    ],
+    "name": "Gate Guard",
+    "sprite": "guard",
+    "wander": false,
+    "x": 21,
+    "y": 26
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Steel I can give you. Courage you bring yourself.",
+     "Lyra's fire and Mira's mercy - that's a party worth its salt."
+    ],
+    "name": "Smith Orla",
+    "sprite": "villager",
+    "wander": true,
+    "x": 9,
+    "y": 12
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "Buying? The inn keeps my stock these days.",
+     "Too many bandits on the south road for an honest cart."
+    ],
+    "name": "Pedlar Voss",
+    "sprite": "merchant",
+    "wander": true,
+    "x": 33,
+    "y": 16
+   }
+  ],
+  "wild": []
+ },
+ "shop_stock": [
+  "potion",
+  "hipotion",
+  "ether",
+  "phoenix",
+  "bomb"
+ ],
+ "sign_text": {
+  "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
+  "wild": "THORNWILDS SHRINE - Turn back. The chieftain does not sleep."
+ },
+ "spells": {
+  "bolt": {
+   "element": "bolt",
+   "fx": "bolt",
+   "kind": "attack",
+   "mp": 6,
+   "name": "Thunder",
+   "power": 28,
+   "target": "enemy"
+  },
+  "cura": {
+   "fx": "heal",
+   "kind": "heal",
+   "mp": 10,
+   "name": "Cura",
+   "power": 110,
+   "target": "ally"
+  },
+  "cure": {
+   "fx": "heal",
+   "kind": "heal",
+   "mp": 4,
+   "name": "Cure",
+   "power": 46,
+   "target": "ally"
+  },
+  "fire": {
+   "element": "fire",
+   "fx": "fire",
+   "kind": "attack",
+   "mp": 4,
+   "name": "Fire",
+   "power": 22,
+   "target": "enemy"
+  },
+  "flare": {
+   "element": null,
+   "fx": "flare",
+   "kind": "attack",
+   "mp": 18,
+   "name": "Flare",
+   "power": 62,
+   "target": "enemy"
+  },
+  "holy": {
+   "element": "holy",
+   "fx": "holy",
+   "kind": "attack",
+   "mp": 20,
+   "name": "Radiance",
+   "power": 58,
+   "target": "enemy"
+  },
+  "ice": {
+   "element": "ice",
+   "fx": "ice",
+   "kind": "attack",
+   "mp": 4,
+   "name": "Blizzard",
+   "power": 20,
+   "target": "enemy"
+  },
+  "life": {
+   "fx": "holy",
+   "kind": "revive",
+   "mp": 16,
+   "name": "Raise",
+   "power": 0.5,
+   "target": "ally"
+  },
+  "quake": {
+   "element": "earth",
+   "fx": "quake",
+   "kind": "attack",
+   "mp": 14,
+   "name": "Quake",
+   "power": 30,
+   "target": "enemies"
+  },
+  "vigil": {
+   "fx": "heal",
+   "kind": "healAll",
+   "mp": 8,
+   "name": "Vigil",
+   "power": 40,
+   "target": "allies"
+  }
+ },
+ "underlay": {
+  "1": "ground",
+  "2": "ground",
+  "A": "ground",
+  "B": "t_water0",
+  "T": "ground",
+  "U": "ground",
+  "b": "ground",
+  "c": "ground",
+  "f": "ground",
+  "l": "t_cobble",
+  "o": "t_cobble",
+  "r": "ground",
+  "s": "ground"
+ }
+}

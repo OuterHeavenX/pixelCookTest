@@ -1,0 +1,37 @@
+; Rivenbrook - Godot 4 project.
+; Assets under assets/ are cooked by the Python tools in ../tools; run
+; `python3 tools/godotcook.py` from the repository root to refresh them.
+
+config_version=5
+
+[application]
+
+config/name="Rivenbrook"
+config/description="A pixel-art RPG with an ATB battle system."
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Dat="*res://scripts/Dat.gd"
+Gs="*res://scripts/Gs.gd"
+Art="*res://scripts/Art.gd"
+Snd="*res://scripts/Snd.gd"
+Inp="*res://scripts/Inp.gd"
+
+[display]
+
+window/size/viewport_width=320
+window/size/viewport_height=180
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
