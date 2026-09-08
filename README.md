@@ -174,11 +174,25 @@ Two things were settled by measurement rather than taste:
   `scaleFor` / `Art.scale_for`, so a 24x32 generated character and a 16x24
   procedural townsperson stand correctly side by side on the same tile.
 
-Costs, for planning: a base character is 12 credits, each animation 20, and
-each extra viewing angle needs a 12-credit prep step. A full four-direction
-walk set works out around 152 credits per character, so a complete cast
-replacement is far more than a small balance holds - upgrade the party first,
-where the player actually looks.
+**The party of three is generated art; everyone else is procedural.** Aldric
+has a real four-direction walk cycle (left mirrors right); Lyra and Mira only
+ever appear in battle and in menu portraits, so their front-facing idle stands
+in for every field direction. All three share front-facing battle poses, since
+SpriteCook animates attack and hurt from the front idle - mixing a side-view
+stance with a front-view swing would have the character spin to face the camera
+mid-attack.
+
+Two details in the importer matter more than they look. Every frame in a group
+is cropped to **one shared bounding box**, because cropping each frame to its
+own silhouette makes the sprite jitter as the crop shifts underneath it. And
+field and battle poses are **separate groups**, so Aldric's extended sword does
+not widen the box that his walk cycle is scaled against.
+
+Costs, for planning: a base character is 12 credits and each animation 16-20,
+plus a 12-credit prep step for every viewing angle beyond the front. Aldric's
+full set came to about 180 and each battle-only mage about 60. A complete cast
+replacement - eight characters and seven monsters - would run well past 1,300,
+so the party is where the credits go.
 
 Once either route is live the art can be regenerated through SpriteCook. The
 swap is deliberately cheap: both runtimes look sprites up by name from

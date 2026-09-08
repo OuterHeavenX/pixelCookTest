@@ -156,23 +156,93 @@ def fit_height(img, target_h):
     return downscale(img, target_w, target_h)
 
 
+def slice_sheet(sheet, frame_w, frame_h):
+    """Split a horizontal animation strip into its frames."""
+    count = sheet.width // frame_w
+    frames = []
+    for i in range(count):
+        f = Image(frame_w, frame_h)
+        for y in range(frame_h):
+            for x in range(frame_w):
+                f.set(x, y, sheet.get(i * frame_w + x, y))
+        frames.append(f)
+    return frames
+
+
+def union_bounds(images, alpha_min=8):
+    """One bounding box covering every frame.
+
+    Cropping each frame to its own silhouette would make the sprite jitter as
+    the crop shifted underneath it, so the whole character shares a box.
+    """
+    x0 = y0 = 10 ** 6
+    x1 = y1 = -1
+    for img in images:
+        for y in range(img.height):
+            for x in range(img.width):
+                if img.get(x, y)[3] >= alpha_min:
+                    x0 = min(x0, x); x1 = max(x1, x)
+                    y0 = min(y0, y); y1 = max(y1, y)
+    if x1 < 0:
+        return None
+    return x0, y0, x1, y1
+
+
+def crop_to(img, box):
+    x0, y0, x1, y1 = box
+    out = Image(x1 - x0 + 1, y1 - y0 + 1)
+    for y in range(out.height):
+        for x in range(out.width):
+            out.set(x, y, img.get(x0 + x, y0 + y))
+    return out
+
+
 def cook():
-    """Return {game sprite name: Image} for everything in the manifest."""
+    """Return {game sprite name: Image} for every wired-up character."""
     manifest_path = os.path.join(ART_DIR, "MANIFEST.json")
     if not os.path.exists(manifest_path):
         return {}
     manifest = json.load(open(manifest_path))
     out = {}
-    for key, entry in sorted(manifest.get("assets", {}).items()):
-        targets = entry.get("targets")
-        if not targets:
-            continue  # source art held for reference, not wired to the game yet
-        path = os.path.join(ART_DIR, entry.get("file", key + ".png"))
-        if not os.path.exists(path):
-            raise ValueError("manifest references missing file: %s" % path)
-        art = crop_to_silhouette(read_png(path))
-        height = int(entry.get("height", 32))
-        scaled = fit_height(art, height)
-        for name in targets:
-            out[name] = scaled
+
+    for char_name, spec in sorted(manifest.get("characters", {}).items()):
+        target_h = int(spec.get("height", 32))
+        sources = spec.get("sources", [])
+        if not sources:
+            continue
+
+        # Pass one: pull every picked frame out of every sheet.
+        picked = []
+        for src in sources:
+            path = os.path.join(ART_DIR, src["file"])
+            if not os.path.exists(path):
+                raise ValueError("manifest references missing file: %s" % path)
+            sheet = read_png(path)
+            fw = int(src.get("frame_w", sheet.height))
+            fh = int(src.get("frame_h", sheet.height))
+            frames = slice_sheet(sheet, fw, fh)
+            for slot, index in enumerate(src["pick"]):
+                if index >= len(frames):
+                    raise ValueError("%s has %d frames, asked for %d"
+                                     % (src["file"], len(frames), index))
+                picked.append({"img": frames[index], "src": src, "slot": slot})
+
+        # Pass two: one shared crop and one shared scale for the character, so
+        # the sprite neither jitters between frames nor changes size.
+        box = union_bounds([p["img"] for p in picked])
+        if box is None:
+            continue
+        cropped_h = box[3] - box[1] + 1
+        cropped_w = box[2] - box[0] + 1
+        scale = target_h / float(cropped_h)
+        target_w = max(1, int(round(cropped_w * scale)))
+        if target_w % 2:
+            target_w += 1
+
+        for entry in picked:
+            img = downscale(crop_to(entry["img"], box), target_w, target_h)
+            if entry["src"].get("mirror"):
+                img = img.flipped_x()
+            out[entry["src"]["targets"][entry["slot"]]] = img
+
     return out
