@@ -140,10 +140,19 @@ There are two ways to reach it, and either one is enough:
    it just has to be enabled for the individual chat, in that chat's connector
    settings. Nothing else is needed - the authorization already exists.
 2. **The project MCP server.** `.mcp.json` in this repository points Claude Code
-   at `https://api.spritecook.ai/mcp/`. It reads the token from a
-   `SPRITECOOK_API_KEY` environment variable, so no secret is committed. Set
-   that variable in the environment and start a fresh session - MCP servers are
-   loaded at session start, so an already-running session will not pick it up.
+   at `https://api.spritecook.ai/mcp/` and deliberately sets **no**
+   `Authorization` header, because the endpoint speaks full OAuth with dynamic
+   client registration:
+
+       authorization_endpoint  https://api.spritecook.ai/oauth/authorize
+       token_endpoint          https://api.spritecook.ai/oauth/token
+       registration_endpoint   https://api.spritecook.ai/oauth/register
+
+   Pinning a bearer token in `headers` turns that fallback **off**, so a wrong
+   or missing token becomes a hard 401 instead of a sign-in prompt. Leaving the
+   header out lets the client register itself and prompt for sign-in - no API
+   key to manage. MCP servers are loaded at session start, so a session that is
+   already running will not pick up a change here.
 
 Once either route is live the art can be regenerated through SpriteCook. The
 swap is deliberately cheap: both runtimes look sprites up by name from
