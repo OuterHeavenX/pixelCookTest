@@ -140,19 +140,33 @@ There are two ways to reach it, and either one is enough:
    it just has to be enabled for the individual chat, in that chat's connector
    settings. Nothing else is needed - the authorization already exists.
 2. **The project MCP server.** `.mcp.json` in this repository points Claude Code
-   at `https://api.spritecook.ai/mcp/` and deliberately sets **no**
-   `Authorization` header, because the endpoint speaks full OAuth with dynamic
-   client registration:
+   at `https://mcp.spritecook.ai/mcp/claude` and authenticates with an API key
+   read from the environment:
 
-       authorization_endpoint  https://api.spritecook.ai/oauth/authorize
-       token_endpoint          https://api.spritecook.ai/oauth/token
-       registration_endpoint   https://api.spritecook.ai/oauth/register
+       export SPRITECOOK_API_KEY=sc_live_...   # from app.spritecook.ai -> API Keys
 
-   Pinning a bearer token in `headers` turns that fallback **off**, so a wrong
-   or missing token becomes a hard 401 instead of a sign-in prompt. Leaving the
-   header out lets the client register itself and prompt for sign-in - no API
-   key to manage. MCP servers are loaded at session start, so a session that is
-   already running will not pick up a change here.
+   The key is expanded out of `${SPRITECOOK_API_KEY}` at load time, so nothing
+   secret is ever committed. A session started without that variable set will
+   fail to connect.
+
+   **On the route.** SpriteCook serves a separate MCP endpoint per client, and
+   the OAuth metadata is only self-consistent on the exact per-client path.
+   Every other candidate advertises its protected resource as
+   `https://mcp.spritecook.ai/mcp/openai`, which matches neither the URL being
+   dialled nor its origin, so a conforming client aborts the handshake:
+
+       api.spritecook.ai/mcp/       -> resource: .../mcp/openai   mismatch
+       mcp.spritecook.ai/mcp/       -> resource: .../mcp/openai   mismatch
+       mcp.spritecook.ai/mcp/claude -> resource: .../mcp/claude   ok
+
+   That mismatch is what the earlier `https://api.spritecook.ai/mcp/` config hit.
+   If the key path is ever dropped in favour of OAuth again, `/mcp/claude` is
+   still the route to use: its authorization server is `https://api.spritecook.ai`,
+   advertising `/oauth/authorize`, `/oauth/token` and `/oauth/register` with
+   PKCE and dynamic client registration.
+
+   MCP servers are loaded at session start, so a session that is already running
+   will not pick up a change here.
 
 Once either route is live the art can be regenerated through SpriteCook. The
 swap is deliberately cheap: both runtimes look sprites up by name from
