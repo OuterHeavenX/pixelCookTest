@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rivenbrook - A Tale of the Thornwilds</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: #0a0812;
+    background-image: radial-gradient(circle at 50% 12%, #1d1c38 0%, #0a0812 70%);
+    color: #cdd3f0;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #stage {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #0a0812;
+    border: 2px solid #3a3a6a;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px #12102a, 0 14px 40px rgba(0,0,0,.65);
+  }
+  #hint { font-size: 11px; letter-spacing: .06em; opacity: .62; text-align: center; }
+  #hint b { color: #f6e2a8; font-weight: 600; }
+  #loading {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; letter-spacing: .2em; color: #8f97c0; background: #0a0812;
+  }
+  #touch { display: none; position: fixed; inset: auto 0 0 0; padding: 12px; user-select: none; }
+  #touch .pad { position: absolute; left: 14px; bottom: 18px; width: 132px; height: 132px; }
+  #touch .btns { position: absolute; right: 14px; bottom: 30px; display: flex; gap: 12px; }
+  #touch button {
+    position: absolute; width: 44px; height: 44px; border-radius: 8px;
+    border: 2px solid #4a4a80; background: rgba(40,42,80,.72); color: #e8ecff;
+    font: 600 13px/1 ui-monospace, monospace;
+  }
+  #touch .btns button { position: static; width: 52px; height: 52px; border-radius: 50%; }
+  #touch button.on { background: rgba(120,140,240,.8); }
+  #touch [data-act=up]    { left: 44px; top: 0; }
+  #touch [data-act=left]  { left: 0; top: 44px; }
+  #touch [data-act=right] { left: 88px; top: 44px; }
+  #touch [data-act=down]  { left: 44px; top: 88px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="screen" width="320" height="180"></canvas>
+  <div id="hint">
+    <b>Arrows/WASD</b> move &nbsp;·&nbsp; <b>Z</b> confirm &nbsp;·&nbsp; <b>X</b> cancel/dash &nbsp;·&nbsp;
+    <b>C</b> menu &nbsp;·&nbsp; <b>M</b> mute
+  </div>
+</div>
+<div id="loading">LOADING&hellip;</div>
+<div id="touch">
+  <div class="pad">
+    <button data-act="up">&#9650;</button>
+    <button data-act="left">&#9664;</button>
+    <button data-act="right">&#9654;</button>
+    <button data-act="down">&#9660;</button>
+  </div>
+  <div class="btns">
+    <button data-act="cancel">B</button>
+    <button data-act="confirm">A</button>
+    <button data-act="menu">&#9776;</button>
+  </div>
+</div>
+<script>
+/*__ASSETS__*/
+</script>
+<script>
+/*__FONT__*/
+</script>
+<script>
+/*__GAME__*/
+</script>
+</body>
+</html>
