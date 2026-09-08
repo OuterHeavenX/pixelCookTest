@@ -132,7 +132,30 @@ is a working asset generator built for this project that fills the same role:
 one command cooks every sprite in the game from source, with no dependencies
 beyond the Python standard library.
 
-If you enable the Spritecook connector for a session, the character sprites and
-animations can be regenerated through it: `Atlas`/`Art` read frame rectangles
-out of `atlas.json` by name, so swapping the art means replacing the atlas and
-its frame table, not touching either runtime.
+### Wiring up SpriteCook
+
+There are two ways to reach it, and either one is enough:
+
+1. **The account connector.** SpriteCook is already installed on the account;
+   it just has to be enabled for the individual chat, in that chat's connector
+   settings. Nothing else is needed - the authorization already exists.
+2. **The project MCP server.** `.mcp.json` in this repository points Claude Code
+   at `https://api.spritecook.ai/mcp/`. It reads the token from a
+   `SPRITECOOK_API_KEY` environment variable, so no secret is committed. Set
+   that variable in the environment and start a fresh session - MCP servers are
+   loaded at session start, so an already-running session will not pick it up.
+
+Once either route is live the art can be regenerated through SpriteCook. The
+swap is deliberately cheap: both runtimes look sprites up by name from
+`atlas.json` and neither hardcodes a pixel coordinate, so replacing the art
+means replacing the atlas and its frame table, not touching game code. The
+names the game asks for are:
+
+| Sprite | Names |
+| --- | --- |
+| Walk cycles | `<char>_<down\|up\|left\|right><0..2>` for each of the 8 characters |
+| Battle poses | `<hero>_ready`, `<hero>_attack`, `<hero>_hurt` |
+| Monsters | `e_slime`, `e_goblin`, `e_wolf`, `e_bat`, `e_wisp`, `e_bandit`, `e_ogre` |
+
+`tools/spritecook.py` stays either way: it cooks the tiles, props, furniture,
+icons and font, which are not character art.

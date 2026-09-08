@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "spritecook": {
+      "type": "http",
+      "url": "https://api.spritecook.ai/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${SPRITECOOK_API_KEY}"
+      }
+    }
+  }
+}
