@@ -140,7 +140,7 @@ There are two ways to reach it, and either one is enough:
    it just has to be enabled for the individual chat, in that chat's connector
    settings. Nothing else is needed - the authorization already exists.
 2. **The project MCP server.** `.mcp.json` in this repository points Claude Code
-   at `https://api.spritecook.ai/mcp/` and deliberately sets **no**
+   at `https://mcp.spritecook.ai/mcp/claude` and deliberately sets **no**
    `Authorization` header, because the endpoint speaks full OAuth with dynamic
    client registration:
 
@@ -153,6 +153,22 @@ There are two ways to reach it, and either one is enough:
    header out lets the client register itself and prompt for sign-in - no API
    key to manage. MCP servers are loaded at session start, so a session that is
    already running will not pick up a change here.
+
+   **The exact URL matters, and `https://api.spritecook.ai/mcp/` is the wrong
+   one.** Under RFC 9728 a client only starts the sign-in flow if the protected
+   resource metadata it discovers names the very URL it is talking to. The two
+   candidate URLs behave differently:
+
+   | URL | `WWW-Authenticate` on 401 | metadata `resource` | starts auth |
+   | --- | --- | --- | --- |
+   | `https://api.spritecook.ai/mcp/` | no `resource_metadata` | `https://mcp.spritecook.ai/mcp/openai` (via the origin-wide well-known) | no - host and path both differ |
+   | `https://mcp.spritecook.ai/mcp/claude` | `resource_metadata=".../oauth-protected-resource/mcp/claude"` | `https://mcp.spritecook.ai/mcp/claude` | yes - exact match |
+
+   The `api` host answers on `/mcp/` but points discovery at the `mcp` host, so
+   the client rejects the mismatch and reports *"Failed to start MCP
+   authorization"* before any browser window ever opens. There is also a
+   `/mcp/openai` route on the `mcp` host; it is self-consistent too, but
+   `/mcp/claude` is the route for this client.
 
 Once either route is live the art can be regenerated through SpriteCook. The
 swap is deliberately cheap: both runtimes look sprites up by name from
