@@ -323,7 +323,8 @@ func _draw_party(c: CanvasItem) -> void:
 		var h: Dictionary = Gs.party[i]
 		var x := 110
 		var y := 30 + i * 48
-		Art.spr(c, "%s_down0" % h["sprite"], Vector2(x, y - 6), 1.5)
+		Art.spr_foot(c, "%s_down0" % h["sprite"], Vector2(x + 12, y + 30),
+			Art.scale_for("%s_down0" % h["sprite"], 36.0))
 		Art.spr(c, class_icon(h), Vector2(x + 30, y - 1))
 		Art.draw_text(c, h["name"], Vector2(x + 40, y),
 			Color("#f2f4ff") if bool(h["alive"]) else Color("#c08090"))
@@ -444,7 +445,8 @@ func _draw_status(c: CanvasItem, anim: float) -> void:
 			Art.draw_cursor(c, Vector2(106, y - 1), anim)
 	c.draw_rect(Rect2(154, 24, 1, Art.VH - 46), Color("#4d63b4"))
 
-	Art.spr(c, "%s_ready" % h["sprite"], Vector2(162, 26), 2.0)
+	Art.spr_foot(c, "%s_ready" % h["sprite"], Vector2(178, 74),
+		Art.scale_for("%s_ready" % h["sprite"], 48.0))
 	Art.draw_text(c, h["name"], Vector2(200, 30), Color("#f2f4ff"))
 	Art.spr(c, class_icon(h), Vector2(200, 41))
 	Art.draw_text(c, h["title"], Vector2(212, 42), Color("#9aa4c8"))

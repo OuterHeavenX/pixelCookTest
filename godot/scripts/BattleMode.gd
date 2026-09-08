@@ -822,10 +822,13 @@ func draw(c: CanvasItem) -> void:
 		var h: Dictionary = Gs.party[i]
 		var slot := hero_slot(i)
 		var pos := Vector2(slot.x + float(h["offset"]), slot.y)
+		var bs := Art.scale_for("%s_ready" % h["sprite"], 36.0)
 		if not bool(h["alive"]):
 			# Fallen party members lie on their back: the 16-bit shorthand for KO.
+			var ko := Art.frame_size("%s_hurt" % h["sprite"])
 			c.draw_set_transform(Vector2(pos.x + 12 + sh, pos.y + 26), -PI / 2.0)
-			Art.spr(c, "%s_hurt" % h["sprite"], Vector2(-12, -18), 1.5, Color(1, 1, 1, 0.5))
+			Art.spr(c, "%s_hurt" % h["sprite"],
+				Vector2(-ko.x * bs / 2.0, -ko.y * bs / 2.0), bs, Color(1, 1, 1, 0.5))
 			c.draw_set_transform(Vector2(sh, 0))
 			continue
 		var is_acting := not acting.is_empty() and is_same(acting["who"], h) \
@@ -837,7 +840,7 @@ func draw(c: CanvasItem) -> void:
 			alpha = 0.55
 		var bob := sin(t * 6.0) if is_ready else 0.0
 		var pose := "_attack" if is_acting else "_ready"
-		Art.spr(c, h["sprite"] + pose, Vector2(pos.x, pos.y + bob), 1.5,
+		Art.spr_foot(c, h["sprite"] + pose, Vector2(pos.x + 12, pos.y + 36 + bob), bs,
 			Color(1, 1, 1, alpha))
 
 	draw_fx(c)

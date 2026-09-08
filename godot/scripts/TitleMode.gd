@@ -63,9 +63,10 @@ func draw(c: CanvasItem) -> void:
 	Art.draw_text(c, "a tale of the thornwilds", Vector2(Art.VW / 2.0, 60),
 		Color("#c8cdf0"), "center")
 
-	Art.spr(c, "aldric_right0", Vector2(128, 96), 2.0)
-	Art.spr(c, "lyra_right0", Vector2(152, 96), 2.0)
-	Art.spr(c, "mira_right0", Vector2(176, 96), 2.0)
+	var lineup := ["aldric_right0", "lyra_right0", "mira_right0"]
+	for i in lineup.size():
+		Art.spr_foot(c, lineup[i], Vector2(140 + i * 24, 144),
+			Art.scale_for(lineup[i], 48.0))
 
 	var opts := options()
 	Art.draw_window(c, Rect2(Art.VW / 2.0 - 52, 138, 104, 16 + opts.size() * 14))

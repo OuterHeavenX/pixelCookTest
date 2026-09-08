@@ -467,7 +467,8 @@ func draw(c: CanvasItem) -> void:
 		if n == null:
 			var pos := Vector2((Gs.px + offset.x) * TILE - cam.x, (Gs.py + offset.y) * TILE - cam.y)
 			Art.draw_shadow(c, pos + Vector2(8, 15), 6.0)
-			Art.spr(c, "aldric_%s%d" % [Gs.dir, walk_frame(walk_phase)], pos + Vector2(0, -8))
+			Art.spr_foot(c, "aldric_%s%d" % [Gs.dir, walk_frame(walk_phase)],
+				pos + Vector2(8, 16))
 			continue
 		var npos := Vector2((n["tx"] + float(n["ox"])) * TILE - cam.x,
 			(n["ty"] + float(n["oy"])) * TILE - cam.y)
@@ -477,8 +478,8 @@ func draw(c: CanvasItem) -> void:
 			Art.spr(c, "e_ogre", npos + Vector2(8 - size.x / 2.0, 16 - size.y))
 		else:
 			Art.draw_shadow(c, npos + Vector2(8, 15), 6.0)
-			Art.spr(c, "%s_%s%d" % [n["sprite"], n["dir"], walk_frame(float(n["phase"]))],
-				npos + Vector2(0, -8))
+			Art.spr_foot(c, "%s_%s%d" % [n["sprite"], n["dir"], walk_frame(float(n["phase"]))],
+				npos + Vector2(8, 16))
 
 	draw_location_banner(c)
 	if not msg.is_empty():

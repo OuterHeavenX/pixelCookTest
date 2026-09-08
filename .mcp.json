@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "spritecook": {
-      "type": "http",
-      "url": "https://api.spritecook.ai/mcp/"
-    }
-  }
-}

@@ -4,7 +4,7 @@ import json
 import os
 
 from .imaging import Packer
-from . import beasts, chars, tiles
+from . import beasts, chars, imported, tiles
 
 ATLAS_WIDTH = 256
 
@@ -15,6 +15,9 @@ def cook_all():
     sprites.update(chars.cook())
     sprites.update(beasts.cook())
     sprites.update(beasts.cook_icons())
+    # Externally generated art wins over the procedural sprite of the same
+    # name, so the cast can be upgraded one character at a time.
+    sprites.update(imported.cook())
     return sprites
 
 

@@ -139,20 +139,46 @@ There are two ways to reach it, and either one is enough:
 1. **The account connector.** SpriteCook is already installed on the account;
    it just has to be enabled for the individual chat, in that chat's connector
    settings. Nothing else is needed - the authorization already exists.
-2. **The project MCP server.** `.mcp.json` in this repository points Claude Code
-   at `https://api.spritecook.ai/mcp/` and deliberately sets **no**
-   `Authorization` header, because the endpoint speaks full OAuth with dynamic
-   client registration:
+2. **A project MCP server.** If you want SpriteCook in an editor that has no
+   connector (Cursor, VS Code, a local Claude Code), point it at
+   `https://mcp.spritecook.ai/mcp/claude` and set **no** `Authorization`
+   header, so the client can run OAuth (dynamic client registration, S256
+   PKCE) instead of needing an API key.
 
-       authorization_endpoint  https://api.spritecook.ai/oauth/authorize
-       token_endpoint          https://api.spritecook.ai/oauth/token
-       registration_endpoint   https://api.spritecook.ai/oauth/register
+   Two traps are worth writing down. Pinning a bearer token in `headers`
+   disables the OAuth fallback, turning a missing token into a hard 401
+   instead of a sign-in prompt. And the route matters: `api.spritecook.ai/mcp/`
+   answers, but its protected-resource metadata declares
+   `https://mcp.spritecook.ai/mcp/openai`, so a client that validates RFC 9728
+   metadata rejects the mismatch. The `/mcp/claude` route's metadata is
+   self-consistent.
 
-   Pinning a bearer token in `headers` turns that fallback **off**, so a wrong
-   or missing token becomes a hard 401 instead of a sign-in prompt. Leaving the
-   header out lets the client register itself and prompt for sign-in - no API
-   key to manage. MCP servers are loaded at session start, so a session that is
-   already running will not pick up a change here.
+### Bringing SpriteCook art into the game
+
+`art/spritecook/` holds the generated source PNGs and a `MANIFEST.json` saying
+which game sprite names each file supplies and how tall it should end up.
+`tools/spritecook/imported.py` crops each file to its silhouette, area-averages
+it down to that height with a hard alpha threshold so the edges stay crisp, and
+packs it into the same atlas as the procedural art. **A name imported this way
+overrides the procedural sprite of that name**, which is what lets the cast be
+upgraded one character at a time.
+
+Two things were settled by measurement rather than taste:
+
+- **Characters land at 24x32, two tiles tall.** SpriteCook returns roughly
+  38x64 of usable character inside a 66x66 image. Scaled to 24x32 the helm,
+  plume, cape and face all survive; at 18x24 the face disappears entirely, and
+  at native size the character is four tiles tall against 16px terrain.
+- **Nothing assumes a fixed sprite size any more.** Both runtimes anchor
+  sprites on the feet (`sprFoot` / `Art.spr_foot`) and pick a zoom with
+  `scaleFor` / `Art.scale_for`, so a 24x32 generated character and a 16x24
+  procedural townsperson stand correctly side by side on the same tile.
+
+Costs, for planning: a base character is 12 credits, each animation 20, and
+each extra viewing angle needs a 12-credit prep step. A full four-direction
+walk set works out around 152 credits per character, so a complete cast
+replacement is far more than a small balance holds - upgrade the party first,
+where the player actually looks.
 
 Once either route is live the art can be regenerated through SpriteCook. The
 swap is deliberately cheap: both runtimes look sprites up by name from

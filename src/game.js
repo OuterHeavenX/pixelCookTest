@@ -35,6 +35,28 @@ function spr(name, dx, dy, opts) {
 }
 function sprSize(name) { const f = FRAMES[name]; return f ? [f[2], f[3]] : [0, 0]; }
 
+/* Sprites are not all one size any more - procedural characters are 16x24 and
+   generated ones 24x32 - so everything anchors on the feet rather than on a
+   hardcoded top-left offset. */
+function sprFoot(name, cx, footY, opts) {
+  const f = FRAMES[name];
+  if (!f) return;
+  const s = (opts && opts.scale) || 1;
+  spr(name, cx - (f[2] * s) / 2, footY - f[3] * s, opts);
+}
+
+/* Pick the crispest whole-ish zoom that lands near a target height. */
+function scaleFor(name, targetH) {
+  const f = FRAMES[name];
+  if (!f) return 1;
+  let best = 1, bestErr = Infinity;
+  for (const s of [1, 1.5, 2, 3]) {
+    const err = Math.abs(f[3] * s - targetH);
+    if (err < bestErr) { bestErr = err; best = s; }
+  }
+  return best;
+}
+
 /* ----------------------------------------------------------------- text -- */
 const FontCache = {
   keys: Object.keys(FONT),
@@ -800,7 +822,7 @@ function drawField() {
           spr('e_ogre', sx + 8 - w / 2, sy + 16 - h);
         } else {
           drawShadow(sx + 8, sy + 15, 6);
-          spr(n.sprite + '_' + n.dir + walkFrame(n.phase), sx, sy - 8);
+          sprFoot(n.sprite + '_' + n.dir + walkFrame(n.phase), sx + 8, sy + 16);
         }
       }
     });
@@ -810,7 +832,7 @@ function drawField() {
       const sx = (G.px + pox) * TILE - camX;
       const sy = (G.py + poy) * TILE - camY;
       drawShadow(sx + 8, sy + 15, 6);
-      spr('aldric_' + G.dir + walkFrame(Field.walkPhase), sx, sy - 8);
+      sprFoot('aldric_' + G.dir + walkFrame(Field.walkPhase), sx + 8, sy + 16);
     }
   });
   ents.sort((a, b) => a.y - b.y);
@@ -1468,13 +1490,15 @@ function drawBattle() {
   G.party.forEach((h, i) => {
     const s = heroSlot(i);
     const x = s.x + h.offset, y = s.y;
+    const bs = scaleFor(h.sprite + '_ready', 36);
     if (!h.alive) {
       // Fallen party members lie on their back, the 16-bit shorthand for KO.
+      const [kw, kh] = sprSize(h.sprite + '_hurt');
       ctx.save();
       ctx.globalAlpha = 0.5;
       ctx.translate(x + 12, y + 26);
       ctx.rotate(-Math.PI / 2);
-      spr(h.sprite + '_hurt', -12, -18, { scale: 1.5 });
+      spr(h.sprite + '_hurt', -kw * bs / 2, -kh * bs / 2, { scale: bs });
       ctx.restore();
       return;
     }
@@ -1483,7 +1507,8 @@ function drawBattle() {
     drawShadow(x + 12, y + 35, 9);
     if (h.hurt > 0 && Math.floor(h.hurt * 30) % 2 === 0) ctx.globalAlpha = 0.55;
     const pose = isActing ? '_attack' : '_ready';
-    spr(h.sprite + pose, x, y + (isReady ? Math.sin(Battle.t * 6) * 1 : 0), { scale: 1.5 });
+    sprFoot(h.sprite + pose, x + 12,
+      y + 36 + (isReady ? Math.sin(Battle.t * 6) * 1 : 0), { scale: bs });
     ctx.globalAlpha = 1;
   });
 
@@ -1887,7 +1912,7 @@ function drawPartyRow(h, x, y, highlight) {
     ctx.fillStyle = 'rgba(120,160,255,0.14)';
     ctx.fillRect(x - 4, y - 4, 202, 46);
   }
-  spr(h.sprite + '_down0', x, y - 6, { scale: 1.5 });
+  sprFoot(h.sprite + '_down0', x + 12, y + 30, { scale: scaleFor(h.sprite + '_down0', 36) });
   spr(classIcon(h), x + 30, y - 1);
   drawText(h.name, x + 40, y, h.alive ? '#f2f4ff' : '#c08090');
   drawText(h.title, x + 40, y + 11, '#9aa4c8');
@@ -1981,7 +2006,7 @@ function drawStatusPane() {
   ctx.fillStyle = '#4d63b4';
   ctx.fillRect(154, 24, 1, VH - 46);
 
-  spr(h.sprite + '_ready', 162, 26, { scale: 2 });
+  sprFoot(h.sprite + '_ready', 178, 74, { scale: scaleFor(h.sprite + '_ready', 48) });
   drawText(h.name, 200, 30, '#f2f4ff');
   spr(classIcon(h), 200, 41);
   drawText(h.title, 212, 42, '#9aa4c8');
@@ -2119,9 +2144,10 @@ function drawTitle() {
   drawTextBig('RIVENBROOK', VW / 2, 26, '#f6e2a8', 3, { align: 'center' });
   drawText('a tale of the thornwilds', VW / 2, 60, '#c8cdf0', { align: 'center' });
 
-  spr('aldric_right0', 128, 96, { scale: 2 });
-  spr('lyra_right0', 152, 96, { scale: 2 });
-  spr('mira_right0', 176, 96, { scale: 2 });
+  ['aldric', 'lyra', 'mira'].forEach((who, i) => {
+    const name = who + '_right0';
+    sprFoot(name, 140 + i * 24, 144, { scale: scaleFor(name, 48) });
+  });
 
   const opts = ['New Game'];
   if (hasSave()) opts.push('Continue');

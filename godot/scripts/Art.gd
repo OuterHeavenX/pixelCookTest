@@ -73,6 +73,33 @@ func spr(c: CanvasItem, sprite_name: String, pos: Vector2, scale := 1.0,
 	c.draw_texture_rect_region(atlas, dst, src, modulate)
 
 
+## Sprites are not all one size any more - procedural characters are 16x24 and
+## generated ones 24x32 - so everything anchors on the feet rather than on a
+## hardcoded top-left offset.
+func spr_foot(c: CanvasItem, sprite_name: String, foot: Vector2, scale := 1.0,
+		modulate := Color.WHITE) -> void:
+	var size := frame_size(sprite_name)
+	if size == Vector2.ZERO:
+		return
+	spr(c, sprite_name, Vector2(foot.x - size.x * scale / 2.0, foot.y - size.y * scale),
+		scale, modulate)
+
+
+## Pick the crispest whole-ish zoom that lands near a target height.
+func scale_for(sprite_name: String, target_h: float) -> float:
+	var size := frame_size(sprite_name)
+	if size.y <= 0.0:
+		return 1.0
+	var best := 1.0
+	var best_err := INF
+	for s in [1.0, 1.5, 2.0, 3.0]:
+		var err: float = abs(size.y * s - target_h)
+		if err < best_err:
+			best_err = err
+			best = s
+	return best
+
+
 # --- text -------------------------------------------------------------------
 
 func text_width(s: String) -> int:
