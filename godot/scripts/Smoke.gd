@@ -119,6 +119,25 @@ func _talk_to(who: String) -> bool:
 	return false
 
 
+## Press through a message until it is waiting on its choice - the last page,
+## fully typed out, with the options up.
+func _wait_for_choice(limit := 20) -> bool:
+	var pressed := 0
+	while pressed < limit:
+		var m: Dictionary = main.field.msg
+		if m.is_empty():
+			return false
+		var ch: Dictionary = m.get("choice", {})
+		var lines: Array = m["lines"]
+		var page := int(m["page"])
+		if not ch.is_empty() and page == lines.size() - 1 \
+				and float(m["chars"]) >= float((lines[page] as String).length()):
+			return true
+		await _press("confirm", 3)
+		pressed += 1
+	return false
+
+
 func _shot(name: String) -> void:
 	_say("    .. shot " + name)
 	await _settle()
@@ -454,7 +473,43 @@ func _run() -> void:
 	await _step(6)
 	main.field.enter_map("shore", 45, 14)
 	await _step(8)
-	_expect(main.field.msg.is_empty(), "and the scene does not play twice")
+	# Coming back the same way does not play his goodbye again. The road is
+	# not silent, though - she has the next word, and that is the next test.
+	_expect(str(main.field.msg.get("speaker", "")) != "Bram",
+		"and the scene does not play twice")
+
+	# Sera, in four movements. Worth running in the engine rather than trusting
+	# the browser for it: it is all message plumbing - a gift that has to land
+	# in the pack, a question whose answer has to stick - and message plumbing
+	# is exactly where this build was thin.
+	_expect(not main.field.msg.is_empty(), "the road gives her the first word")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("seraDusk", false)), "and it stays said")
+
+	main.field.enter_map("hollow", 21, 31)
+	await _step(8)
+	_expect(not main.field.msg.is_empty(), "she gives you something in town")
+	await _read_msg()
+	_expect(int(Gs.gear.get("lamp_key", 0)) > 0, "and the lamp key lands in the pack")
+	_expect(Gs.can_wear(Gs.find_hero("aldric"), Dat.gear["lamp_key"])
+		and not Gs.can_wear(Gs.find_hero("sera"), Dat.gear["lamp_key"]),
+		"and it is his to wear, nobody else's")
+
+	main.field.enter_map("shore", 45, 14)
+	await _step(8)
+	_expect(await _wait_for_choice(), "the road asks you something")
+	await _shot("ch2_sera")
+	await _press("confirm")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("seraClose", false)), "sitting with her is an answer")
+
+	main.field.enter_map("hollow", 21, 31)
+	await _step(8)
+	await _read_msg()
+	_expect(bool(Gs.flags.get("seraKeptTwice", false)),
+		"and she answers the question she would not answer")
+	_expect(not bool(Gs.flags.get("seraKeptQuiet", false)),
+		"and the other answer stays unsaid")
 
 	_say("save")
 	_expect(Gs.save_game(), "the journal saves")

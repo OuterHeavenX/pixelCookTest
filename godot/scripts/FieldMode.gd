@@ -328,6 +328,34 @@ func map_beat(id: String) -> void:
 		for l in beat["lines"]:
 			lines.append(fill_tokens(l))
 		msg = make_message(lines, str(beat.get("speaker", "")))
+		# A beat that asks something waits on its last page. Cancel picks the
+		# last option, the same as everywhere else, so the gentler answer goes
+		# first.
+		var asked: Dictionary = beat.get("choice", {})
+		if not asked.is_empty():
+			var sets: Array = asked["sets"]
+			var replies: Array = asked.get("replies", [])
+			var on_pick := func(i: int) -> void:
+				if i < sets.size() and str(sets[i]) != "":
+					Gs.flags[str(sets[i])] = true
+				if i < replies.size():
+					var said := []
+					for l in replies[i]:
+						said.append(fill_tokens(l))
+					msg = make_message(said, str(beat.get("speaker", "")))
+			msg["choice"] = {
+				"options": (asked["options"] as Array).duplicate(),
+				"index": 0, "on_pick": on_pick,
+			}
+			return
+		var gift = beat.get("gives", null)
+		if gift != null:
+			msg["on_close"] = func() -> void:
+				Gs.take_gear(str(gift))
+				Snd.sfx("item")
+				msg = make_message(["%s goes into your pack."
+					% Dat.gear[str(gift)]["name"]])
+			return
 		var leaver = beat.get("leaves", null)
 		if leaver != null:
 			msg["on_close"] = func() -> void:

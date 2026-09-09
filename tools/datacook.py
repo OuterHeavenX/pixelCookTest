@@ -685,6 +685,11 @@ GEAR = {
     'guard_charm': {'name': 'Guard Charm', 'slot': 'trinket', 'icon': 'i_ring',
                     'price': 700, 'users': None, 'stats': {'def': 7, 'hp': 30},
                     'desc': 'Someone wanted you to come home.'},
+    # Not for sale anywhere. It is given, once, by one person, and it is worth
+    # about as much as a shop trinket - the point of it is whose it was.
+    'lamp_key': {'name': "Sera's Lamp Key", 'slot': 'trinket', 'icon': 'i_ring',
+                 'price': 0, 'users': ['aldric'], 'stats': {'def': 4, 'mag': 4, 'hp': 20},
+                 'desc': "Her mother's. It still turns the ones on the bridge."},
 }
 
 # The three slots, in the order the equip screen lists them.
@@ -781,6 +786,69 @@ MAP_BEATS = {
                    "So I am staying up here and keeping them lit. No, do not.",
                    "{name}. I have followed you into one hole in the ground already.",
                    "Let me be useful where you can still find me."]},
+
+        # Sera, in four movements, spread over the walk between Hollowmere and
+        # the water. Nothing here is automatic: the first two are earned by
+        # having her with you and coming back this way, the third asks you
+        # outright, and the fourth is only the answer to a question she
+        # refused to answer in the first.
+        {'flag': 'seraDusk',
+         'needs': ['bramHoldsRoad'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'lines': ["He is going to light every one of them, you know. All the way to the bridge.",
+                   "My mother did that. Not the whole road - ours, and the two either side, because the Marrows are old.",
+                   "I thought it was a chore. Then she went in the winter, and I went out at dusk anyway.",
+                   "That was when I understood it was not a chore. It was a promise.",
+                   "Ask me what I promised. No - ask me later. When we know what is under the water."]},
+
+        {'flag': 'seraWater',
+         'needs': ['seraLamp'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'lines': ["Stop a moment. The ice is talking.",
+                   "It does that when it is thinking about breaking. Grandmother said it was the mere clearing its throat.",
+                   "We are going down there soon, and one of us is going to say something stupid.",
+                   "So it may as well be tonight. Sit with me until the lamps take."],
+         'choice': {
+             'options': ['Sit with her', 'There is no time'],
+             'sets': ['seraClose', 'seraKept'],
+             'replies': [
+                 ["She does not say anything else for a long while. Neither do you.",
+                  "The lamps take, one after another, all the way down to the bridge.",
+                  "\"There,\" she says. \"Now I have kept it twice.\""],
+                 ["\"No,\" she agrees. \"There is not.\"",
+                  "She stands, walks on ahead of you, and lights the next one anyway.",
+                  "She does not sound angry. Somehow that is worse."]]}},
+    ],
+    'hollow': [
+        {'flag': 'seraLamp',
+         'needs': ['seraDusk'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'gives': 'lamp_key',
+         'lines': ["Hold out your hand. No - the other one. You keep that one free. I have been watching.",
+                   "It is a lamp key. Every keeper gets one at twelve and loses it by thirty.",
+                   "That one was hers. It still turns the ones on the bridge, so do not drop it in the mere.",
+                   "{name}. That is the first time I have said your name without the town in front of it."]},
+
+        {'flag': 'seraKeptTwice',
+         'needs': ['seraClose'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'lines': ["You asked me what I promised. Out on the road, before I told you to ask later.",
+                   "Not to let one go out. That is all it is. Nobody ever said why.",
+                   "I have added you to it. You do not get a say in that.",
+                   "Now stop looking at me like that and go and buy a coat."]},
+
+        {'flag': 'seraKeptQuiet',
+         'needs': ['seraKept'],
+         'absent': ['seraClose'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'lines': ["You never asked me again. Out on the road. What I promised.",
+                   "Good. Keep it that way until this is finished.",
+                   "Then ask me, and I will still be here, and I will tell you."]},
     ],
 }
 

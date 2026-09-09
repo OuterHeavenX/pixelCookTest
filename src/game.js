@@ -878,7 +878,25 @@ function mapBeat(id) {
     if ((beat.party || []).some(who => !inRoster(who))) continue;
     G.flags[beat.flag] = true;
     Field.msg = makeMessage(beat.lines.map(fillTokens), { speaker: beat.speaker });
-    if (beat.leaves) {
+    // A beat that asks something waits on its last page. Cancel picks the last
+    // option, the same as everywhere else, so the gentler answer goes first.
+    if (beat.choice) {
+      const c = beat.choice;
+      Field.msg.choice = {
+        options: c.options.slice(), index: 0,
+        onPick: i => {
+          if (c.sets[i]) G.flags[c.sets[i]] = true;
+          const reply = (c.replies || [])[i];
+          if (reply) Field.msg = makeMessage(reply.map(fillTokens), { speaker: beat.speaker });
+        }
+      };
+    } else if (beat.gives) {
+      Field.msg.onClose = () => {
+        takeGear(beat.gives);
+        Audio_.sfx('item');
+        Field.msg = makeMessage([GEAR[beat.gives].name + ' goes into your pack.']);
+      };
+    } else if (beat.leaves) {
       const who = beat.leaves;
       Field.msg.onClose = () => {
         const h = leaveParty(who);

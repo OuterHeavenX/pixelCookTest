@@ -204,6 +204,20 @@ def check_flags(srcs, problems):
     gd, js = flag_names(srcs)
     if not js:
         return
+    data = json.load(open(os.path.join(GODOT, "assets", "gamedata.json")))
+    # Flags the data names are the data's vocabulary, not the engine's, and
+    # either build may read one without owning it. Only the flags the code
+    # itself invents have to match on both sides.
+    from_data = set()
+    for beats in data.get("map_beats", {}).values():
+        for beat in beats:
+            from_data.add(beat["flag"])
+            from_data |= {f for f in beat.get("choice", {}).get("sets", []) if f}
+    for loot in data.get("chest_loot", {}).values():
+        if "flag" in loot:
+            from_data.add(loot["flag"])
+    gd -= from_data
+    js -= from_data
     for name in sorted(js - gd):
         problems.append("flag '%s' is set in the browser build but never in Godot"
                         % name)
@@ -211,11 +225,12 @@ def check_flags(srcs, problems):
         problems.append("flag '%s' is set in the Godot build but never in the browser"
                         % name)
     # And every flag the data gates a scene behind has to be one somebody sets.
-    data = json.load(open(os.path.join(GODOT, "assets", "gamedata.json")))
-    produced = set(gd)
+    produced = set(gd) | from_data
     for beats in data.get("map_beats", {}).values():
         for beat in beats:
             produced.add(beat["flag"])
+            # A beat that asks a question sets whichever flag the answer names.
+            produced |= {f for f in beat.get("choice", {}).get("sets", []) if f}
     for loot in data.get("chest_loot", {}).values():
         if "flag" in loot:
             produced.add(loot["flag"])
