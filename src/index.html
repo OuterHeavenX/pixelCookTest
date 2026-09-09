@@ -35,19 +35,21 @@
     font-size: 13px; letter-spacing: .2em; color: #8f97c0; background: #0a0812;
   }
   #touch { display: none; position: fixed; inset: auto 0 0 0; padding: 12px; user-select: none; }
-  #touch .pad { position: absolute; left: 14px; bottom: 18px; width: 132px; height: 132px; }
+  #touch .pad {
+    position: absolute; left: 14px; bottom: 18px;
+    display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px);
+  }
   #touch .btns { position: absolute; right: 14px; bottom: 30px; display: flex; gap: 12px; }
   #touch button {
-    position: absolute; width: 44px; height: 44px; border-radius: 8px;
+    width: 44px; height: 44px; border-radius: 8px;
     border: 2px solid #4a4a80; background: rgba(40,42,80,.72); color: #e8ecff;
     font: 600 13px/1 ui-monospace, monospace;
   }
-  #touch .btns button { position: static; width: 52px; height: 52px; border-radius: 50%; }
+  #touch .btns button { width: 52px; height: 52px; border-radius: 50%; }
+  #touch .pad .gap { visibility: hidden; }
+  #touch .pad button { font-size: 11px; }
   #touch button.on { background: rgba(120,140,240,.8); }
-  #touch [data-act=up]    { left: 44px; top: 0; }
-  #touch [data-act=left]  { left: 0; top: 44px; }
-  #touch [data-act=right] { left: 88px; top: 44px; }
-  #touch [data-act=down]  { left: 44px; top: 88px; }
+
 </style>
 </head>
 <body>
@@ -61,10 +63,15 @@
 <div id="loading">LOADING&hellip;</div>
 <div id="touch">
   <div class="pad">
+    <button data-act="up left">&#8598;</button>
     <button data-act="up">&#9650;</button>
+    <button data-act="up right">&#8599;</button>
     <button data-act="left">&#9664;</button>
+    <button class="gap" disabled></button>
     <button data-act="right">&#9654;</button>
+    <button data-act="down left">&#8601;</button>
     <button data-act="down">&#9660;</button>
+    <button data-act="down right">&#8600;</button>
   </div>
   <div class="btns">
     <button data-act="cancel">B</button>

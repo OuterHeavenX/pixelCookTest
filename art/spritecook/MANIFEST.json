@@ -13,7 +13,7 @@
     {
      "file": "sheets/aldric_walk_down.png",
      "pick": [
-      0,
+      7,
       2,
       6
      ],
@@ -26,9 +26,9 @@
     {
      "file": "sheets/aldric_walk_up.png",
      "pick": [
-      0,
-      2,
-      6
+      7,
+      1,
+      5
      ],
      "targets": [
       "aldric_up0",
@@ -39,9 +39,9 @@
     {
      "file": "sheets/aldric_walk_right.png",
      "pick": [
-      0,
       2,
-      5
+      0,
+      4
      ],
      "targets": [
       "aldric_right0",
@@ -52,9 +52,9 @@
     {
      "file": "sheets/aldric_walk_right.png",
      "pick": [
-      0,
       2,
-      5
+      0,
+      4
      ],
      "targets": [
       "aldric_left0",
@@ -285,5 +285,6 @@
    ]
   }
  },
- "credits_remaining_after": 46
+ "credits_remaining_after": 46,
+ "frame_convention": "Index 0 is a legs-together idle, 1 and 2 are opposite strides. The walk cycle plays 1,0,2,0 so the character passes through the idle pose on each step, and standing still shows it rather than a frozen stride."
 }

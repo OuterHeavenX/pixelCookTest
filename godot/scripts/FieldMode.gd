@@ -111,14 +111,33 @@ func nearest_free(x: int, y: int) -> Vector2i:
 
 # --- movement ---------------------------------------------------------------
 
-func try_step(facing: String) -> bool:
-	var d: Vector2i = DIRV[facing]
-	var nx := Gs.px + d.x
-	var ny := Gs.py + d.y
-	Gs.dir = facing
-	if solid_at(nx, ny) or npc_at(nx, ny) != null:
+## Diagonals face along the horizontal, which reads better than up/down.
+func facing_for(dx: int, dy: int) -> String:
+	if dx < 0:
+		return "left"
+	if dx > 0:
+		return "right"
+	return "up" if dy < 0 else "down"
+
+
+func blocked(x: int, y: int) -> bool:
+	return solid_at(x, y) or npc_at(x, y) != null
+
+
+func try_step(dx: int, dy: int) -> bool:
+	var nx := Gs.px + dx
+	var ny := Gs.py + dy
+	Gs.dir = facing_for(dx, dy)
+	if blocked(nx, ny):
 		return false
-	moving = {"fx": Gs.px, "fy": Gs.py, "tx": nx, "ty": ny, "t": 0.0, "dur": 0.155}
+	# A diagonal may not cut a corner: both orthogonal neighbours must be clear,
+	# otherwise the sprite visibly clips the corner of a wall.
+	if dx != 0 and dy != 0:
+		if blocked(Gs.px + dx, Gs.py) or blocked(Gs.px, Gs.py + dy):
+			return false
+	# Scale the step so a diagonal is not a free speed boost.
+	var span := sqrt(2.0) if dx != 0 and dy != 0 else 1.0
+	moving = {"fx": Gs.px, "fy": Gs.py, "tx": nx, "ty": ny, "t": 0.0, "dur": 0.155 * span}
 	return true
 
 
@@ -301,17 +320,25 @@ func update(dt: float) -> void:
 			on_step_complete()
 			return
 	else:
-		var facing := ""
+		var dx := 0
+		var dy := 0
+		if Inp.held("left"):
+			dx -= 1
+		if Inp.held("right"):
+			dx += 1
 		if Inp.held("up"):
-			facing = "up"
-		elif Inp.held("down"):
-			facing = "down"
-		elif Inp.held("left"):
-			facing = "left"
-		elif Inp.held("right"):
-			facing = "right"
-		if facing != "":
-			if try_step(facing):
+			dy -= 1
+		if Inp.held("down"):
+			dy += 1
+		if dx != 0 or dy != 0:
+			var moved := try_step(dx, dy)
+			# A blocked diagonal slides along whichever axis is still open, so
+			# running into a wall at an angle does not stop the player dead.
+			if not moved and dx != 0 and dy != 0:
+				moved = try_step(dx, 0)
+				if not moved:
+					moved = try_step(0, dy)
+			if moved:
 				# Holding cancel dashes.
 				moving["dur"] = float(moving["dur"]) * (0.62 if Inp.held("cancel") else 1.0)
 			else:
@@ -413,13 +440,15 @@ func camera_for(offset: Vector2) -> Vector2:
 	return Vector2(round(cx), round(cy))
 
 
+## Frame 0 is a legs-together idle; 1 and 2 are opposite strides. Walking plays
+## 1,0,2,0 so the legs pass through the idle pose on every step, and standing
+## still rests on it instead of freezing mid-stride.
+const WALK_CYCLE := [1, 0, 2, 0]
+
 func walk_frame(phase: float) -> int:
-	var f := int(phase) % 4
-	if f == 1:
-		return 1
-	if f == 3:
-		return 2
-	return 0
+	if phase <= 0.0:
+		return 0
+	return WALK_CYCLE[int(phase) % WALK_CYCLE.size()]
 
 
 func draw(c: CanvasItem) -> void:

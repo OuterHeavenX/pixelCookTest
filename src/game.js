@@ -220,9 +220,18 @@ const Input = {
     if (!('ontouchstart' in window)) return;
     pad.style.display = 'block';
     pad.querySelectorAll('[data-act]').forEach(el => {
-      const act = el.dataset.act;
-      const on = e => { e.preventDefault(); if (!this.down[act]) this.tapped[act] = true; this.down[act] = true; el.classList.add('on'); };
-      const off = e => { e.preventDefault(); this.down[act] = false; el.classList.remove('on'); };
+      // A diagonal button carries two actions, e.g. data-act="up right".
+      const acts = el.dataset.act.split(/\s+/);
+      const on = e => {
+        e.preventDefault();
+        acts.forEach(a => { if (!this.down[a]) this.tapped[a] = true; this.down[a] = true; });
+        el.classList.add('on');
+      };
+      const off = e => {
+        e.preventDefault();
+        acts.forEach(a => { this.down[a] = false; });
+        el.classList.remove('on');
+      };
       el.addEventListener('touchstart', on, { passive: false });
       el.addEventListener('touchend', off, { passive: false });
       el.addEventListener('touchcancel', off, { passive: false });
@@ -534,12 +543,25 @@ function warpAt(x, y) {
 const DIRV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const GRASS_VARIANTS = ['t_grass', 't_grass3', 't_grass2'];
 
-function tryStep(dir) {
-  const [dx, dy] = DIRV[dir];
+/* Diagonals face along the horizontal, which reads better than up/down. */
+function facingFor(dx, dy) {
+  if (dx < 0) return 'left';
+  if (dx > 0) return 'right';
+  return dy < 0 ? 'up' : 'down';
+}
+
+function blocked(x, y) { return solidAt(x, y) || !!npcAt(x, y); }
+
+function tryStep(dx, dy) {
   const nx = G.px + dx, ny = G.py + dy;
-  G.dir = dir;
-  if (solidAt(nx, ny) || npcAt(nx, ny)) return false;
-  Field.moving = { fx: G.px, fy: G.py, tx: nx, ty: ny, t: 0, dur: 0.155 };
+  G.dir = facingFor(dx, dy);
+  if (blocked(nx, ny)) return false;
+  // A diagonal may not cut a corner: both orthogonal neighbours must be clear,
+  // otherwise the sprite visibly clips the corner of a wall.
+  if (dx && dy && (blocked(G.px + dx, G.py) || blocked(G.px, G.py + dy))) return false;
+  // Scale the step so a diagonal is not a free speed boost.
+  const span = dx && dy ? Math.SQRT2 : 1;
+  Field.moving = { fx: G.px, fy: G.py, tx: nx, ty: ny, t: 0, dur: 0.155 * span };
   return true;
 }
 
@@ -687,13 +709,16 @@ function updateField(dt) {
     }
   } else {
     const speedMul = Input.held('cancel') ? 0.62 : 1;  // hold cancel to dash
-    let dir = null;
-    if (Input.held('up')) dir = 'up';
-    else if (Input.held('down')) dir = 'down';
-    else if (Input.held('left')) dir = 'left';
-    else if (Input.held('right')) dir = 'right';
-    if (dir) {
-      const moved = tryStep(dir);
+    let dx = 0, dy = 0;
+    if (Input.held('left')) dx -= 1;
+    if (Input.held('right')) dx += 1;
+    if (Input.held('up')) dy -= 1;
+    if (Input.held('down')) dy += 1;
+    if (dx || dy) {
+      let moved = tryStep(dx, dy);
+      // A blocked diagonal slides along whichever axis is still open, so
+      // running into a wall at an angle does not stop the player dead.
+      if (!moved && dx && dy) moved = tryStep(dx, 0) || tryStep(0, dy);
       if (moved) Field.moving.dur *= speedMul;
       else Field.walkPhase += dt * 5;
     } else {
@@ -775,9 +800,13 @@ function playerOffset() {
   return [lerp(m.fx - m.tx, 0, k) + (m.tx - G.px), lerp(m.fy - m.ty, 0, k) + (m.ty - G.py)];
 }
 
+/* Frame 0 is a legs-together idle; 1 and 2 are opposite strides. Walking
+   plays 1,0,2,0 so the legs pass through the idle pose on every step, and
+   standing still rests on it instead of freezing mid-stride. */
+const WALK_CYCLE = [1, 0, 2, 0];
 function walkFrame(phase) {
-  const f = Math.floor(phase) % 4;
-  return f === 1 ? 1 : f === 3 ? 2 : 0;
+  if (phase <= 0) return 0;
+  return WALK_CYCLE[Math.floor(phase) % WALK_CYCLE.length];
 }
 
 function drawField() {
