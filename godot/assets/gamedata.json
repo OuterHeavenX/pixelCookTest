@@ -11,9 +11,18 @@
    "item": "potion",
    "n": 2
   },
+  "wild:13,36": {
+   "gear": "flame_brand"
+  },
   "wild:43,39": {
    "item": "hipotion",
    "n": 2
+  },
+  "wild:51,5": {
+   "gear": "knight_plate"
+  },
+  "wild:6,12": {
+   "gear": "guard_charm"
   }
  },
  "classes": {
@@ -360,6 +369,218 @@
    "weak": "fire"
   }
  },
+ "gear": {
+  "bronze_sword": {
+   "desc": "A recruit's blade. Honest, blunt.",
+   "icon": "i_sword",
+   "name": "Bronze Sword",
+   "price": 120,
+   "slot": "weapon",
+   "stats": {
+    "atk": 6
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "chain_mail": {
+   "desc": "Turns a blade. Slows a step.",
+   "icon": "i_armor",
+   "name": "Chain Mail",
+   "price": 420,
+   "slot": "armour",
+   "stats": {
+    "def": 12,
+    "spd": -1
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "copper_ring": {
+   "desc": "Warm against the skin.",
+   "icon": "i_ring",
+   "name": "Copper Ring",
+   "price": 150,
+   "slot": "trinket",
+   "stats": {
+    "hp": 24
+   },
+   "users": null
+  },
+  "flame_brand": {
+   "desc": "Its edge burns. Ice hates it.",
+   "element": "fire",
+   "icon": "i_sword",
+   "name": "Flame Brand",
+   "price": 1400,
+   "slot": "weapon",
+   "stats": {
+    "atk": 26
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "guard_charm": {
+   "desc": "Someone wanted you to come home.",
+   "icon": "i_ring",
+   "name": "Guard Charm",
+   "price": 700,
+   "slot": "trinket",
+   "stats": {
+    "def": 7,
+    "hp": 30
+   },
+   "users": null
+  },
+  "iron_sword": {
+   "desc": "Heavier, and it tells.",
+   "icon": "i_sword",
+   "name": "Iron Sword",
+   "price": 480,
+   "slot": "weapon",
+   "stats": {
+    "atk": 15
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "knight_plate": {
+   "desc": "A wall you can walk in.",
+   "icon": "i_armor",
+   "name": "Knight Plate",
+   "price": 1200,
+   "slot": "armour",
+   "stats": {
+    "def": 21,
+    "spd": -2
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "leather_vest": {
+   "desc": "Better than a shirt.",
+   "icon": "i_armor",
+   "name": "Leather Vest",
+   "price": 90,
+   "slot": "armour",
+   "stats": {
+    "def": 4
+   },
+   "users": null
+  },
+  "moon_rod": {
+   "desc": "Cold to hold. Sharpens a spell.",
+   "icon": "i_staff",
+   "name": "Moon Rod",
+   "price": 520,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 12
+   },
+   "users": [
+    "lyra"
+   ]
+  },
+  "oak_staff": {
+   "desc": "Plain wood, patiently carved.",
+   "icon": "i_staff",
+   "name": "Oak Staff",
+   "price": 100,
+   "slot": "weapon",
+   "stats": {
+    "atk": 2,
+    "mag": 4
+   },
+   "users": [
+    "lyra",
+    "mira"
+   ]
+  },
+  "sage_cane": {
+   "desc": "Carried by healers who walk far.",
+   "icon": "i_staff",
+   "name": "Sage Cane",
+   "price": 560,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 9,
+    "mp": 10
+   },
+   "users": [
+    "mira"
+   ]
+  },
+  "sage_pendant": {
+   "desc": "Holds a little more of the well.",
+   "icon": "i_ring",
+   "name": "Sage Pendant",
+   "price": 300,
+   "slot": "trinket",
+   "stats": {
+    "mp": 14
+   },
+   "users": null
+  },
+  "silk_robe": {
+   "desc": "Woven to carry a spell cleanly.",
+   "icon": "i_armor",
+   "name": "Silk Robe",
+   "price": 380,
+   "slot": "armour",
+   "stats": {
+    "def": 6,
+    "mag": 3
+   },
+   "users": [
+    "lyra",
+    "mira"
+   ]
+  },
+  "swift_boots": {
+   "desc": "The gauge fills that bit faster.",
+   "icon": "i_ring",
+   "name": "Swift Boots",
+   "price": 450,
+   "slot": "trinket",
+   "stats": {
+    "spd": 5
+   },
+   "users": null
+  }
+ },
+ "gear_slots": [
+  {
+   "id": "weapon",
+   "label": "Weapon"
+  },
+  {
+   "id": "armour",
+   "label": "Armour"
+  },
+  {
+   "id": "trinket",
+   "label": "Trinket"
+  }
+ ],
+ "gear_stock": [
+  "bronze_sword",
+  "iron_sword",
+  "oak_staff",
+  "moon_rod",
+  "sage_cane",
+  "leather_vest",
+  "chain_mail",
+  "silk_robe",
+  "copper_ring",
+  "sage_pendant",
+  "swift_boots"
+ ],
  "inn_cost": 50,
  "items": {
   "bomb": {
@@ -757,6 +978,23 @@
    "name": "Vigil",
    "power": 40,
    "target": "allies"
+  }
+ },
+ "starting_gear": {
+  "aldric": {
+   "armour": "leather_vest",
+   "trinket": null,
+   "weapon": "bronze_sword"
+  },
+  "lyra": {
+   "armour": null,
+   "trinket": null,
+   "weapon": "oak_staff"
+  },
+  "mira": {
+   "armour": null,
+   "trinket": null,
+   "weapon": "oak_staff"
   }
  },
  "underlay": {

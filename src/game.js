@@ -562,6 +562,10 @@ const LEGEND = GAMEDATA.legend;
 const UNDERLAY = GAMEDATA.underlay;
 const SIGN_TEXT = GAMEDATA.sign_text;
 const CHEST_LOOT = GAMEDATA.chest_loot;
+const GEAR = GAMEDATA.gear;
+const GEAR_SLOTS = GAMEDATA.gear_slots;
+const GEAR_STOCK = GAMEDATA.gear_stock;
+const STARTING_GEAR = GAMEDATA.starting_gear;
 
 /* ============================================================ party model */
 
@@ -576,7 +580,9 @@ function makeHero(id, lv) {
   lv = lv || 1;
   const h = {
     id, name: cls.name, title: cls.title, sprite: cls.sprite,
-    lv, exp: 0, alive: true, defending: false, atb: 0
+    lv, exp: 0, alive: true, defending: false, atb: 0,
+    gear: Object.assign({ weapon: null, armour: null, trinket: null },
+                        STARTING_GEAR[id] || {})
   };
   refreshStats(h);
   h.hp = h.maxhp; h.mp = h.maxmp;
@@ -591,7 +597,74 @@ function refreshStats(h) {
   h.def = statAt(cls, 'def', h.lv);
   h.mag = statAt(cls, 'mag', h.lv);
   h.spd = statAt(cls, 'spd', h.lv);
+  // Equipment is folded straight into the derived stats, so nothing
+  // downstream has to know it exists - a sword just makes atk bigger.
+  gearOn(h).forEach(g => {
+    for (const k in g.stats) {
+      if (k === 'hp') h.maxhp += g.stats[k];
+      else if (k === 'mp') h.maxmp += g.stats[k];
+      else h[k] = Math.max(1, h[k] + g.stats[k]);
+    }
+  });
   h.spells = cls.spells.filter(s => s.lv <= h.lv).map(s => s.id);
+}
+
+/* ------------------------------------------------------------------ gear -- */
+
+/* The pieces a character is actually wearing. */
+function gearOn(h) {
+  const out = [];
+  for (const slot in (h.gear || {})) {
+    const g = GEAR[h.gear[slot]];
+    if (g) out.push(g);
+  }
+  return out;
+}
+
+function equipped(h, slot) { return h.gear ? GEAR[h.gear[slot]] || null : null; }
+
+function canWear(h, g) { return !g.users || g.users.indexOf(h.id) >= 0; }
+
+/* Unequipped pieces in the pack, for one slot, that this character can wear. */
+function gearFor(h, slot) {
+  return Object.keys(G.gear || {})
+    .filter(id => G.gear[id] > 0 && GEAR[id] && GEAR[id].slot === slot && canWear(h, GEAR[id]))
+    .sort((a, b) => GEAR[a].price - GEAR[b].price);
+}
+
+function takeGear(id, n) { G.gear[id] = (G.gear[id] || 0) + (n || 1); }
+
+/* Swap a piece in. The old one goes back in the pack, and current HP/MP move
+   with the maximum so a +30 HP charm is felt immediately rather than banked. */
+function equipGear(h, slot, id) {
+  const g = id ? GEAR[id] : null;
+  if (id && (!g || g.slot !== slot || !canWear(h, g) || !(G.gear[id] > 0))) return false;
+  const before = { hp: h.maxhp, mp: h.maxmp };
+  const old = h.gear[slot];
+  if (id) {
+    G.gear[id]--;
+    if (G.gear[id] <= 0) delete G.gear[id];
+  }
+  if (old) takeGear(old);
+  h.gear[slot] = id || null;
+  refreshStats(h);
+  h.hp = clamp(h.hp + (h.maxhp - before.hp), 1, h.maxhp);
+  h.mp = clamp(h.mp + (h.maxmp - before.mp), 0, h.maxmp);
+  return true;
+}
+
+/* "+6 ATK  -1 SPD", the line that actually decides a purchase. */
+function gearDelta(h, g) {
+  const cur = equipped(h, g.slot);
+  const keys = ['atk', 'def', 'mag', 'spd', 'hp', 'mp'];
+  const parts = [];
+  keys.forEach(k => {
+    const now = cur && cur.stats[k] ? cur.stats[k] : 0;
+    const next = g.stats[k] || 0;
+    const d = next - now;
+    if (d) parts.push((d > 0 ? '+' : '') + d + ' ' + k.toUpperCase());
+  });
+  return parts.length ? parts.join('  ') : 'no change';
 }
 
 function grantExp(h, amount) {
@@ -615,7 +688,7 @@ function grantExp(h, amount) {
 
 const G = {
   mode: 'title',
-  party: [], gil: 200, bag: {},
+  party: [], gil: 200, bag: {}, gear: {},
   mapId: 'town', px: 0, py: 0, dir: 'down',
   steps: 0, stepsToEncounter: 0, playtime: 0,
   flags: { chests: {}, bossDown: false, visitedWild: false },
@@ -626,6 +699,7 @@ function newGame() {
   G.party = [makeHero('aldric'), makeHero('lyra'), makeHero('mira')];
   G.gil = 200;
   G.bag = { potion: 5, ether: 1, phoenix: 1 };
+  G.gear = { leather_vest: 2 };   // two spare vests: the mages start bare
   G.flags = { chests: {}, bossDown: false, visitedWild: false };
   G.steps = 0; G.playtime = 0;
   enterMap('town', MAPS.town.spawn[0], MAPS.town.spawn[1], 'down');
@@ -634,8 +708,9 @@ function newGame() {
 const SAVE_KEY = 'rivenbrook.save.v1';
 function saveGame() {
   const data = {
-    party: G.party.map(h => ({ id: h.id, lv: h.lv, exp: h.exp, hp: h.hp, mp: h.mp, alive: h.alive })),
-    gil: G.gil, bag: G.bag, mapId: G.mapId, px: G.px, py: G.py, dir: G.dir,
+    party: G.party.map(h => ({ id: h.id, lv: h.lv, exp: h.exp, hp: h.hp, mp: h.mp,
+                               alive: h.alive, gear: h.gear })),
+    gil: G.gil, bag: G.bag, gear: G.gear, mapId: G.mapId, px: G.px, py: G.py, dir: G.dir,
     flags: G.flags, playtime: G.playtime
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; }
@@ -650,10 +725,13 @@ function loadGame() {
     if (!d) return false;
     G.party = d.party.map(p => {
       const h = makeHero(p.id, p.lv);
+      // Saves from before equipment existed just keep their starting kit.
+      if (p.gear) { h.gear = Object.assign(h.gear, p.gear); refreshStats(h); }
       h.exp = p.exp; h.hp = p.hp; h.mp = p.mp; h.alive = p.alive !== false;
       return h;
     });
-    G.gil = d.gil; G.bag = d.bag || {}; G.flags = d.flags || { chests: {} };
+    G.gil = d.gil; G.bag = d.bag || {}; G.gear = d.gear || {};
+    G.flags = d.flags || { chests: {} };
     G.playtime = d.playtime || 0;
     enterMap(d.mapId, d.px, d.py, d.dir);
     return true;
@@ -874,6 +952,7 @@ function openChest(tx, ty) {
   const loot = CHEST_LOOT[key] || { gil: 50 };
   let line;
   if (loot.gil) { G.gil += loot.gil; line = 'Found ' + loot.gil + ' gil!'; }
+  else if (loot.gear) { takeGear(loot.gear); line = 'Found the ' + GEAR[loot.gear].name + '!'; }
   else {
     G.bag[loot.item] = (G.bag[loot.item] || 0) + loot.n;
     line = 'Found ' + ITEMS[loot.item].name + ' x' + loot.n + '!';
@@ -1194,7 +1273,12 @@ function physDamage(attacker, target, mult) {
   let dmg = Math.max(1, Math.round((atk * 2.2 - def * 1.1) * rnd(0.9, 1.12)));
   let crit = false;
   if (Math.random() < 0.07) { dmg = Math.round(dmg * 1.9); crit = true; }
-  return { dmg, crit };
+  // An elemental weapon carries its element into the swing, so the Flame
+  // Brand is worth the walk if the thing in front of you hates fire.
+  const w = attacker.gear ? equipped(attacker, 'weapon') : null;
+  const weak = !!(w && w.element && target.weak === w.element);
+  if (weak) dmg = Math.round(dmg * 1.5);
+  return { dmg, crit, weak };
 }
 
 function magicDamage(caster, target, spell) {
@@ -1503,7 +1587,7 @@ function resolveHeroAction(a, h, act) {
     addFx('slash', c.x, c.y);
     Audio_.sfx('hit');
     const r = physDamage(h, t);
-    applyDamage(t, r.dmg, false, { crit: r.crit });
+    applyDamage(t, r.dmg, false, { crit: r.crit, weak: r.weak });
     t.offset = 6;
     flashBanner(h.name + ' attacks!');
     a.hold = 0.45;
@@ -1992,12 +2076,14 @@ function drawTextBig(str, x, y, color, scale, opts) {
 }
 
 const Menu = {
-  state: 'root', root: 0, index: 0, scroll: 0, who: 0, spell: 0, note: '', noteT: 0
+  state: 'root', root: 0, index: 0, scroll: 0, who: 0, spell: 0,
+  slot: 0, pick: 0, note: '', noteT: 0
 };
 
 const MENU_ROOT = [
   { id: 'item', label: 'Item' },
   { id: 'magic', label: 'Magic' },
+  { id: 'equip', label: 'Equip' },
   { id: 'status', label: 'Status' },
   { id: 'save', label: 'Save' },
   { id: 'sound', label: 'Sound' },
@@ -2059,6 +2145,31 @@ function updateMenu(dt) {
         else { Menu.state = 'item'; Menu.index = clamp(Menu.index, 0, bagList().length - 1); }
       } else { Audio_.sfx('cancel'); menuNote('It had no effect.'); }
     }
+    return;
+  }
+
+  if (Menu.state === 'equipWho') {
+    if (Input.tap('cancel')) { Menu.state = 'root'; Audio_.sfx('cancel'); return; }
+    if (Input.nav('up', dt)) { Menu.who = (Menu.who + G.party.length - 1) % G.party.length; Audio_.sfx('cursor'); }
+    if (Input.nav('down', dt)) { Menu.who = (Menu.who + 1) % G.party.length; Audio_.sfx('cursor'); }
+    if (Input.tap('confirm')) openEquipSlots(Menu.who);
+    return;
+  }
+
+  if (Menu.state === 'equipSlot') {
+    if (Input.tap('cancel')) { Menu.state = 'equipWho'; Audio_.sfx('cancel'); return; }
+    if (Input.nav('up', dt)) { Menu.slot = (Menu.slot + GEAR_SLOTS.length - 1) % GEAR_SLOTS.length; Audio_.sfx('cursor'); }
+    if (Input.nav('down', dt)) { Menu.slot = (Menu.slot + 1) % GEAR_SLOTS.length; Audio_.sfx('cursor'); }
+    if (Input.tap('confirm')) openEquipPick(Menu.slot);
+    return;
+  }
+
+  if (Menu.state === 'equipPick') {
+    if (Input.tap('cancel')) { Menu.state = 'equipSlot'; Audio_.sfx('cancel'); return; }
+    const choices = equipChoices();
+    if (Input.nav('up', dt)) { Menu.pick = (Menu.pick + choices.length - 1) % choices.length; Audio_.sfx('cursor'); }
+    if (Input.nav('down', dt)) { Menu.pick = (Menu.pick + 1) % choices.length; Audio_.sfx('cursor'); }
+    if (Input.tap('confirm')) chooseEquip(Menu.pick);
     return;
   }
 
@@ -2130,9 +2241,49 @@ function runMenuRoot(id) {
   if (id === 'close') { closeMenu(); return; }
   if (id === 'item') { Menu.state = 'item'; Menu.index = 0; Menu.scroll = 0; }
   else if (id === 'magic') { Menu.state = 'magicWho'; Menu.who = 0; }
+  else if (id === 'equip') { Menu.state = 'equipWho'; Menu.who = 0; Menu.slot = 0; }
   else if (id === 'status') { Menu.state = 'status'; Menu.who = 0; }
   else if (id === 'sound') { menuNote(Audio_.toggleMute() ? 'Sound off.' : 'Sound on.'); }
   else if (id === 'save') { menuNote(saveGame() ? 'Journal saved.' : 'Could not save.'); }
+}
+
+/* The equip flow: who -> which slot -> which piece. Each step is a function
+   so the confirm key and a tap on the row go through the same place. */
+function openEquipSlots(i) {
+  if (G.mode !== 'menu') return;
+  Menu.who = i; Menu.slot = 0; Menu.state = 'equipSlot';
+  Audio_.sfx('confirm');
+}
+
+function openEquipPick(slotIndex) {
+  if (G.mode !== 'menu') return;
+  Menu.slot = slotIndex; Menu.pick = 0; Menu.state = 'equipPick';
+  Audio_.sfx('confirm');
+}
+
+/* The pack's options for the open slot, with "take it off" first when there
+   is something to take off. */
+function equipChoices() {
+  const h = G.party[Menu.who];
+  const slot = GEAR_SLOTS[Menu.slot].id;
+  const list = gearFor(h, slot).map(id => ({ id: id, gear: GEAR[id] }));
+  if (equipped(h, slot)) list.unshift({ id: null, gear: null });
+  return list;
+}
+
+function chooseEquip(i) {
+  if (G.mode !== 'menu' || Menu.state !== 'equipPick') return;
+  const choices = equipChoices();
+  const c = choices[i];
+  if (!c) { Audio_.sfx('cancel'); return; }
+  Menu.pick = i;
+  const h = G.party[Menu.who];
+  const slot = GEAR_SLOTS[Menu.slot].id;
+  if (!equipGear(h, slot, c.id)) { Audio_.sfx('cancel'); return; }
+  Audio_.sfx('item');
+  menuNote(c.id ? h.name + ' equips ' + c.gear.name + '.'
+                : h.name + ' unequips.');
+  Menu.state = 'equipSlot';
 }
 
 function drawMenu() {
@@ -2143,13 +2294,13 @@ function drawMenu() {
   // Command column: buttons, so an entry can be hit rather than walked to.
   drawWindow(6, 6, 84, 108);
   MENU_ROOT.forEach((c, i) => {
-    const by = 11 + i * 16;
+    const by = 10 + i * 14;
     const dim = Menu.state !== 'root' && i !== Menu.root;
     const id = 'menu:' + c.id;
-    drawButton(10, by, 76, 14, c.label,
+    drawButton(10, by, 76, 13, c.label,
       { selected: i === Menu.root, pressed: Taps.pressed(id), dim: dim });
     if (Menu.state === 'root') {
-      Taps.add(id, 10, by, 76, 14, () => { Menu.root = i; runMenuRoot(c.id); });
+      Taps.add(id, 10, by, 76, 13, () => { Menu.root = i; runMenuRoot(c.id); });
     }
   });
 
@@ -2164,6 +2315,7 @@ function drawMenu() {
   // Right pane.
   drawWindow(96, 6, VW - 102, VH - 12);
   if (Menu.state === 'status') drawStatusPane();
+  else if (Menu.state.indexOf('equip') === 0) drawEquipPane();
   else if (Menu.state === 'item' || Menu.state === 'itemTarget') drawItemPane();
   else if (Menu.state.indexOf('magic') === 0) drawMagicPane();
   else drawPartyPane();
@@ -2261,6 +2413,68 @@ function drawMagicPane() {
   }
 }
 
+/* The equip pane: who, then their three slots, then what the pack offers for
+   the open one. Every row is a button, so it can be tapped straight. */
+function drawEquipPane() {
+  drawText('EQUIP', 106, 12, '#f6e2a8');
+  const picking = Menu.state === 'equipWho';
+  G.party.forEach((h, i) => {
+    const by = 24 + i * 15;
+    const id = 'eqwho:' + i;
+    drawButton(112, by, 96, 13, h.name,
+      { selected: i === Menu.who, pressed: Taps.pressed(id) });
+    drawText(h.title, 214, by + 3, '#7a82a8');
+    if (picking) Taps.add(id, 112, by, 96, 13, () => openEquipSlots(i));
+  });
+  if (picking) {
+    drawText('Choose who to outfit.', 112, 76, '#9aa4c8');
+    return;
+  }
+
+  const h = G.party[Menu.who];
+  const slotOpen = Menu.state === 'equipSlot';
+  GEAR_SLOTS.forEach((sl, i) => {
+    const by = 76 + i * 15;
+    const g = equipped(h, sl.id);
+    const id = 'eqslot:' + sl.id;
+    drawButton(112, by, 60, 13, sl.label, { selected: i === Menu.slot && slotOpen });
+    if (g) spr(g.icon, 176, by + 2);
+    drawText(g ? g.name : '- empty -', 188, by + 3, g ? '#f2f4ff' : '#7a82a8');
+    if (slotOpen) Taps.add(id, 112, by, 196, 13, () => openEquipPick(i));
+  });
+
+  // The character's numbers, so a swap can be judged against them.
+  const stats = [['ATK', h.atk], ['DEF', h.def], ['MAG', h.mag], ['SPD', h.spd]];
+  stats.forEach((st, i) => {
+    const x = 112 + i * 50;
+    drawText(st[0], x, 126, '#7a82a8');
+    drawText(st[1] + '', x + 44, 126, '#f2f4ff', { align: 'right' });
+  });
+
+  if (slotOpen) {
+    drawText('Pick a slot to change.', 112, 146, '#9aa4c8');
+    return;
+  }
+
+  // The pack's offerings for the open slot.
+  const choices = equipChoices();
+  if (!choices.length) {
+    drawText('Nothing else fits that slot.', 112, 146, '#9aa4c8');
+    return;
+  }
+  const start = clamp(Menu.pick - 2, 0, Math.max(0, choices.length - 3));
+  for (let i = start; i < Math.min(choices.length, start + 3); i++) {
+    const c = choices[i];
+    const by = 140 + (i - start) * 12;
+    const id = 'eqpick:' + i;
+    drawButton(112, by, 130, 11, c.gear ? c.gear.name : '(take it off)',
+      { selected: i === Menu.pick, pressed: Taps.pressed(id), align: 'left' });
+    const delta = c.gear ? gearDelta(h, c.gear) : 'removes it';
+    drawText(delta, 246, by + 2, delta.charAt(0) === '-' ? '#e08a90' : '#8fd8a0');
+    Taps.add(id, 112, by, 130, 11, () => chooseEquip(i));
+  }
+}
+
 function drawStatusPane() {
   const h = G.party[Menu.who];
   drawText('STATUS', 106, 12, '#f6e2a8');
@@ -2298,27 +2512,57 @@ function drawStatusPane() {
 
 /* =========================================================== inn and shop */
 
-const Shop = { open: false, index: 0, mode: 'buy', note: '', noteT: 0 };
+const Shop = { open: false, index: 0, tab: 0, mode: 'buy', note: '', noteT: 0 };
+const SHOP_TABS = [
+  { id: 'wares', label: 'Wares' },
+  { id: 'armoury', label: 'Armoury' }
+];
+
+/* What is on the shelf under the open tab, as {id, name, price, icon, desc}. */
+function shopStock() {
+  if (SHOP_TABS[Shop.tab].id === 'armoury') {
+    return GEAR_STOCK.map(id => Object.assign({ id: id, gear: true }, GEAR[id]));
+  }
+  return SHOP_STOCK.map(id => Object.assign({ id: id, gear: false }, ITEMS[id]));
+}
+
+/* Buying, from the confirm key or a tap on the row. */
+function buyStock(i) {
+  if (G.mode !== 'shop') return;
+  const stock = shopStock();
+  const it = stock[i];
+  if (!it) return;
+  Shop.index = i;
+  if (G.gil < it.price) { shopNote('Not enough gil.'); Audio_.sfx('cancel'); return; }
+  G.gil -= it.price;
+  if (it.gear) takeGear(it.id);
+  else G.bag[it.id] = (G.bag[it.id] || 0) + 1;
+  shopNote('Bought ' + it.name + '.');
+  Audio_.sfx('item');
+}
+
+function shopTab(i) {
+  if (G.mode !== 'shop' || i === Shop.tab) return;
+  Shop.tab = i; Shop.index = 0;
+  Audio_.sfx('cursor');
+}
+
+function shopNote(text) { Shop.note = text; Shop.noteT = 1.6; }
 
 function openShop(npc) {
-  G.mode = 'shop'; Shop.index = 0; Shop.note = ''; Shop.noteT = 0;
+  G.mode = 'shop'; Shop.index = 0; Shop.tab = 0; Shop.note = ''; Shop.noteT = 0;
   Audio_.sfx('confirm');
 }
 
 function updateShop(dt) {
   Shop.noteT = Math.max(0, Shop.noteT - dt);
   if (Input.tap('cancel') || Input.tap('menu')) { G.mode = 'field'; Audio_.sfx('cancel'); return; }
-  if (Input.nav('up', dt)) { Shop.index = (Shop.index + SHOP_STOCK.length - 1) % SHOP_STOCK.length; Audio_.sfx('cursor'); }
-  if (Input.nav('down', dt)) { Shop.index = (Shop.index + 1) % SHOP_STOCK.length; Audio_.sfx('cursor'); }
-  if (Input.tap('confirm')) {
-    const id = SHOP_STOCK[Shop.index], it = ITEMS[id];
-    if (G.gil < it.price) { Shop.note = 'Not enough gil.'; Shop.noteT = 1.6; Audio_.sfx('cancel'); return; }
-    G.gil -= it.price;
-    G.bag[id] = (G.bag[id] || 0) + 1;
-    Shop.note = 'Bought ' + it.name + '.';
-    Shop.noteT = 1.6;
-    Audio_.sfx('item');
-  }
+  const stock = shopStock();
+  if (Input.nav('left', dt)) shopTab((Shop.tab + SHOP_TABS.length - 1) % SHOP_TABS.length);
+  if (Input.nav('right', dt)) shopTab((Shop.tab + 1) % SHOP_TABS.length);
+  if (Input.nav('up', dt)) { Shop.index = (Shop.index + stock.length - 1) % stock.length; Audio_.sfx('cursor'); }
+  if (Input.nav('down', dt)) { Shop.index = (Shop.index + 1) % stock.length; Audio_.sfx('cursor'); }
+  if (Input.tap('confirm')) buyStock(Shop.index);
 }
 
 function drawShop() {
@@ -2326,16 +2570,49 @@ function drawShop() {
   ctx.fillStyle = 'rgba(8,6,18,0.7)';
   ctx.fillRect(0, 0, VW, VH);
   drawWindow(20, 14, 180, 150);
-  drawText('QUARTERMASTER', 30, 22, '#f6e2a8');
-  SHOP_STOCK.forEach((id, i) => {
-    const it = ITEMS[id], y = 40 + i * 18;
-    spr(it.icon, 38, y - 1);
-    drawText(it.name, 52, y, i === Shop.index ? '#ffe9a0' : '#f2f4ff');
-    drawText(it.price + 'g', 192, y, G.gil >= it.price ? '#9fd0ff' : '#8a8fb0', { align: 'right' });
-    if (i === Shop.index) drawCursor(28, y - 1, Field.anim);
+  drawText('QUARTERMASTER', 30, 20, '#f6e2a8');
+
+  // Two shelves: consumables and gear. The armoury is where gil finally goes.
+  SHOP_TABS.forEach((tb, i) => {
+    const bx = 30 + i * 60, by = 32;
+    const id = 'shoptab:' + i;
+    drawButton(bx, by, 56, 13, tb.label,
+      { selected: i === Shop.tab, pressed: Taps.pressed(id) });
+    Taps.add(id, bx, by, 56, 13, () => shopTab(i));
   });
-  drawText(ITEMS[SHOP_STOCK[Shop.index]].desc, 30, 136, '#9aa4c8');
-  drawText('[Z] buy   [X] leave', 30, 150, '#7a82a8');
+
+  const stock = shopStock();
+  const rows = 5;
+  const start = clamp(Shop.index - rows + 1, 0, Math.max(0, stock.length - rows));
+  for (let i = start; i < Math.min(stock.length, start + rows); i++) {
+    const it = stock[i], by = 50 + (i - start) * 15;
+    const id = 'shop:' + i;
+    const afford = G.gil >= it.price;
+    drawButton(30, by, 160, 13, '', { selected: i === Shop.index, pressed: Taps.pressed(id) });
+    spr(it.icon, 33, by + 2);
+    drawText(it.name, 45, by + 3, afford ? '#f2f4ff' : '#8a8fb0');
+    drawText(it.price + 'g', 186, by + 3, afford ? '#9fd0ff' : '#8a8fb0', { align: 'right' });
+    Taps.add(id, 30, by, 160, 13, () => buyStock(i));
+  }
+  if (stock.length > rows) {
+    const track = rows * 15 - 2;
+    const thumb = Math.max(6, Math.round(track * rows / stock.length));
+    const ty = 50 + Math.round((track - thumb) * start / (stock.length - rows));
+    ctx.fillStyle = '#1a2148'; ctx.fillRect(192, 50, 2, track);
+    ctx.fillStyle = '#7c88b8'; ctx.fillRect(192, ty, 2, thumb);
+  }
+
+  const sel = stock[Math.min(Shop.index, stock.length - 1)];
+  wrapText(sel.desc, 27).slice(0, 2).forEach((ln, i) =>
+    drawText(ln, 30, 130 + i * 11, '#9aa4c8'));
+  // For gear, what it would do for whoever can actually wear it.
+  if (sel.gear) {
+    const wearer = G.party.find(h => canWear(h, sel));
+    drawText(wearer ? wearer.name + ': ' + gearDelta(wearer, sel) : 'Nobody here can use it.',
+      30, 152, wearer ? '#8fd8a0' : '#e08a90');
+  } else {
+    drawText('[Z] buy   [X] leave', 30, 152, '#7a82a8');
+  }
 
   drawWindow(206, 14, 96, 44);
   spr('i_gil', 214, 21);
@@ -2343,9 +2620,11 @@ function drawShop() {
   drawText(G.gil + '', 294, 36, '#f6e2a8', { align: 'right' });
   drawWindow(206, 64, 96, 100);
   drawText('BAG', 214, 72, '#9aa4c8');
-  bagList().slice(0, 6).forEach((b, i) => {
-    drawText(ITEMS[b.id].name.slice(0, 10), 214, 88 + i * 12, '#f2f4ff');
-    drawText('x' + b.n, 294, 88 + i * 12, '#9fd0ff', { align: 'right' });
+  const carried = bagList().map(b => [ITEMS[b.id].name, b.n])
+    .concat(Object.keys(G.gear || {}).filter(k => GEAR[k]).map(k => [GEAR[k].name, G.gear[k]]));
+  carried.slice(0, 7).forEach((row, i) => {
+    drawText(row[0].slice(0, 10), 214, 86 + i * 11, '#f2f4ff');
+    drawText('x' + row[1], 294, 86 + i * 11, '#9fd0ff', { align: 'right' });
   });
   if (Shop.noteT > 0) {
     const w = textWidth(Shop.note) + 20;

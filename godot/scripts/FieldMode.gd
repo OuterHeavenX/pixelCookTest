@@ -242,6 +242,9 @@ func open_chest(tx: int, ty: int) -> void:
 	if loot.has("gil"):
 		Gs.gil += int(loot["gil"])
 		line = "Found %d gil!" % int(loot["gil"])
+	elif loot.has("gear"):
+		Gs.take_gear(loot["gear"])
+		line = "Found the %s!" % Dat.gear[loot["gear"]]["name"]
 	else:
 		Gs.take_item(loot["item"], int(loot["n"]))
 		line = "Found %s x%d!" % [Dat.items[loot["item"]]["name"], int(loot["n"])]

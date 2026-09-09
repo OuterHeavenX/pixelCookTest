@@ -259,6 +259,12 @@ def wilds():
     g.set(49, 33, "l")
     g.set(43, 39, "c")
     g.set(50, 36, "s")
+
+    # Three caches worth leaving the road for. The best gear is found, not
+    # bought, so each one sits in a corner the main path does not pass.
+    g.set(6, 12, "c")       # north-west, behind the pines
+    g.set(51, 5, "c")       # north-east, past the far treeline
+    g.set(13, 36, "c")      # south-west, deep in the thorns
     vroad(46, 30, 33)
 
     return {

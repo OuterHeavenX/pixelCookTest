@@ -137,7 +137,16 @@ func phys_damage(attacker: Dictionary, victim: Dictionary, mult := 1.0) -> Dicti
 	var crit := randf() < 0.07
 	if crit:
 		dmg = int(round(dmg * 1.9))
-	return {"dmg": dmg, "crit": crit}
+	# An elemental weapon carries its element into the swing, so the Flame
+	# Brand is worth the walk if the thing in front of you hates fire.
+	var weak := false
+	if attacker.has("gear"):
+		var w = Gs.equipped(attacker, "weapon")
+		if w != null and w.get("element", null) != null \
+				and victim.get("weak", null) == w["element"]:
+			weak = true
+			dmg = int(round(dmg * 1.5))
+	return {"dmg": dmg, "crit": crit, "weak": weak}
 
 
 func magic_damage(caster: Dictionary, victim: Dictionary, spell: Dictionary) -> Dictionary:
@@ -540,7 +549,7 @@ func resolve_hero_action(h: Dictionary, act: Dictionary) -> void:
 		add_fx("slash", enemy_center(foe))
 		Snd.sfx("hit")
 		var roll := phys_damage(h, foe)
-		apply_damage(foe, int(roll["dmg"]), false, bool(roll["crit"]))
+		apply_damage(foe, int(roll["dmg"]), false, bool(roll["crit"]), bool(roll["weak"]))
 		foe["offset"] = 6.0
 		flash_banner("%s attacks!" % h["name"])
 		acting["hold"] = 0.45

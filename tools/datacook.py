@@ -375,14 +375,115 @@ UNDERLAY = {'1': 'ground',
 SIGN_TEXT = {'town': 'RIVENBROOK - The Amber Lantern, rooms and remedies.',
  'wild': 'THORNWILDS SHRINE - Turn back. The chieftain does not sleep.'}
 
+# --------------------------------------------------------------------- gear
+# Three slots per character. `users` is None when anyone can wear it, and the
+# stats are flat bonuses folded into the derived stats, so nothing downstream
+# has to know equipment exists - a sword just makes atk bigger.
+GEAR = {
+    # weapons
+    'bronze_sword': {'name': 'Bronze Sword', 'slot': 'weapon', 'icon': 'i_sword',
+                     'price': 120, 'users': ['aldric'], 'stats': {'atk': 6},
+                     'desc': 'A recruit\'s blade. Honest, blunt.'},
+    'iron_sword': {'name': 'Iron Sword', 'slot': 'weapon', 'icon': 'i_sword',
+                   'price': 480, 'users': ['aldric'], 'stats': {'atk': 15},
+                   'desc': 'Heavier, and it tells.'},
+    'flame_brand': {'name': 'Flame Brand', 'slot': 'weapon', 'icon': 'i_sword',
+                    'price': 1400, 'users': ['aldric'], 'stats': {'atk': 26},
+                    'element': 'fire', 'desc': 'Its edge burns. Ice hates it.'},
+    'oak_staff': {'name': 'Oak Staff', 'slot': 'weapon', 'icon': 'i_staff',
+                  'price': 100, 'users': ['lyra', 'mira'], 'stats': {'atk': 2, 'mag': 4},
+                  'desc': 'Plain wood, patiently carved.'},
+    'moon_rod': {'name': 'Moon Rod', 'slot': 'weapon', 'icon': 'i_staff',
+                 'price': 520, 'users': ['lyra'], 'stats': {'atk': 3, 'mag': 12},
+                 'desc': 'Cold to hold. Sharpens a spell.'},
+    'sage_cane': {'name': 'Sage Cane', 'slot': 'weapon', 'icon': 'i_staff',
+                  'price': 560, 'users': ['mira'], 'stats': {'atk': 3, 'mag': 9, 'mp': 10},
+                  'desc': 'Carried by healers who walk far.'},
+
+    # armour
+    'leather_vest': {'name': 'Leather Vest', 'slot': 'armour', 'icon': 'i_armor',
+                     'price': 90, 'users': None, 'stats': {'def': 4},
+                     'desc': 'Better than a shirt.'},
+    'chain_mail': {'name': 'Chain Mail', 'slot': 'armour', 'icon': 'i_armor',
+                   'price': 420, 'users': ['aldric'], 'stats': {'def': 12, 'spd': -1},
+                   'desc': 'Turns a blade. Slows a step.'},
+    'silk_robe': {'name': 'Silk Robe', 'slot': 'armour', 'icon': 'i_armor',
+                  'price': 380, 'users': ['lyra', 'mira'], 'stats': {'def': 6, 'mag': 3},
+                  'desc': 'Woven to carry a spell cleanly.'},
+    'knight_plate': {'name': 'Knight Plate', 'slot': 'armour', 'icon': 'i_armor',
+                     'price': 1200, 'users': ['aldric'], 'stats': {'def': 21, 'spd': -2},
+                     'desc': 'A wall you can walk in.'},
+
+    # accessories
+    'copper_ring': {'name': 'Copper Ring', 'slot': 'trinket', 'icon': 'i_ring',
+                    'price': 150, 'users': None, 'stats': {'hp': 24},
+                    'desc': 'Warm against the skin.'},
+    'sage_pendant': {'name': 'Sage Pendant', 'slot': 'trinket', 'icon': 'i_ring',
+                     'price': 300, 'users': None, 'stats': {'mp': 14},
+                     'desc': 'Holds a little more of the well.'},
+    'swift_boots': {'name': 'Swift Boots', 'slot': 'trinket', 'icon': 'i_ring',
+                    'price': 450, 'users': None, 'stats': {'spd': 5},
+                    'desc': 'The gauge fills that bit faster.'},
+    'guard_charm': {'name': 'Guard Charm', 'slot': 'trinket', 'icon': 'i_ring',
+                    'price': 700, 'users': None, 'stats': {'def': 7, 'hp': 30},
+                    'desc': 'Someone wanted you to come home.'},
+}
+
+# The three slots, in the order the equip screen lists them.
+GEAR_SLOTS = [
+    {'id': 'weapon', 'label': 'Weapon'},
+    {'id': 'armour', 'label': 'Armour'},
+    {'id': 'trinket', 'label': 'Trinket'},
+]
+
+# What each character walks out of the prologue wearing.
+STARTING_GEAR = {
+    'aldric': {'weapon': 'bronze_sword', 'armour': 'leather_vest', 'trinket': None},
+    'lyra': {'weapon': 'oak_staff', 'armour': None, 'trinket': None},
+    'mira': {'weapon': 'oak_staff', 'armour': None, 'trinket': None},
+}
+
+# The armoury's shelf. The best pieces are not for sale - those are found.
+GEAR_STOCK = ['bronze_sword', 'iron_sword', 'oak_staff', 'moon_rod', 'sage_cane',
+              'leather_vest', 'chain_mail', 'silk_robe',
+              'copper_ring', 'sage_pendant', 'swift_boots']
+
 # Keyed "<map>:<x>,<y>".
 CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
  'town:35,24': {'item': 'ether', 'n': 1},
  'inn:11,2': {'gil': 120},
- 'wild:43,39': {'item': 'hipotion', 'n': 2}}
+ 'wild:43,39': {'item': 'hipotion', 'n': 2},
+ 'wild:6,12': {'gear': 'guard_charm'},
+ 'wild:51,5': {'gear': 'knight_plate'},
+ 'wild:13,36': {'gear': 'flame_brand'}}
+
+
+def _check_chests():
+    """Every chest_loot key must name a tile that actually holds a chest.
+
+    Loot keyed to a spot with no chest on it is invisible: the item exists in
+    the data and nobody can ever open it. mapcook runs before this step, so
+    the painted maps are on disk to check against.
+    """
+    path = os.path.join(ROOT, "assets", "maps.json")
+    if not os.path.exists(path):
+        return []
+    with open(path) as fh:
+        maps = json.load(fh)
+    problems = []
+    for key in sorted(CHEST_LOOT):
+        map_id, _, xy = key.partition(":")
+        x, y = (int(n) for n in xy.split(","))
+        rows = maps.get(map_id, {}).get("rows")
+        if not rows or y >= len(rows) or x >= len(rows[y]) or rows[y][x] != "c":
+            problems.append(key)
+    if problems:
+        raise SystemExit("chest loot with no chest on the map: %s" % ", ".join(problems))
+    return sorted(CHEST_LOOT)
 
 
 def build():
+    _check_chests()
     payload = {
         "spells": SPELLS,
         "items": ITEMS,
@@ -395,6 +496,10 @@ def build():
         "underlay": UNDERLAY,
         "sign_text": SIGN_TEXT,
         "chest_loot": CHEST_LOOT,
+        "gear": GEAR,
+        "gear_slots": GEAR_SLOTS,
+        "gear_stock": GEAR_STOCK,
+        "starting_gear": STARTING_GEAR,
         "inn_cost": INN_COST,
     }
     path = os.path.join(ROOT, "assets", "gamedata.json")
@@ -406,6 +511,6 @@ def build():
 
 if __name__ == "__main__":
     path, payload = build()
-    print("data  : %s (%d spells, %d items, %d monsters, %d tiles)"
+    print("data  : %s (%d spells, %d items, %d gear, %d monsters, %d tiles)"
           % (path, len(payload["spells"]), len(payload["items"]),
-             len(payload["enemies"]), len(payload["legend"])))
+             len(payload["gear"]), len(payload["enemies"]), len(payload["legend"])))

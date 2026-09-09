@@ -16,6 +16,10 @@ var legend := {}
 var underlay := {}
 var sign_text := {}
 var chest_loot := {}
+var gear := {}
+var gear_slots := []
+var gear_stock := []
+var starting_gear := {}
 var inn_cost := 50
 var maps := {}
 
@@ -33,6 +37,10 @@ func _ready() -> void:
 	underlay = data.get("underlay", {})
 	sign_text = data.get("sign_text", {})
 	chest_loot = data.get("chest_loot", {})
+	gear = data.get("gear", {})
+	gear_slots = data.get("gear_slots", [])
+	gear_stock = data.get("gear_stock", [])
+	starting_gear = data.get("starting_gear", {})
 	inn_cost = int(data.get("inn_cost", 50))
 	maps = _read_json("res://assets/maps.json")
 

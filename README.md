@@ -47,6 +47,23 @@ sitting on top of the game. It reads all eight directions, with a small dead
 zone so a resting thumb does not walk. A, B and the menu button stay put on
 the right, and work at the same time as the stick.
 
+## Equipment
+
+Three slots each - weapon, armour, trinket. A piece's stats are folded straight
+into the derived stats in `refreshStats`, so nothing downstream knows equipment
+exists: a sword just makes `atk` bigger, and every damage formula, ATB rate and
+HP bar picks it up for free. Swapping moves current HP and MP with the maximum,
+so a +30 HP charm is felt now rather than banked for the next level.
+
+`users` decides who can wear what, the quartermaster grew an **Armoury** tab
+that quotes the stat change for whoever can actually use the piece, and an
+elemental weapon carries its element into a physical swing - which is why the
+Flame Brand is worth the walk if the thing in front of you hates fire. The
+three best pieces are not for sale; they are in chests off the main path.
+
+`datacook` refuses to build if a chest_loot entry names a tile with no chest
+painted on it - loot nobody can reach is worse than no loot.
+
 Menus are tapped, not walked to. The battle commands, the spell and item
 lists, the combatants during targeting, and the field menu's column all
 register themselves as screen rectangles while they draw, and a tap is matched
@@ -57,8 +74,8 @@ functions, so neither can drift away from the other.
 ## Two builds, one source of truth
 
 The rules live in `tools/datacook.py` and are cooked to `assets/gamedata.json`:
-spells, items, class growth, monsters, encounter tables, townsfolk, the tile
-legend and the loot. The browser build inlines that file at build time; the
+spells, items, equipment, class growth, monsters, encounter tables, townsfolk,
+the tile legend and the loot. The browser build inlines that file at build time; the
 Godot project loads it at startup. Neither runtime restates a single number, so
 balance is changed in exactly one place.
 

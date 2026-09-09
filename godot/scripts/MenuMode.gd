@@ -5,6 +5,7 @@ extends RefCounted
 const ROOT_ENTRIES := [
 	{"id": "item", "label": "Item"},
 	{"id": "magic", "label": "Magic"},
+	{"id": "equip", "label": "Equip"},
 	{"id": "status", "label": "Status"},
 	{"id": "save", "label": "Save"},
 	{"id": "sound", "label": "Sound"},
@@ -17,6 +18,8 @@ var root := 0
 var index := 0
 var who := 0
 var spell := 0
+var slot := 0
+var pick := 0
 var target := 0
 var note := ""
 var note_t := 0.0
@@ -55,6 +58,12 @@ func update(dt: float) -> void:
 			_update_magic_list(dt)
 		"magicTarget":
 			_update_magic_target(dt)
+		"equipWho":
+			_update_equip_who(dt)
+		"equipSlot":
+			_update_equip_slot(dt)
+		"equipPick":
+			_update_equip_pick(dt)
 		"status":
 			_update_status(dt)
 
@@ -82,6 +91,10 @@ func _update_root(dt: float) -> void:
 		"magic":
 			state = "magicWho"
 			who = 0
+		"equip":
+			state = "equipWho"
+			who = 0
+			slot = 0
 		"status":
 			state = "status"
 			who = 0
@@ -89,6 +102,84 @@ func _update_root(dt: float) -> void:
 			say("Sound off." if Snd.toggle_mute() else "Sound on.")
 		"save":
 			say("Journal saved." if Gs.save_game() else "Could not save.")
+
+
+## The equip flow: who -> which slot -> which piece.
+func _update_equip_who(dt: float) -> void:
+	if Inp.tap("cancel"):
+		state = "root"
+		Snd.sfx("cancel")
+		return
+	if Inp.nav("up", dt):
+		who = (who + Gs.party.size() - 1) % Gs.party.size()
+		Snd.sfx("cursor")
+	if Inp.nav("down", dt):
+		who = (who + 1) % Gs.party.size()
+		Snd.sfx("cursor")
+	if Inp.tap("confirm"):
+		slot = 0
+		state = "equipSlot"
+		Snd.sfx("confirm")
+
+
+func _update_equip_slot(dt: float) -> void:
+	if Inp.tap("cancel"):
+		state = "equipWho"
+		Snd.sfx("cancel")
+		return
+	var n := Dat.gear_slots.size()
+	if Inp.nav("up", dt):
+		slot = (slot + n - 1) % n
+		Snd.sfx("cursor")
+	if Inp.nav("down", dt):
+		slot = (slot + 1) % n
+		Snd.sfx("cursor")
+	if Inp.tap("confirm"):
+		pick = 0
+		state = "equipPick"
+		Snd.sfx("confirm")
+
+
+## The pack's options for the open slot, with "take it off" first when there
+## is something to take off. A null id means remove.
+func equip_choices() -> Array:
+	var h: Dictionary = Gs.party[who]
+	var slot_id: String = Dat.gear_slots[slot]["id"]
+	var out := []
+	if Gs.equipped(h, slot_id) != null:
+		out.append(null)
+	for id in Gs.gear_for(h, slot_id):
+		out.append(id)
+	return out
+
+
+func _update_equip_pick(dt: float) -> void:
+	if Inp.tap("cancel"):
+		state = "equipSlot"
+		Snd.sfx("cancel")
+		return
+	var choices := equip_choices()
+	if choices.is_empty():
+		return
+	if Inp.nav("up", dt):
+		pick = (pick + choices.size() - 1) % choices.size()
+		Snd.sfx("cursor")
+	if Inp.nav("down", dt):
+		pick = (pick + 1) % choices.size()
+		Snd.sfx("cursor")
+	if Inp.tap("confirm"):
+		var h: Dictionary = Gs.party[who]
+		var slot_id: String = Dat.gear_slots[slot]["id"]
+		var chosen = choices[pick]
+		if not Gs.equip_gear(h, slot_id, chosen):
+			Snd.sfx("cancel")
+			return
+		Snd.sfx("item")
+		if chosen == null:
+			say("%s unequips." % h["name"])
+		else:
+			say("%s equips %s." % [h["name"], Dat.gear[chosen]["name"]])
+		state = "equipSlot"
 
 
 func _update_item(dt: float) -> void:
@@ -288,9 +379,9 @@ func draw(c: CanvasItem, anim: float) -> void:
 	# Command column: buttons, so an entry can be hit rather than walked to.
 	Art.draw_window(c, Rect2(6, 6, 84, 108))
 	for i in ROOT_ENTRIES.size():
-		var by := 11 + i * 16
+		var by := 10 + i * 14
 		var dim := state != "root" and i != root
-		Art.draw_button(c, Rect2(10, by, 76, 14), ROOT_ENTRIES[i]["label"],
+		Art.draw_button(c, Rect2(10, by, 76, 13), ROOT_ENTRIES[i]["label"],
 			i == root, false, dim)
 
 	Art.draw_window(c, Rect2(6, 118, 84, 56))
@@ -307,6 +398,8 @@ func draw(c: CanvasItem, anim: float) -> void:
 		_draw_items(c, anim)
 	elif state.begins_with("magic"):
 		_draw_magic(c, anim)
+	elif state.begins_with("equip"):
+		_draw_equip(c)
 	else:
 		_draw_party(c)
 
@@ -427,6 +520,60 @@ func _draw_magic(c: CanvasItem, anim: float) -> void:
 			Vector2(250, y), hp_color(h), "right")
 		if i == target:
 			Art.draw_cursor(c, Vector2(116, y - 1), anim)
+
+
+## The equip pane: who, then their three slots, then what the pack offers.
+func _draw_equip(c: CanvasItem) -> void:
+	Art.draw_text(c, "EQUIP", Vector2(106, 12), Color("#f6e2a8"))
+	var picking := state == "equipWho"
+	for i in Gs.party.size():
+		var h: Dictionary = Gs.party[i]
+		Art.draw_button(c, Rect2(112, 24 + i * 15, 96, 13), h["name"], i == who)
+		Art.draw_text(c, h["title"], Vector2(214, 27 + i * 15), Color("#7a82a8"))
+	if picking:
+		Art.draw_text(c, "Choose who to outfit.", Vector2(112, 76), Color("#9aa4c8"))
+		return
+
+	var hero: Dictionary = Gs.party[who]
+	var slot_open := state == "equipSlot"
+	for i in Dat.gear_slots.size():
+		var by := 76 + i * 15
+		var g = Gs.equipped(hero, Dat.gear_slots[i]["id"])
+		Art.draw_button(c, Rect2(112, by, 60, 13), Dat.gear_slots[i]["label"],
+			i == slot and slot_open)
+		if g != null:
+			Art.spr(c, g["icon"], Vector2(176, by + 2))
+		Art.draw_text(c, g["name"] if g != null else "- empty -", Vector2(188, by + 3),
+			Color("#f2f4ff") if g != null else Color("#7a82a8"))
+
+	# The character's numbers, so a swap can be judged against them.
+	var stats := [["ATK", "atk"], ["DEF", "def"], ["MAG", "mag"], ["SPD", "spd"]]
+	for i in stats.size():
+		var x := 112 + i * 50
+		Art.draw_text(c, stats[i][0], Vector2(x, 126), Color("#7a82a8"))
+		Art.draw_text(c, str(int(hero[stats[i][1]])), Vector2(x + 44, 126),
+			Color("#f2f4ff"), "right")
+
+	if slot_open:
+		Art.draw_text(c, "Pick a slot to change.", Vector2(112, 146), Color("#9aa4c8"))
+		return
+
+	var choices := equip_choices()
+	if choices.is_empty():
+		Art.draw_text(c, "Nothing else fits that slot.", Vector2(112, 146), Color("#9aa4c8"))
+		return
+	var start: int = clampi(pick - 2, 0, maxi(0, choices.size() - 3))
+	for i in range(start, mini(choices.size(), start + 3)):
+		var by := 140 + (i - start) * 12
+		var chosen = choices[i]
+		var label := "(take it off)"
+		var delta := "removes it"
+		if chosen != null:
+			label = Dat.gear[chosen]["name"]
+			delta = Gs.gear_delta(hero, Dat.gear[chosen])
+		Art.draw_button(c, Rect2(112, by, 130, 11), label, i == pick, false, false, "left")
+		Art.draw_text(c, delta, Vector2(246, by + 2),
+			Color("#e08a90") if delta.begins_with("-") else Color("#8fd8a0"))
 
 
 func _draw_status(c: CanvasItem, anim: float) -> void:

@@ -6,6 +6,7 @@ const SAVE_PATH := "user://rivenbrook_save.json"
 var party := []
 var gil := 200
 var bag := {}
+var gear := {}          ## unequipped pieces in the pack, id -> count
 var map_id := "town"
 var px := 0
 var py := 0
@@ -26,10 +27,13 @@ func stat_at(cls: Dictionary, key: String, level: int) -> int:
 
 func make_hero(id: String, level := 1) -> Dictionary:
 	var cls: Dictionary = Dat.classes[id]
+	var worn := {"weapon": null, "armour": null, "trinket": null}
+	for slot in Dat.starting_gear.get(id, {}):
+		worn[slot] = Dat.starting_gear[id][slot]
 	var h := {
 		"id": id, "name": cls["name"], "title": cls["title"], "sprite": cls["sprite"],
 		"lv": level, "exp": 0, "alive": true, "defending": false,
-		"atb": 0.0, "hurt": 0.0, "offset": 0.0,
+		"atb": 0.0, "hurt": 0.0, "offset": 0.0, "gear": worn,
 	}
 	refresh_stats(h)
 	h["hp"] = h["maxhp"]
@@ -45,11 +49,98 @@ func refresh_stats(h: Dictionary) -> void:
 	h["def"] = stat_at(cls, "def", h["lv"])
 	h["mag"] = stat_at(cls, "mag", h["lv"])
 	h["spd"] = stat_at(cls, "spd", h["lv"])
+	# Equipment is folded straight into the derived stats, so nothing
+	# downstream has to know it exists - a sword just makes atk bigger.
+	for g in gear_on(h):
+		for k in g["stats"]:
+			var v := int(g["stats"][k])
+			if k == "hp":
+				h["maxhp"] = int(h["maxhp"]) + v
+			elif k == "mp":
+				h["maxmp"] = int(h["maxmp"]) + v
+			else:
+				h[k] = maxi(1, int(h[k]) + v)
 	var known := []
 	for entry in cls["spells"]:
 		if int(entry["lv"]) <= int(h["lv"]):
 			known.append(entry["id"])
 	h["spells"] = known
+
+
+## ------------------------------------------------------------------- gear --
+
+## The pieces a character is actually wearing.
+func gear_on(h: Dictionary) -> Array:
+	var out := []
+	for slot in h.get("gear", {}):
+		var id = h["gear"][slot]
+		if id != null and Dat.gear.has(id):
+			out.append(Dat.gear[id])
+	return out
+
+
+func equipped(h: Dictionary, slot: String):
+	var id = h.get("gear", {}).get(slot, null)
+	return Dat.gear[id] if id != null and Dat.gear.has(id) else null
+
+
+func can_wear(h: Dictionary, g: Dictionary) -> bool:
+	var users = g.get("users", null)
+	return users == null or users.has(h["id"])
+
+
+## Unequipped pieces in the pack, for one slot, that this character can wear.
+func gear_for(h: Dictionary, slot: String) -> Array:
+	var out := []
+	for id in gear:
+		if int(gear[id]) > 0 and Dat.gear.has(id) \
+				and Dat.gear[id]["slot"] == slot and can_wear(h, Dat.gear[id]):
+			out.append(id)
+	out.sort_custom(func(a, b): return int(Dat.gear[a]["price"]) < int(Dat.gear[b]["price"]))
+	return out
+
+
+func take_gear(id: String, n := 1) -> void:
+	gear[id] = int(gear.get(id, 0)) + n
+
+
+## Swap a piece in. The old one goes back in the pack, and current HP/MP move
+## with the maximum so a +30 HP charm is felt immediately rather than banked.
+func equip_gear(h: Dictionary, slot: String, id) -> bool:
+	if id != null:
+		if not Dat.gear.has(id):
+			return false
+		var g: Dictionary = Dat.gear[id]
+		if g["slot"] != slot or not can_wear(h, g) or int(gear.get(id, 0)) <= 0:
+			return false
+	var before_hp := int(h["maxhp"])
+	var before_mp := int(h["maxmp"])
+	var old = h["gear"][slot]
+	if id != null:
+		gear[id] = int(gear[id]) - 1
+		if int(gear[id]) <= 0:
+			gear.erase(id)
+	if old != null:
+		take_gear(old)
+	h["gear"][slot] = id
+	refresh_stats(h)
+	h["hp"] = clampi(int(h["hp"]) + int(h["maxhp"]) - before_hp, 1, int(h["maxhp"]))
+	h["mp"] = clampi(int(h["mp"]) + int(h["maxmp"]) - before_mp, 0, int(h["maxmp"]))
+	return true
+
+
+## "+6 ATK  -1 SPD", the line that actually decides a purchase.
+func gear_delta(h: Dictionary, g: Dictionary) -> String:
+	var cur = equipped(h, g["slot"])
+	var parts := []
+	for k in ["atk", "def", "mag", "spd", "hp", "mp"]:
+		var now := 0
+		if cur != null:
+			now = int(cur["stats"].get(k, 0))
+		var d := int(g["stats"].get(k, 0)) - now
+		if d != 0:
+			parts.append("%s%d %s" % ["+" if d > 0 else "", d, k.to_upper()])
+	return "  ".join(parts) if not parts.is_empty() else "no change"
 
 
 ## Returns one entry per level gained, each listing the spells it unlocked.
@@ -83,6 +174,7 @@ func new_game() -> void:
 	party = [make_hero("aldric"), make_hero("lyra"), make_hero("mira")]
 	gil = 200
 	bag = {"potion": 5, "ether": 1, "phoenix": 1}
+	gear = {"leather_vest": 2}   # two spare vests: the mages start bare
 	flags = {"chests": {}, "boss_down": false, "visited_wild": false}
 	steps = 0
 	playtime = 0.0
@@ -115,9 +207,9 @@ func save_game() -> bool:
 	var slim := []
 	for h in party:
 		slim.append({"id": h["id"], "lv": h["lv"], "exp": h["exp"],
-			"hp": h["hp"], "mp": h["mp"], "alive": h["alive"]})
+			"hp": h["hp"], "mp": h["mp"], "alive": h["alive"], "gear": h["gear"]})
 	var payload := {
-		"party": slim, "gil": gil, "bag": bag, "map_id": map_id,
+		"party": slim, "gil": gil, "bag": bag, "gear": gear, "map_id": map_id,
 		"px": px, "py": py, "dir": dir, "flags": flags, "playtime": playtime,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -138,6 +230,11 @@ func load_game() -> bool:
 	party = []
 	for p in d.get("party", []):
 		var h := make_hero(p["id"], int(p["lv"]))
+		# Saves from before equipment existed just keep their starting kit.
+		if p.has("gear"):
+			for slot in p["gear"]:
+				h["gear"][slot] = p["gear"][slot]
+			refresh_stats(h)
 		h["exp"] = int(p["exp"])
 		h["hp"] = int(p["hp"])
 		h["mp"] = int(p["mp"])
@@ -145,6 +242,7 @@ func load_game() -> bool:
 		party.append(h)
 	gil = int(d.get("gil", 200))
 	bag = d.get("bag", {})
+	gear = d.get("gear", {})
 	flags = d.get("flags", {"chests": {}, "boss_down": false, "visited_wild": false})
 	playtime = float(d.get("playtime", 0.0))
 	map_id = d.get("map_id", "town")
