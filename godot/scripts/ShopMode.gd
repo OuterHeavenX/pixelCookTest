@@ -10,6 +10,7 @@ const TABS := [
 var main
 var index := 0
 var tab := 0
+var shelf := "amber"
 var note := ""
 var note_t := 0.0
 
@@ -18,9 +19,10 @@ func _init(owner) -> void:
 	main = owner
 
 
-func open() -> void:
+func open(from_shelf := "amber") -> void:
 	index = 0
 	tab = 0
+	shelf = from_shelf
 	note = ""
 	note_t = 0.0
 	Snd.sfx("confirm")
@@ -29,13 +31,15 @@ func open() -> void:
 ## What is on the shelf under the open tab, flattened into one shape.
 func shop_stock() -> Array:
 	var out := []
+	# Each counter names its own shelf, so Hollowmere sells cold-country work
+	# and the Amber Lantern goes on selling what it always did.
 	if TABS[tab]["id"] == "armoury":
-		for id in Dat.gear_stock:
+		for id in Dat.gear_stock.get(shelf, []):
 			var g: Dictionary = Dat.gear[id]
 			out.append({"id": id, "gear": true, "name": g["name"], "icon": g["icon"],
 				"price": int(g["price"]), "desc": g["desc"]})
 	else:
-		for id in Dat.shop_stock:
+		for id in Dat.shop_stock.get(shelf, []):
 			var it: Dictionary = Dat.items[id]
 			out.append({"id": id, "gear": false, "name": it["name"], "icon": it["icon"],
 				"price": int(it["price"]), "desc": it["desc"]})

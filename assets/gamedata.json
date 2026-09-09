@@ -282,6 +282,62 @@
     "w": 5
    }
   ],
+  "shore": [
+   {
+    "group": [
+     "rimewolf"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "mereling"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "rimewolf",
+     "rimewolf"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "bat",
+     "bat",
+     "rimewolf"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "lampwraith"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "mereling",
+     "mereling"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "lampwraith",
+     "rimewolf"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "wight",
+     "mereling"
+    ],
+    "w": 5
+   }
+  ],
   "wild": [
    {
     "group": [
@@ -471,6 +527,58 @@
    "spd": 9,
    "sprite": "e_goblin"
   },
+  "lampwraith": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 35
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 40
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 24,
+   "def": 15,
+   "exp": 52,
+   "gil": 46,
+   "height": 30,
+   "hp": 132,
+   "mag": 24,
+   "name": "Lamp Wraith",
+   "spd": 15,
+   "sprite": "e_wight_ice",
+   "weak": "holy"
+  },
+  "mereling": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 45
+    }
+   ],
+   "atk": 21,
+   "def": 19,
+   "exp": 40,
+   "gil": 34,
+   "height": 26,
+   "hp": 120,
+   "mag": 16,
+   "name": "Mereling",
+   "spd": 9,
+   "sprite": "e_slime_ice",
+   "weak": "bolt"
+  },
   "ogre": {
    "ai": [
     {
@@ -499,6 +607,29 @@
    "spd": 10,
    "sprite": "e_ogre",
    "weak": "ice"
+  },
+  "rimewolf": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 60
+    },
+    {
+     "act": "pounce",
+     "w": 40
+    }
+   ],
+   "atk": 27,
+   "def": 14,
+   "exp": 38,
+   "gil": 30,
+   "height": 26,
+   "hp": 104,
+   "mag": 6,
+   "name": "Rimewolf",
+   "spd": 18,
+   "sprite": "e_wolf_ice",
+   "weak": "fire"
   },
   "skeleton": {
    "ai": [
@@ -686,6 +817,18 @@
     "bram"
    ]
   },
+  "furs": {
+   "desc": "Warm. That is the entire argument.",
+   "icon": "i_armor",
+   "name": "Thick Furs",
+   "price": 300,
+   "slot": "armour",
+   "stats": {
+    "def": 8,
+    "spd": -1
+   },
+   "users": null
+  },
   "guard_charm": {
    "desc": "Someone wanted you to come home.",
    "icon": "i_ring",
@@ -695,6 +838,18 @@
    "stats": {
     "def": 7,
     "hp": 30
+   },
+   "users": null
+  },
+  "ice_charm": {
+   "desc": "Cold to hold, and it keeps the cold out.",
+   "icon": "i_ring",
+   "name": "Rime Charm",
+   "price": 560,
+   "slot": "trinket",
+   "stats": {
+    "def": 5,
+    "mag": 5
    },
    "users": null
   },
@@ -738,6 +893,32 @@
    "users": [
     "aldric"
    ]
+  },
+  "lake_mail": {
+   "desc": "Scales cut from something that lived in the mere.",
+   "icon": "i_armor",
+   "name": "Lake Mail",
+   "price": 780,
+   "slot": "armour",
+   "stats": {
+    "def": 16
+   },
+   "users": [
+    "aldric",
+    "bram"
+   ]
+  },
+  "lantern_stone": {
+   "desc": "Hollowmere keeps its lamps lit with these.",
+   "icon": "i_ring",
+   "name": "Lantern Stone",
+   "price": 820,
+   "slot": "trinket",
+   "stats": {
+    "mag": 4,
+    "mp": 22
+   },
+   "users": null
   },
   "leather_vest": {
    "desc": "Better than a shirt.",
@@ -794,6 +975,20 @@
     "mira"
    ]
   },
+  "rimeblade": {
+   "desc": "The edge frosts over as you draw it.",
+   "element": "ice",
+   "icon": "i_sword",
+   "name": "Rimeblade",
+   "price": 1150,
+   "slot": "weapon",
+   "stats": {
+    "atk": 22
+   },
+   "users": [
+    "aldric"
+   ]
+  },
   "sage_cane": {
    "desc": "Carried by healers who walk far.",
    "icon": "i_staff",
@@ -846,6 +1041,22 @@
    },
    "users": null
   },
+  "warden_coat": {
+   "desc": "Lined, hooded, and older than anyone wearing it.",
+   "icon": "i_armor",
+   "name": "Warden Coat",
+   "price": 720,
+   "slot": "armour",
+   "stats": {
+    "def": 11,
+    "mag": 4
+   },
+   "users": [
+    "lyra",
+    "mira",
+    "sera"
+   ]
+  },
   "warden_staff": {
    "desc": "Hollowmere work. The head is a seal, not an ornament.",
    "icon": "i_staff",
@@ -876,19 +1087,33 @@
    "label": "Trinket"
   }
  ],
- "gear_stock": [
-  "bronze_sword",
-  "iron_sword",
-  "oak_staff",
-  "moon_rod",
-  "sage_cane",
-  "leather_vest",
-  "chain_mail",
-  "silk_robe",
-  "copper_ring",
-  "sage_pendant",
-  "swift_boots"
- ],
+ "gear_stock": {
+  "amber": [
+   "bronze_sword",
+   "iron_sword",
+   "oak_staff",
+   "moon_rod",
+   "sage_cane",
+   "leather_vest",
+   "chain_mail",
+   "silk_robe",
+   "copper_ring",
+   "sage_pendant",
+   "swift_boots"
+  ],
+  "hollow": [
+   "iron_halberd",
+   "warden_staff",
+   "mere_wand",
+   "rimeblade",
+   "lake_mail",
+   "warden_coat",
+   "furs",
+   "ice_charm",
+   "lantern_stone",
+   "swift_boots"
+  ]
+ },
  "inn_cost": 50,
  "items": {
   "bomb": {
@@ -962,6 +1187,11 @@
    "t_grass",
    0
   ],
+  "/": [
+   "t_path",
+   0,
+   "pass"
+  ],
   "1": [
    "t_bedtop",
    1,
@@ -1011,12 +1241,30 @@
    "t_shelf",
    1
   ],
+  "I": [
+   "t_ice",
+   1,
+   "water"
+  ],
   "K": [
    "t_counter",
    1
   ],
+  "L": [
+   "t_lantern",
+   1,
+   "lamp"
+  ],
   "M": [
    "t_mountain",
+   1
+  ],
+  "P": [
+   "t_palewall",
+   1
+  ],
+  "Q": [
+   "t_blueroof",
    1
   ],
   "R": [
@@ -1030,6 +1278,10 @@
   "U": [
    "t_rug",
    0
+  ],
+  "V": [
+   "t_palewindow",
+   1
   ],
   "W": [
    "t_wall",
@@ -1074,10 +1326,18 @@
    1,
    "lamp"
   ],
+  "n": [
+   "t_snow",
+   0
+  ],
   "o": [
    "t_well",
    1,
    "well"
+  ],
+  "p": [
+   "t_pinesnow",
+   1
   ],
   "r": [
    "t_rock",
@@ -1098,7 +1358,132 @@
    "water"
   ]
  },
+ "map_beats": {
+  "shore": [
+   {
+    "flag": "bramHoldsRoad",
+    "leaves": "bram",
+    "lines": [
+     "Hold on. Look at the lamps - every one of them lit, all the way back.",
+     "Somebody walks this road at dusk to do that. Every night. Alone.",
+     "If the road goes dark, Hollowmere goes dark, and then it is just you down there.",
+     "So I am staying up here and keeping them lit. No, do not.",
+     "{name}. I have followed you into one hole in the ground already.",
+     "Let me be useful where you can still find me."
+    ],
+    "needs": [
+     "bossDown"
+    ],
+    "party": [
+     "bram",
+     "sera"
+    ],
+    "speaker": "Bram"
+   }
+  ]
+ },
  "npcs": {
+  "hollow": [
+   {
+    "after": [
+     "Say the word and I will go first. That is the job.",
+     "Have you talked to the lamp girl? She knows something."
+    ],
+    "dir": "down",
+    "lines": [
+     "{name}. I heard what came out of that barrow, and I heard who went in.",
+     "Four hundred miles I have not seen you, and you still walk like a recruit.",
+     "They are lighting the lamps at noon here. Noon.",
+     "I am not letting you go down there alone twice. Move over."
+    ],
+    "name": "Bram",
+    "recruit": "bram",
+    "sprite": "bram",
+    "wander": false,
+    "x": 21,
+    "y": 28
+   },
+   {
+    "after": [
+     "I keep the lamps because my mother did, and hers.",
+     "Nobody ever said why. We just never let one go out."
+    ],
+    "dir": "up",
+    "lines": [
+     "Careful. The mere took two dogs and a cart this week.",
+     "It has not frozen in summer since my grandmother was small.",
+     "You are the one from Rivenbrook. You broke the ward.",
+     "No - do not apologise. My family cut that ward. We should have told somebody what it was for.",
+     "I am coming with you. It is my mess as much as yours now."
+    ],
+    "name": "Sera",
+    "recruit": "sera",
+    "sprite": "sera",
+    "wander": false,
+    "x": 20,
+    "y": 9
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Beds are warm. The mere is not. Fifty gil."
+    ],
+    "name": "Keeper Ilse",
+    "service": "inn",
+    "sprite": "merchant",
+    "wander": false,
+    "x": 27,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "lines": [
+     "Cold-country work. It weighs more and it is worth it."
+    ],
+    "name": "Armourer Fenn",
+    "service": "shop",
+    "shelf": "hollow",
+    "sprite": "villager",
+    "wander": false,
+    "x": 21,
+    "y": 24
+   },
+   {
+    "dir": "right",
+    "lines": [
+     "Lamps at noon, lad. Lamps at noon.",
+     "My father said the day we stop is the day it comes up."
+    ],
+    "name": "Old Marrow",
+    "sprite": "elder",
+    "wander": false,
+    "x": 12,
+    "y": 19
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "I skated on the mere once. Once.",
+     "Sera pulled me out and did not even shout."
+    ],
+    "name": "Pip",
+    "sprite": "child",
+    "wander": true,
+    "x": 33,
+    "y": 22
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "We watch the water, not the road. The road never hurt anybody."
+    ],
+    "name": "Watchwoman",
+    "sprite": "guard",
+    "wander": false,
+    "x": 8,
+    "y": 22
+   }
+  ],
   "inn": [
    {
     "after": [
@@ -1123,6 +1508,7 @@
     ],
     "name": "Quartermaster",
     "service": "shop",
+    "shelf": "amber",
     "sprite": "villager",
     "wander": false,
     "x": 6,
@@ -1246,19 +1632,30 @@
   ],
   "wild": []
  },
- "shop_stock": [
-  "potion",
-  "hipotion",
-  "ether",
-  "phoenix",
-  "bomb"
- ],
+ "shop_stock": {
+  "amber": [
+   "potion",
+   "hipotion",
+   "ether",
+   "phoenix",
+   "bomb"
+  ],
+  "hollow": [
+   "potion",
+   "hipotion",
+   "ether",
+   "phoenix",
+   "bomb"
+  ]
+ },
  "sign_after": {
   "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.",
   "wild": "THORNWILDS SHRINE - The barrow below is sealed. The letters are fresh cut. Someone re-carved this recently."
  },
  "sign_text": {
   "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
+  "hollow": "HOLLOWMERE - Keep the lanterns lit. Keep off the ice.",
+  "shore": "THE MERE ROAD - Do not stop between the lamps.",
   "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
   "wild": "THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason."
  },
@@ -1391,6 +1788,7 @@
   "2": "ground",
   "A": "ground",
   "B": "t_water0",
+  "L": "t_snow",
   "T": "ground",
   "U": "ground",
   "b": "ground",
@@ -1401,6 +1799,7 @@
   "j": "t_crypt",
   "l": "t_cobble",
   "o": "t_cobble",
+  "p": "t_snow",
   "r": "ground",
   "s": "ground"
  }

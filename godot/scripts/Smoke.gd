@@ -304,6 +304,77 @@ func _run() -> void:
 	_expect(reacted, "the town has something new to say")
 	await _shot("aftermath_town")
 
+	print("chapter two")
+	await _settle()
+	Gs.flags["boss_down"] = true
+	main.field.enter_map("shore", 3, 14)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Gs.map_id == "shore", "the mere road loads")
+	_expect(str(main.field.map.get("encounters", "")) == "shore",
+		"with its own encounter table")
+	var cold := Dat.roll_encounter("shore")
+	var real := true
+	for id in cold:
+		if not Dat.enemies.has(id):
+			real = false
+	_expect(real, "that names real cold-country monsters (%s)" % ", ".join(cold))
+	await _shot("ch2_road")
+
+	main.field.enter_map("hollow", 21, 31)
+	await _step(8)
+	_expect(Gs.map_id == "hollow", "Hollowmere loads")
+	var found := {"Bram": false, "Sera": false, "Armourer Fenn": false}
+	for n in main.field.npcs:
+		if found.has(n["name"]):
+			found[n["name"]] = true
+	_expect(found["Bram"] and found["Sera"], "Bram and Sera are waiting in it")
+	await _shot("ch2_hollow")
+
+	main.field.recruit("bram")
+	main.field.msg = {}
+	main.field.recruit("sera")
+	main.field.msg = {}
+	await _step(4)
+	_expect(Gs.find_hero("bram") != null and Gs.find_hero("sera") != null,
+		"both of them join")
+	_expect(Gs.bench.size() == 1, "the fifth waits on the bench")
+	var still_there := false
+	for n in main.field.npcs:
+		if n["name"] == "Bram":
+			still_there = true
+	_expect(not still_there, "and stop standing in the street")
+
+	# The Hollowmere counter sells its own shelf.
+	main.open_shop("hollow")
+	await _step(6)
+	_expect(main.mode == "shop", "the armourer opens")
+	main.shop.set_tab(1)
+	await _step(4)
+	var shelf := main.shop.shop_stock()
+	_expect(shelf.size() == Dat.gear_stock["hollow"].size(),
+		"stocking cold-country work (%d pieces)" % shelf.size())
+	await _shot("ch2_shop")
+	main.close_shop()
+	await _until(func(): return main.mode == "field")
+
+	# Walking back onto the road with both of them: Bram stays.
+	var pack_before := Gs.gear.size()
+	main.field.enter_map("shore", 45, 14)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(not main.field.msg.is_empty(), "the road has something to say about it")
+	await _shot("ch2_bram")
+	while not main.field.msg.is_empty():
+		await _press("confirm", 3)
+	_expect(Gs.find_hero("bram") == null, "Bram stays behind")
+	_expect(Gs.gear.size() > pack_before, "and leaves his kit with you")
+	main.field.enter_map("hollow", 21, 31)
+	await _step(6)
+	main.field.enter_map("shore", 45, 14)
+	await _step(8)
+	_expect(main.field.msg.is_empty(), "and the scene does not play twice")
+
 	print("save")
 	_expect(Gs.save_game(), "the journal saves")
 	var gear_before := (Gs.party[1]["gear"] as Dictionary).duplicate()

@@ -40,6 +40,9 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 	walk_phase = 0.0
 	npcs = []
 	for n in Dat.npcs.get(id, []):
+		# Somebody who has already joined is not still standing in the street.
+		if n.get("recruit", null) != null and Gs.find_hero(n["recruit"]) != null:
+			continue
 		var spot := nearest_free(int(n["x"]), int(n["y"]))
 		var npc := {
 			"tx": spot.x, "ty": spot.y, "ox": 0.0, "oy": 0.0, "phase": 0.0,
@@ -47,6 +50,7 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 			"sprite": n["sprite"], "dir": n["dir"], "name": n["name"],
 			"wander": bool(n.get("wander", false)), "lines": n["lines"],
 			"after": n.get("after", null), "service": n.get("service", ""),
+			"shelf": n.get("shelf", "amber"), "recruit": n.get("recruit", null),
 		}
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
@@ -54,11 +58,13 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		npcs.append({
 			"tx": int(map["boss"]["x"]), "ty": int(map["boss"]["y"]),
 			"ox": 0.0, "oy": 0.0, "phase": 0.0, "cool": 999.0, "move": {},
-			"boss": true, "after": null, "sprite": "e_ogre", "dir": "down",
+			"boss": true, "after": null, "shelf": "amber", "recruit": null,
+			"sprite": "e_ogre", "dir": "down",
 			"name": "Ogre Chieftain", "wander": false, "lines": [], "service": "",
 		})
 	Gs.steps_to_encounter = roll_encounter_countdown()
 	Snd.play(map.get("music", "field"))
+	map_beat(id)
 
 
 func roll_encounter_countdown() -> int:
@@ -82,6 +88,9 @@ func solid_at(x: int, y: int) -> bool:
 	# A barred gate stops being a wall once you are carrying its key.
 	if entry.size() > 2 and str(entry[2]) == "gate":
 		return not bool(Gs.flags.get("barrowKey", false))
+	# The west pass opens when the barrow is done with you.
+	if entry.size() > 2 and str(entry[2]) == "pass":
+		return not bool(Gs.flags.get("boss_down", false))
 	return int(entry[1]) != 0
 
 
@@ -204,15 +213,24 @@ func interact() -> void:
 			open_inn(npc)
 			return
 		if npc["service"] == "shop":
-			main.open_shop()
+			main.open_shop(str(npc.get("shelf", "amber")))
 			return
+		# `after` means two different things depending on who is speaking: for
+		# someone recruitable it is what they say once they have joined, for a
+		# townsperson it is what they say once the chieftain is down.
+		var recruit_id = npc.get("recruit", null)
+		var joined: bool = recruit_id != null and Gs.find_hero(recruit_id) != null
+		var use_after: bool = joined if recruit_id != null \
+			else bool(Gs.flags.get("boss_down", false))
 		var script: Array = npc["lines"]
-		if bool(Gs.flags.get("boss_down", false)) and npc.get("after", null) != null:
+		if use_after and npc.get("after", null) != null:
 			script = npc["after"]
 		var lines := []
 		for l in script:
 			lines.append(fill_tokens(l))
 		msg = make_message(lines, npc["name"])
+		if recruit_id != null and not joined:
+			msg["on_close"] = func() -> void: recruit(recruit_id)
 		Snd.sfx("confirm")
 		return
 
@@ -257,10 +275,70 @@ func interact() -> void:
 				])
 		"stair":
 			msg = make_message(["Steps, worn hollow in the middle by feet long gone."])
+		"pass":
+			if bool(Gs.flags.get("boss_down", false)):
+				msg = make_message(["The west pass. Someone has been keeping the road clear."])
+			else:
+				msg = make_message([
+					"A pass west, choked with thorn and rockfall.",
+					"Nobody has come through here in a long time.",
+				])
 		"water":
 			msg = make_message(["Clear water. Too deep to wade."])
 	if not msg.is_empty():
 		Snd.sfx("confirm")
+
+
+## Someone joins on the spot: they stop standing in the street and start
+## standing in the party.
+func recruit(id: String) -> void:
+	if Gs.find_hero(id) != null:
+		return
+	var h = Gs.join_party(id)
+	var kept := []
+	for n in npcs:
+		if n.get("recruit", null) != id:
+			kept.append(n)
+	npcs = kept
+	Snd.sfx("levelup")
+	var where := "joins the party!" if Gs.party.has(h) else "is waiting with the others."
+	msg = make_message(["%s, the %s, %s" % [h["name"], h["title"], where]])
+
+
+## Story that fires the first time you set foot somewhere, once each. Kept in
+## data so a beat is a paragraph rather than a branch buried in the map code.
+func map_beat(id: String) -> void:
+	for beat in Dat.map_beats.get(id, []):
+		if bool(Gs.flags.get(beat["flag"], false)):
+			continue
+		var blocked := false
+		for f in beat.get("needs", []):
+			if not bool(Gs.flags.get(f, false)):
+				blocked = true
+		for f in beat.get("absent", []):
+			if bool(Gs.flags.get(f, false)):
+				blocked = true
+		for who in beat.get("party", []):
+			if Gs.find_hero(who) == null:
+				blocked = true
+		if blocked:
+			continue
+		Gs.flags[beat["flag"]] = true
+		var lines := []
+		for l in beat["lines"]:
+			lines.append(fill_tokens(l))
+		msg = make_message(lines, str(beat.get("speaker", "")))
+		var leaver = beat.get("leaves", null)
+		if leaver != null:
+			msg["on_close"] = func() -> void:
+				var h = Gs.leave_party(leaver)
+				if h != null:
+					Snd.sfx("cancel")
+					msg = make_message([
+						"%s stays behind to keep the lamps lit." % h["name"],
+						"His kit is in your pack. He would not hear otherwise.",
+					])
+		return
 
 
 func open_chest(tx: int, ty: int) -> void:

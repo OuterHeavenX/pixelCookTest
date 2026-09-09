@@ -181,9 +181,9 @@ func close_menu() -> void:
 	Snd.sfx("cancel")
 
 
-func open_shop() -> void:
+func open_shop(shelf := "amber") -> void:
 	mode = "shop"
-	shop.open()
+	shop.open(shelf)
 
 
 func close_shop() -> void:

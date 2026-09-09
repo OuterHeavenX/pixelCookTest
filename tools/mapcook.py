@@ -263,6 +263,7 @@ def wilds():
     g.set(43, 39, "c")
     g.set(50, 36, "s")
     g.set(46, 37, ">")          # the way into the barrow
+    g.set(2, 22, "/")           # the west pass, shut until the barrow is done
 
     # Three caches worth leaving the road for. The best gear is found, not
     # bought, so each one sits in a corner the main path does not pass.
@@ -283,6 +284,7 @@ def wilds():
         "warps": [
             {"x": 28, "y": 2, "to": "town", "tx": 20, "ty": 27, "dir": "up"},
             {"x": 46, "y": 37, "to": "barrow1", "tx": 20, "ty": 28, "dir": "up"},
+            {"x": 2, "y": 22, "to": "shore", "tx": 3, "ty": 14, "dir": "left"},
         ],
     }
 
@@ -383,6 +385,116 @@ def barrow_deep():
     }
 
 
+def hollowmere():
+    """Hollowmere: a lake town on the far side of the Thornwilds, built in pale
+    stone with the mere frozen along its north edge. Every doorway has a
+    lantern over it and every lantern is lit, which is the first thing anyone
+    notices and the last thing anyone here will explain."""
+    g = Grid(44, 34, "n")
+
+    def house(x, y, w, h, door_x):
+        g.rect(x, y, w, 2, "Q")          # roof
+        g.rect(x, y + 2, w, h - 2, "P")  # wall
+        # Lit windows: the town's whole character is that nothing here is dark.
+        for wx in range(1, w - 1, 3):
+            if wx != door_x:
+                g.set(x + wx, y + 2, "V")
+        g.set(x + door_x, y + h - 1, "D")
+        g.set(x + door_x - 1, y + h - 1, "L")
+
+    g.border(1, "M")
+    g.rect(0, 0, 44, 8, "I")             # the mere, frozen over
+    g.rect(0, 0, 44, 1, "M")
+    for x in range(2, 42):               # a shore of trodden snow
+        g.set(x, 8, "n")
+
+    # The lantern row along the shore: this is the town's whole job.
+    for x in range(4, 40, 5):
+        g.set(x, 9, "L")
+
+    house(3, 12, 8, 5, 4)                # west terrace
+    house(13, 12, 7, 5, 3)
+    house(24, 12, 9, 5, 4)               # the inn
+    house(36, 12, 6, 5, 2)
+    house(5, 24, 9, 5, 4)                # south terrace
+    house(18, 25, 8, 5, 3)               # the armoury
+    house(31, 24, 8, 5, 4)
+
+    for x in range(2, 42):               # the long street
+        g.set(x, 20, "=")
+        g.set(x, 21, "=")
+    for y in range(17, 33):              # a cross street to the south gate
+        g.set(21, y, "=")
+        g.set(22, y, "=")
+    g.set(21, 33, "/")                   # the pass back to the Thornwilds
+    g.set(22, 33, "/")
+
+    for lx, ly in ((10, 19), (20, 19), (32, 19), (10, 22), (32, 22), (26, 30)):
+        g.set(lx, ly, "L")
+    for px, py in ((2, 11), (43 - 2, 11), (3, 31), (40, 30), (16, 31), (28, 32),
+                   (2, 18), (41, 18), (8, 32)):
+        g.set(px, py, "p")
+    g.set(24, 22, "s")                   # the sign on the street
+    g.set(38, 9, "c")                    # a chest at the end of the lantern row
+    g.set(6, 31, "c")
+    return {
+        "id": "hollow",
+        "name": "Hollowmere",
+        "rows": g.out(),
+        "encounter": 0,
+        "music": "hollow",
+        "ground": "t_snow",
+        "spawn": [21, 31],
+        "warps": [
+            {"x": 21, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
+            {"x": 22, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
+        ],
+    }
+
+
+def mere_road():
+    """The road along the mere: the cold country between the west pass and
+    Hollowmere. Open on the lake side, pines on the other, and nothing living
+    out here that is glad to see you."""
+    g = Grid(48, 26, "n")
+    g.border(1, "M")
+    g.rect(1, 1, 46, 7, "I")             # the mere along the north
+    g.rect(0, 0, 48, 1, "M")
+    for x in range(1, 47):
+        g.set(x, 8, "n")
+
+    for x in range(2, 46):               # the road itself
+        g.set(x, 14, "-")
+        g.set(x, 15, "-")
+    # Pines and boulders, not grass: the first pass scattered summer tallgrass
+    # across a snowfield and it read as a lawn with weather on it.
+    g.scatter("p", 40, 71, on=("n",))
+    g.scatter("r", 22, 72, on=("n",))
+
+    for lx in range(5, 45, 9):           # the lantern posts, still burning
+        g.set(lx, 12, "L")
+    g.set(24, 17, "s")
+    g.set(9, 20, "c")
+    g.set(40, 10, "c")
+    g.set(1, 14, "/")                    # east, back to the Thornwilds pass
+    g.set(46, 14, "/")                   # west, on to Hollowmere
+    return {
+        "id": "shore",
+        "name": "The Mere Road",
+        "rows": g.out(),
+        "encounter": 16,
+        "encounters": "shore",
+        "battle_bg": "night",
+        "music": "hollow",
+        "ground": "t_snow",
+        "spawn": [3, 14],
+        "warps": [
+            {"x": 1, "y": 14, "to": "wild", "tx": 3, "ty": 22, "dir": "right"},
+            {"x": 46, "y": 14, "to": "hollow", "tx": 21, "ty": 32, "dir": "up"},
+        ],
+    }
+
+
 def _solid_chars():
     """The legend lives in datacook; collision comes from there, not a second
     copy here that could drift."""
@@ -464,7 +576,8 @@ def validate(maps):
 
 
 def build():
-    maps = {m["id"]: m for m in (town(), inn(), wilds(), barrow_upper(), barrow_deep())}
+    maps = {m["id"]: m for m in (town(), inn(), wilds(), barrow_upper(),
+                                 barrow_deep(), hollowmere(), mere_road())}
     for m in maps.values():
         widths = {len(r) for r in m["rows"]}
         assert len(widths) == 1, "%s has ragged rows: %s" % (m["id"], widths)

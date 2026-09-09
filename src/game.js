@@ -516,6 +516,10 @@ const Audio_ = {
            bass: [131,0,131,0,175,0,175,0, 196,0,196,0,131,0,131,0] },
     // Slow, minor, and low: the barrow should feel like somewhere you are
     // trespassing rather than somewhere you are adventuring.
+    hollow: { bpm: 250, lead: [523,0,587,0,494,0,440,0, 523,0,659,0,587,0,523,0,
+                              466,0,523,0,440,0,392,0, 440,0,523,0,466,0,0,0],
+              bass: [131,0,0,0,131,0,0,0, 156,0,0,0,156,0,0,0,
+                     117,0,0,0,117,0,0,0, 131,0,0,0,98,0,0,0] },
     barrow: { bpm: 210, lead: [392,0,0,0,466,0,0,0, 440,0,0,0,349,0,0,0,
                                392,0,0,0,523,0,466,0, 440,0,392,0,330,0,0,0],
               bass: [98,0,0,0,98,0,0,0, 117,0,0,0,117,0,0,0,
@@ -571,6 +575,7 @@ const CHEST_LOOT = GAMEDATA.chest_loot;
 const SIGN_AFTER = GAMEDATA.sign_after || {};
 const BOSS_VICTORY = GAMEDATA.boss_victory || [];
 const ENDING = GAMEDATA.ending;
+const MAP_BEATS = GAMEDATA.map_beats || {};
 const GEAR = GAMEDATA.gear;
 const GEAR_SLOTS = GAMEDATA.gear_slots;
 const GEAR_STOCK = GAMEDATA.gear_stock;
@@ -826,7 +831,7 @@ function enterMap(id, tx, ty, dir) {
   Field.moving = null;
   Field.msg = null;
   Field.walkPhase = 0;
-  Field.npcs = (NPCS[id] || []).map(n => {
+  Field.npcs = (NPCS[id] || []).filter(n => !(n.recruit && inRoster(n.recruit))).map(n => {
     const spot = nearestFree(n.x, n.y);
     return Object.assign({
       tx: spot[0], ty: spot[1], ox: 0, oy: 0, phase: 0, cool: rnd(1, 4), move: null
@@ -841,6 +846,7 @@ function enterMap(id, tx, ty, dir) {
     });
   }
   G.stepsToEncounter = rollEncounterCountdown();
+  mapBeat(id);
   // Whatever track the map names. This used to be a chain of equality tests
   // that fell through to 'field', so the barrow's theme was written, cooked
   // and never once played in this build.
@@ -862,6 +868,31 @@ function nearestFree(x, y) {
   return [x, y];
 }
 
+/* Story that fires the first time you set foot somewhere, once each. Kept in
+   data so a beat is a paragraph rather than a branch buried in the map code. */
+function mapBeat(id) {
+  for (const beat of (MAP_BEATS[id] || [])) {
+    if (G.flags[beat.flag]) continue;
+    if ((beat.needs || []).some(f => !G.flags[f])) continue;
+    if ((beat.absent || []).some(f => G.flags[f])) continue;
+    if ((beat.party || []).some(who => !inRoster(who))) continue;
+    G.flags[beat.flag] = true;
+    Field.msg = makeMessage(beat.lines.map(fillTokens), { speaker: beat.speaker });
+    if (beat.leaves) {
+      const who = beat.leaves;
+      Field.msg.onClose = () => {
+        const h = leaveParty(who);
+        if (h) {
+          Audio_.sfx('cancel');
+          Field.msg = makeMessage([h.name + ' stays behind to keep the lamps lit.',
+            'His kit is in your pack. He would not hear otherwise.']);
+        }
+      };
+    }
+    return;
+  }
+}
+
 function rollEncounterCountdown() {
   const e = Field.map ? Field.map.encounter : 0;
   return e ? rndInt(Math.floor(e * 0.5), Math.floor(e * 1.6)) : Infinity;
@@ -880,6 +911,8 @@ function solidAt(x, y) {
   if (!def) return true;
   // A barred gate stops being a wall once you are carrying its key.
   if (def[2] === 'gate') return !G.flags.barrowKey;
+  // The west pass opens when the barrow is done with you.
+  if (def[2] === 'pass') return !G.flags.bossDown;
   if (def[1]) return true;
   return false;
 }
@@ -930,6 +963,7 @@ function onStepComplete() {
     G.stepsToEncounter--;
     if (G.stepsToEncounter <= 0) {
       G.stepsToEncounter = rollEncounterCountdown();
+  mapBeat(id);
       startEncounter(pickEncounter());
     }
   }
@@ -978,8 +1012,18 @@ function interact() {
     npc.cool = 3;
     if (npc.service === 'inn') { openInn(npc); return; }
     if (npc.service === 'shop') { openShop(npc); return; }
-    const script = (G.flags.bossDown && npc.after) ? npc.after : npc.lines;
+    // Some conversations end with somebody picking up their kit and following
+    // you out. They only do it once.
+    // `after` means two different things depending on who is speaking: for
+    // someone recruitable it is what they say once they have joined, for a
+    // townsperson it is what they say once the chieftain is down.
+    const joined = !!(npc.recruit && inRoster(npc.recruit));
+    const useAfter = npc.recruit ? joined : G.flags.bossDown;
+    const script = useAfter && npc.after ? npc.after : npc.lines;
     Field.msg = makeMessage(script.map(fillTokens), { speaker: npc.name });
+    if (npc.recruit && !joined) {
+      Field.msg.onClose = () => recruit(npc.recruit);
+    }
     Audio_.sfx('confirm');
     return;
   }
@@ -1010,6 +1054,11 @@ function interact() {
       ? ['The iron gate stands open. The stair falls away below.']
       : ['An iron gate, barred and locked.',
          'The lock is old, and it is not going to give.']);
+  } else if (tag === 'pass') {
+    Field.msg = makeMessage(G.flags.bossDown
+      ? ['The west pass. Someone has been keeping the road clear.']
+      : ['A pass west, choked with thorn and rockfall.',
+         'Nobody has come through here in a long time.']);
   } else if (tag === 'stair') {
     Field.msg = makeMessage(['Steps, worn hollow in the middle by feet long gone.']);
   } else if (tag === 'water' || ch === '~') {
@@ -1041,6 +1090,17 @@ function challengeBoss() {
       }
     }
   });
+}
+
+/* Someone joins on the spot: they stop standing in the street and start
+   standing in the party. */
+function recruit(id) {
+  if (inRoster(id)) return;
+  const h = joinParty(id);
+  Field.npcs = Field.npcs.filter(n => n.recruit !== id);
+  Audio_.sfx('levelup');
+  const where = G.party.indexOf(h) >= 0 ? 'joins the party!' : 'is waiting with the others.';
+  Field.msg = makeMessage([h.name + ', the ' + h.title + ', ' + where]);
 }
 
 function fillTokens(line) {
@@ -2727,7 +2787,7 @@ function drawStatusPane() {
 
 /* =========================================================== inn and shop */
 
-const Shop = { open: false, index: 0, tab: 0, mode: 'buy', note: '', noteT: 0 };
+const Shop = { open: false, index: 0, tab: 0, shelf: 'amber', mode: 'buy', note: '', noteT: 0 };
 const SHOP_TABS = [
   { id: 'wares', label: 'Wares' },
   { id: 'armoury', label: 'Armoury' }
@@ -2735,10 +2795,13 @@ const SHOP_TABS = [
 
 /* What is on the shelf under the open tab, as {id, name, price, icon, desc}. */
 function shopStock() {
+  // Each counter names its own shelf, so Hollowmere sells cold-country work
+  // and the Amber Lantern goes on selling what it always did.
+  const shelf = Shop.shelf || 'amber';
   if (SHOP_TABS[Shop.tab].id === 'armoury') {
-    return GEAR_STOCK.map(id => Object.assign({ id: id, gear: true }, GEAR[id]));
+    return (GEAR_STOCK[shelf] || []).map(id => Object.assign({ id: id, gear: true }, GEAR[id]));
   }
-  return SHOP_STOCK.map(id => Object.assign({ id: id, gear: false }, ITEMS[id]));
+  return (SHOP_STOCK[shelf] || []).map(id => Object.assign({ id: id, gear: false }, ITEMS[id]));
 }
 
 /* Buying, from the confirm key or a tap on the row. */
@@ -2766,6 +2829,7 @@ function shopNote(text) { Shop.note = text; Shop.noteT = 1.6; }
 
 function openShop(npc) {
   G.mode = 'shop'; Shop.index = 0; Shop.tab = 0; Shop.note = ''; Shop.noteT = 0;
+  Shop.shelf = (npc && npc.shelf) || 'amber';
   Audio_.sfx('confirm');
 }
 

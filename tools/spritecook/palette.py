@@ -41,6 +41,13 @@ BONE = rgb("d8d2b8")
 BONE_LO = rgb("9a9478")
 EMBER = rgb("ff9a3c")
 EMBER_LO = rgb("c04a20")
+ICE_HI = rgb("dcefff")
+ICE = rgb("a8ccec")
+ICE_LO = rgb("6f9cc4")
+SNOW = rgb("ccd8ea")
+PALE_HI = rgb("cacee2")
+PALE = rgb("a2a7bd")
+PALE_LO = rgb("6f748c")
 MTN_HI = rgb("9a8f88")
 MTN = rgb("6f665f")
 MTN_LO = rgb("4a423d")
@@ -114,6 +121,14 @@ TILE_PALETTE = {
     "m": MTN_HI,
     "M": MTN,
     "x": MTN_LO,
+    "I": ICE,
+    "i": ICE_HI,
+    "J": ICE_LO,
+    "N2": SNOW,
+    "j": PALE_LO,
+    "H": PALE,
+    "h": PALE_HI,
+    "u": PALE_LO,
     "C": CRYPT_HI,
     "c": CRYPT,
     "V": CRYPT_LO,

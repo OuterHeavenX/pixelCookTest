@@ -268,6 +268,123 @@ RIFT = [
     "XXXXXXXXXXXXXXXX",
 ]
 
+def ice(seed=41):
+    """The mere, frozen over: pale plates with darker seams between them."""
+    img = _noise(seed, PAL["I"], [(PAL["i"], 26), (PAL["J"], 14)])
+    rng = random.Random(seed + 5)
+    for _ in range(3):
+        x, y = rng.randrange(TILE), rng.randrange(TILE)
+        d = rng.choice((1, -1))
+        for k in range(rng.randrange(5, 11)):
+            img.set((x + k) % TILE, (y + k * d) % TILE, PAL["J"])
+    return img
+
+
+def snow(seed=42):
+    """Trodden snow over Hollowmere's cobbles."""
+    img = _noise(seed, PAL["N2"], [(PAL["I"], 30), (PAL["i"], 12)])
+    rng = random.Random(seed + 9)
+    for _ in range(5):
+        x, y = rng.randrange(TILE - 2), rng.randrange(TILE - 2)
+        img.rect(x, y, 2, 1, PAL["i"])
+    return img
+
+
+PALE_WALL = [
+    "hhhhhhhhhhhhhhhh",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHuuuuuuuuuHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "huuuuuuuuuuuHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHuuuuuuuuuHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "uuuuuuuuuuuuuuuu",
+]
+
+BLUE_ROOF = [
+    "jjjjjjjjjjjjjjjj",
+    "JJJJJJJJJJJJJJJJ",
+    "IIIIIIIIIIIIIIII",
+    "IIiIIIIiIIIIiIII",
+    "iiiiiiiiiiiiiiii",
+    "JJJJJJJJJJJJJJJJ",
+    "IIIIIIIIIIIIIIII",
+    "IIIIiIIIIiIIIIiI",
+    "iiiiiiiiiiiiiiii",
+    "JJJJJJJJJJJJJJJJ",
+    "IIIIIIIIIIIIIIII",
+    "IIiIIIIiIIIIiIII",
+    "iiiiiiiiiiiiiiii",
+    "JJJJJJJJJJJJJJJJ",
+    "IIIIIIIIIIIIIIII",
+    "jjjjjjjjjjjjjjjj",
+]
+
+PALE_WINDOW = [
+    "hhhhhhhhhhhhhhhh",
+    "hHHHHHHHHHHHHHHu",
+    "hHHuuuuuuuuuuHHu",
+    "hHHu11111111uHHu",
+    "hHHu1EEEEEE1uHHu",
+    "hHHu1EEEEEE1uHHu",
+    "hHHu11111111uHHu",
+    "hHHu1EEEEEE1uHHu",
+    "hHHu1EEEEEE1uHHu",
+    "hHHu11111111uHHu",
+    "hHHuuuuuuuuuuHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHuuuuuuuuuHHu",
+    "hHHHHHHHHHHHHHHu",
+    "hHHHHHHHHHHHHHHu",
+    "uuuuuuuuuuuuuuuu",
+]
+
+LANTERN = [
+    "      ##        ",
+    "     #11#       ",
+    "    ##11##      ",
+    "   #1@@@@1#     ",
+    "   #@EEEE@#     ",
+    "   #@EEEE@#     ",
+    "   #1@@@@1#     ",
+    "    ##11##      ",
+    "     #11#       ",
+    "      ##        ",
+    "      #H        ",
+    "      #H        ",
+    "     #HH#       ",
+    "    #HHHH#      ",
+    "    ######      ",
+    "                ",
+]
+
+PINE_SNOW = [
+    "      @@@       ",
+    "     @yyy@      ",
+    "    @yTTTy@     ",
+    "   @yyTTTyy@    ",
+    "    @@yyy@@     ",
+    "   @yyTTTyy@    ",
+    "  @yyTTTTTyy@   ",
+    "   @@yyyyy@@    ",
+    "  @yyTTTTTyy@   ",
+    " @yyTTTTTTTyy@  ",
+    "  @@yyyyyyy@@   ",
+    "      #BB#      ",
+    "      #BB#      ",
+    "      #BB#      ",
+    "     @@@@@@     ",
+    "                ",
+]
+
 def crypt_floor(seed=31):
     """Flagstones underfoot: big pale slabs, chipped, with the odd wet patch.
 
@@ -735,5 +852,12 @@ def cook():
         "t_bones": _art(BONES),
         "t_seal": _art(SEAL),
         "t_rift": _art(RIFT),
+        "t_ice": ice(),
+        "t_snow": snow(),
+        "t_palewall": _art(PALE_WALL),
+        "t_palewindow": _art(PALE_WINDOW),
+        "t_blueroof": _art(BLUE_ROOF),
+        "t_lantern": _art(LANTERN),
+        "t_pinesnow": _art(PINE_SNOW),
     }
     return out

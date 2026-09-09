@@ -123,6 +123,73 @@
    }
   ]
  },
+ "hollow": {
+  "encounter": 0,
+  "ground": "t_snow",
+  "h": 34,
+  "id": "hollow",
+  "music": "hollow",
+  "name": "Hollowmere",
+  "rows": [
+   "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII",
+   "MnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnM",
+   "MnnnLnnnnLnnnnLnnnnLnnnnLnnnnLnnnnLnnncLnnnM",
+   "MnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnM",
+   "MnpnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnpnM",
+   "MnnQQQQQQQQnnQQQQQQQnnnnQQQQQQQQQnnnQQQQQQnM",
+   "MnnQQQQQQQQnnQQQQQQQnnnnQQQQQQQQQnnnQQQQQQnM",
+   "MnnPVPPPPPPnnPVPPVPPnnnnPVPPPPPVPnnnPVPPVPnM",
+   "MnnPPPPPPPPnnPPPPPPPnnnnPPPPPPPPPnnnPPPPPPnM",
+   "MnnPPPLDPPPnnPPLDPPPnnnnPPPLDPPPPnnnPLDPPPnM",
+   "Mnnnnnnnnnnnnnnnnnnnn==nnnnnnnnnnnnnnnnnnnnM",
+   "Mnpnnnnnnnnnnnnnnnnnn==nnnnnnnnnnnnnnnnnnpnM",
+   "MnnnnnnnnnLnnnnnnnnnL==nnnnnnnnnLnnnnnnnnnnM",
+   "Mn========================================nM",
+   "Mn========================================nM",
+   "MnnnnnnnnnLnnnnnnnnnn==nsnnnnnnnLnnnnnnnnnnM",
+   "Mnnnnnnnnnnnnnnnnnnnn==nnnnnnnnnnnnnnnnnnnnM",
+   "MnnnnQQQQQQQQQnnnnnnn==nnnnnnnnQQQQQQQQnnnnM",
+   "MnnnnQQQQQQQQQnnnnQQQ==QQQnnnnnQQQQQQQQnnnnM",
+   "MnnnnPVPPPPPVPnnnnQQQ==QQQnnnnnPVPPPPPPnnnnM",
+   "MnnnnPPPPPPPPPnnnnPVP==PPPnnnnnPPPPPPPPnnnnM",
+   "MnnnnPPPLDPPPPnnnnPPP==PPPnnnnnPPPLDPPPnnnnM",
+   "MnnnnnnnnnnnnnnnnnPPL==PPPnnnnnnnnnnnnnnnnnM",
+   "Mnnnnnnnnnnnnnnnnnnnn==nnnLnnnnnnnnnnnnnpnnM",
+   "Mnnpnncnnnnnnnnnpnnnn==nnnnnnnnnnnnnnnnnnnnM",
+   "Mnnnnnnnpnnnnnnnnnnnn==nnnnnpnnnnnnnnnnnnnnM",
+   "MMMMMMMMMMMMMMMMMMMMM//MMMMMMMMMMMMMMMMMMMMM"
+  ],
+  "spawn": [
+   21,
+   31
+  ],
+  "w": 44,
+  "warps": [
+   {
+    "dir": "right",
+    "to": "shore",
+    "tx": 45,
+    "ty": 14,
+    "x": 21,
+    "y": 33
+   },
+   {
+    "dir": "right",
+    "to": "shore",
+    "tx": 45,
+    "ty": 14,
+    "x": 22,
+    "y": 33
+   }
+  ]
+ },
  "inn": {
   "encounter": 0,
   "ground": "t_plank",
@@ -158,6 +225,67 @@
     "ty": 11,
     "x": 9,
     "y": 12
+   }
+  ]
+ },
+ "shore": {
+  "battle_bg": "night",
+  "encounter": 16,
+  "encounters": "shore",
+  "ground": "t_snow",
+  "h": 26,
+  "id": "shore",
+  "music": "hollow",
+  "name": "The Mere Road",
+  "rows": [
+   "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIM",
+   "MnpnnnnnnnpnnpnnnnnnnnrnnnrnnnpnnnnnnnnnnnnnnrnM",
+   "MnpnnnnnnnnnnpnnprnnnnnnnnnnpnnnnnnnnnnnnnnnnnnM",
+   "MnnnnnnnnnrnnnpnnnnnnnnnnnnnnnpnnpnnnnnncnnnnnnM",
+   "MnnnrpnnnnpnnnnnpnnnnnnnnnnnnnnpnrnpnrnnnnnnnnnM",
+   "MnnpnLnnnpnnrnLrrnnnnnnLnnnnnnnnLpnnnnnprLnnnnnM",
+   "MnnnnnnnnnnnnnnnnnnnpnnnnnnnnnnnnnnnnnnnnnnnnnnM",
+   "M/--------------------------------------------/M",
+   "Mn--------------------------------------------nM",
+   "MnnnnnnnrnnnnnnnnnnnnnnnnnnpnpnnnnnnnnrnnnnnnnnM",
+   "MnnnnnnnnnnnnnnnnnnnnpnnsnnnnnnnnnnnnnnnnnnnnpnM",
+   "MnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnpnnnnnnnnnnrnrnM",
+   "MnnnnnnnnnnpnnnnnnnnpnnnnnnnnnnnpnnnnnnnnnpnnnnM",
+   "MnnnnrnnncnnnnnnnnnnnpnnnnnnnnnnnnnnnnnnpnnnnnnM",
+   "MnnnnnnnnnnnnnnnnnnnnnnnnpnnnnnnrnnnnnnnnnnnnnnM",
+   "MnnnnnnpnnnnnnnnnnnpnnnnnnnnnnnnnpnnnnnnnnnnnnrM",
+   "MnnnnnnnnnnnnnnnnpnnnnnnnnnnnnnnnnnnnnnnnnnnnrnM",
+   "MnnnnnnnnnnnnnnnnnnnrnnnnnnnnnnnnnnpnnnnnnnnpnnM",
+   "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"
+  ],
+  "spawn": [
+   3,
+   14
+  ],
+  "w": 48,
+  "warps": [
+   {
+    "dir": "right",
+    "to": "wild",
+    "tx": 3,
+    "ty": 22,
+    "x": 1,
+    "y": 14
+   },
+   {
+    "dir": "up",
+    "to": "hollow",
+    "tx": 21,
+    "ty": 32,
+    "x": 46,
+    "y": 14
    }
   ]
  },
@@ -271,7 +399,7 @@
    "MM..........-\"...T....\"~~~...\".*r,..,*TTTTT...-\"T.....MM",
    "MM,..,...T*.-\".b.,.*b..~~~....r.....\"TTTTTTT\".-\"\".\"...MM",
    "MM..........-...\"~~~*..\".....,,.......TTTTT.,.-....,..MM",
-   "MM..b.\"....,-...\"~~~,......,.T.b.\"....TTTTT.\".-....,.*MM",
+   "MM/.b.\"....,-...\"~~~,......,.T.b.\"....TTTTT.\".-....,.*MM",
    "MM.T....T...-....~~~.r........b.,b...,..T.T\"..-.\"T....MM",
    "MM......\"...-....~~~...\"\".*.bbbbb.*........T.T-.....b.MM",
    "MM.\".....,\".-.r..~~~.b...b..bbbbb..r...\".\".,,\"-,..\"\"..MM",
@@ -315,6 +443,14 @@
     "ty": 28,
     "x": 46,
     "y": 37
+   },
+   {
+    "dir": "left",
+    "to": "shore",
+    "tx": 3,
+    "ty": 14,
+    "x": 2,
+    "y": 22
    }
   ]
  }

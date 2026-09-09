@@ -1,5 +1,5 @@
 extends Node
-## A tiny chip synth: square-wave sound effects and five looping themes,
+## A tiny chip synth: square-wave sound effects and six looping themes,
 ## all generated into AudioStreamWAV buffers at runtime so the project ships
 ## no audio files.
 
@@ -40,6 +40,13 @@ const THEMES := {
 		"bpm": 260,
 		"lead": [659, 0, 784, 0, 880, 0, 784, 0, 659, 0, 587, 0, 523, 0, 587, 0],
 		"bass": [131, 0, 131, 0, 175, 0, 175, 0, 196, 0, 196, 0, 131, 0, 131, 0],
+	},
+	"hollow": {
+		"bpm": 250,
+		"lead": [523, 0, 587, 0, 494, 0, 440, 0, 523, 0, 659, 0, 587, 0, 523, 0,
+			466, 0, 523, 0, 440, 0, 392, 0, 440, 0, 523, 0, 466, 0, 0, 0],
+		"bass": [131, 0, 0, 0, 131, 0, 0, 0, 156, 0, 0, 0, 156, 0, 0, 0,
+			117, 0, 0, 0, 117, 0, 0, 0, 131, 0, 0, 0, 98, 0, 0, 0],
 	},
 	# Slow, minor, and low: the barrow should feel like somewhere you are
 	# trespassing rather than somewhere you are adventuring.

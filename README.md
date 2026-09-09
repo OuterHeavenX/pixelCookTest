@@ -38,6 +38,10 @@ folder, and press play. Same game, same art, same numbers.
   its own encounter table, its own theme, and its own night sky over every
   fight. The three best pieces of gear are down there.
 - **An ogre chieftain** on the bier at the bottom of the barrow.
+- **Hollowmere and the Mere Road** — chapter two opens a pass west out of the
+  Thornwilds onto a frozen shore road, and a lake town in pale stone that lights
+  every lamp it owns at noon. Its own monsters (Rimewolves, Merelings, Lamp
+  Wraiths), its own shelf of cold-country equipment, its own theme.
 - **An ending, and a cliffhanger.** The chieftain is not the barrow's tenant, he
   is its lock, and killing him breaks a ward that was there for a reason. The
   chapter closes with a staged sequence, a card, credits and a hook - and then
@@ -101,6 +105,25 @@ joined. Recruiting and losing people is then just moving them between two
 arrays, which is why adding a fifth character touched almost nothing. Aldric
 cannot be benched, the line can never be emptied, and someone who leaves the
 story returns their equipment to the pack rather than walking off in it.
+
+## Chapter two
+
+`recruit` on a townsperson means talking to them ends with them picking up their
+kit; they stop standing in the street and start standing in the party. `after`
+on the same person is what they say once they have joined - the same key on a
+Rivenbrook townsperson means what they say once the chieftain is down, and the
+two never collide because a recruitable NPC reads its own state rather than a
+world flag.
+
+Story that fires on arrival lives in `MAP_BEATS`: a flag to set, flags that
+must and must not already be set, who has to be in the party for it to make
+sense, and optionally who walks out at the end of it. That is how Bram leaves -
+a paragraph of data rather than a branch buried in the map code.
+
+Shops name their shelf, so the Amber Lantern and the Hollowmere armoury sell
+different things from one shop screen. Cold-country monsters are recolours
+cooked from the finished sprite (`tools/spritecook/tints.py`), so a Rimewolf is
+a direwolf that has been out in it too long and neither renderer has to know.
 
 ## The ending
 
