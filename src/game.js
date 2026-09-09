@@ -693,11 +693,68 @@ function grantExp(h, amount) {
   return gained;
 }
 
+/* ---------------------------------------------------------------- roster -- */
+/* `G.party` is who fights: at most PARTY_MAX of them, and every system in the
+   game already reads it, so it stays exactly what it was. `G.bench` is
+   everyone else who has joined. Recruiting and losing people is then just
+   moving them between two arrays. */
+
+const PARTY_MAX = 4;
+
+function roster() { return G.party.concat(G.bench); }
+
+function inRoster(id) { return roster().some(h => h.id === id); }
+
+function findHero(id) { return roster().find(h => h.id === id) || null; }
+
+/* Someone joins. They arrive at a level that keeps up with the party rather
+   than at 1, because a level-1 friend in a level-12 party is a liability
+   dressed as a gift. */
+function joinParty(id, level) {
+  if (inRoster(id)) return findHero(id);
+  const lv = level || Math.max(1, Math.round(
+    G.party.reduce((a, h) => a + h.lv, 0) / Math.max(1, G.party.length)));
+  const h = makeHero(id, lv);
+  if (G.party.length < PARTY_MAX) G.party.push(h);
+  else G.bench.push(h);
+  return h;
+}
+
+/* Someone goes. Their gear goes back in the pack - they are not taking your
+   halberd with them. */
+function leaveParty(id) {
+  const h = findHero(id);
+  if (!h) return null;
+  for (const slot in h.gear) {
+    if (h.gear[slot]) takeGear(h.gear[slot]);
+  }
+  G.party = G.party.filter(x => x !== h);
+  G.bench = G.bench.filter(x => x !== h);
+  // The line never empties: somebody has to be standing there.
+  if (!G.party.length && G.bench.length) G.party.push(G.bench.shift());
+  return h;
+}
+
+/* Swap someone between the line and the bench. Aldric cannot be benched - he
+   is the one the story is happening to. */
+function benchSwap(h) {
+  if (G.party.indexOf(h) >= 0) {
+    if (G.party.length <= 1 || h.id === 'aldric') return false;
+    G.party = G.party.filter(x => x !== h);
+    G.bench.push(h);
+    return true;
+  }
+  if (G.party.length >= PARTY_MAX) return false;
+  G.bench = G.bench.filter(x => x !== h);
+  G.party.push(h);
+  return true;
+}
+
 /* ============================================================= game state */
 
 const G = {
   mode: 'title',
-  party: [], gil: 200, bag: {}, gear: {},
+  party: [], bench: [], gil: 200, bag: {}, gear: {},
   mapId: 'town', px: 0, py: 0, dir: 'down',
   steps: 0, stepsToEncounter: 0, playtime: 0,
   flags: { chests: {}, bossDown: false, visitedWild: false },
@@ -706,6 +763,7 @@ const G = {
 
 function newGame() {
   G.party = [makeHero('aldric'), makeHero('lyra'), makeHero('mira')];
+  G.bench = [];
   G.gil = 200;
   G.bag = { potion: 5, ether: 1, phoenix: 1 };
   G.gear = { leather_vest: 2 };   // two spare vests: the mages start bare
@@ -715,10 +773,22 @@ function newGame() {
 }
 
 const SAVE_KEY = 'rivenbrook.save.v1';
+
+function slimHero(h) {
+  return { id: h.id, lv: h.lv, exp: h.exp, hp: h.hp, mp: h.mp,
+           alive: h.alive, gear: h.gear };
+}
+
+function fatHero(p) {
+  const h = makeHero(p.id, p.lv);
+  // Saves from before equipment existed just keep their starting kit.
+  if (p.gear) { h.gear = Object.assign(h.gear, p.gear); refreshStats(h); }
+  h.exp = p.exp; h.hp = p.hp; h.mp = p.mp; h.alive = p.alive !== false;
+  return h;
+}
 function saveGame() {
   const data = {
-    party: G.party.map(h => ({ id: h.id, lv: h.lv, exp: h.exp, hp: h.hp, mp: h.mp,
-                               alive: h.alive, gear: h.gear })),
+    party: G.party.map(slimHero), bench: G.bench.map(slimHero),
     gil: G.gil, bag: G.bag, gear: G.gear, mapId: G.mapId, px: G.px, py: G.py, dir: G.dir,
     flags: G.flags, playtime: G.playtime
   };
@@ -732,13 +802,8 @@ function loadGame() {
   try {
     const d = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!d) return false;
-    G.party = d.party.map(p => {
-      const h = makeHero(p.id, p.lv);
-      // Saves from before equipment existed just keep their starting kit.
-      if (p.gear) { h.gear = Object.assign(h.gear, p.gear); refreshStats(h); }
-      h.exp = p.exp; h.hp = p.hp; h.mp = p.mp; h.alive = p.alive !== false;
-      return h;
-    });
+    G.party = d.party.map(fatHero);
+    G.bench = (d.bench || []).map(fatHero);
     G.gil = d.gil; G.bag = d.bag || {}; G.gear = d.gear || {};
     G.flags = d.flags || { chests: {} };
     G.playtime = d.playtime || 0;
@@ -1299,7 +1364,7 @@ function livingHeroes() { return G.party.filter(h => h.alive); }
    it: each member a little nearer and a little lower than the last. */
 /* The backdrop's meadow starts about 6px below the geometric horizon, so the
    front of the line stands on grass rather than in the treeline. */
-function heroSlot(i) { return { x: 266 - i * 18, y: 52 + i * 13 }; }
+function heroSlot(i) { return { x: 266 - i * 16, y: 50 + i * 12 }; }
 /* Enemies are baseline-anchored so tall and short monsters share a ground
    line and none of them dips behind the HUD. */
 /* How big a monster stands, from the height its data asks for rather than
@@ -1686,6 +1751,16 @@ function resolveHeroAction(a, h, act) {
         addFx('heal', slot.x + 8, slot.y - 4, { life: 0.7 });
         healTarget(t, Math.round(sp.power + h.mag * 0.9), true);
       });
+    } else if (sp.kind === 'guardAll') {
+      // Sera's Ward: the thing her family has been doing for four hundred
+      // years, scaled down to one fight. Everyone guards without spending
+      // their turn on it.
+      livingHeroes().forEach(t => {
+        t.defending = true;
+        const slot = heroSlot(G.party.indexOf(t));
+        addFx('holy', slot.x + 8, slot.y - 4, { life: 0.6 });
+      });
+      flashBanner('A ward closes over the party!');
     } else if (sp.kind === 'revive') {
       const t = act.target;
       if (t && !t.alive) {
@@ -2015,7 +2090,7 @@ function drawBattleUi() {
   // Party status, right.
   drawWindow(120, panelY, 196, panelH);
   G.party.forEach((h, i) => {
-    const y = panelY + 8 + i * 16;
+    const y = panelY + 6 + i * 14;
     const active = Battle.actor === h;
     drawText(h.name, 132, y, h.alive ? (active ? '#ffe9a0' : '#f2f4ff') : '#9a8090');
     if (h.defending && h.alive) spr('i_shield', 124, y - 1);
@@ -2161,6 +2236,7 @@ const MENU_ROOT = [
   { id: 'item', label: 'Item' },
   { id: 'magic', label: 'Magic' },
   { id: 'equip', label: 'Equip' },
+  { id: 'party', label: 'Party' },
   { id: 'status', label: 'Status' },
   { id: 'save', label: 'Save' },
   { id: 'sound', label: 'Sound' },
@@ -2222,6 +2298,15 @@ function updateMenu(dt) {
         else { Menu.state = 'item'; Menu.index = clamp(Menu.index, 0, bagList().length - 1); }
       } else { Audio_.sfx('cancel'); menuNote('It had no effect.'); }
     }
+    return;
+  }
+
+  if (Menu.state === 'party') {
+    if (Input.tap('cancel')) { Menu.state = 'root'; Audio_.sfx('cancel'); return; }
+    const all = roster();
+    if (Input.nav('up', dt)) { Menu.who = (Menu.who + all.length - 1) % all.length; Audio_.sfx('cursor'); }
+    if (Input.nav('down', dt)) { Menu.who = (Menu.who + 1) % all.length; Audio_.sfx('cursor'); }
+    if (Input.tap('confirm')) togglePartyMember(Menu.who);
     return;
   }
 
@@ -2288,6 +2373,7 @@ function updateMenu(dt) {
       let ok = false;
       if (sp.kind === 'heal' && t.alive && t.hp < t.maxhp) { t.hp = Math.min(t.maxhp, t.hp + Math.round(sp.power + h.mag * 1.2)); ok = true; }
       else if (sp.kind === 'healAll') { G.party.forEach(x => { if (x.alive) x.hp = Math.min(x.maxhp, x.hp + Math.round(sp.power + h.mag * 0.9)); }); ok = true; }
+      else if (sp.kind === 'guardAll') { menuNote('Only useful in a fight.'); return; }
       else if (sp.kind === 'revive' && !t.alive) { t.alive = true; t.hp = Math.max(1, Math.round(t.maxhp * sp.power)); ok = true; }
       if (ok) { h.mp -= sp.mp; Audio_.sfx('heal'); menuNote(h.name + ' casts ' + sp.name + '.'); Menu.state = 'magicList'; }
       else { Audio_.sfx('cancel'); menuNote('Nothing happened.'); }
@@ -2319,6 +2405,7 @@ function runMenuRoot(id) {
   if (id === 'item') { Menu.state = 'item'; Menu.index = 0; Menu.scroll = 0; }
   else if (id === 'magic') { Menu.state = 'magicWho'; Menu.who = 0; }
   else if (id === 'equip') { Menu.state = 'equipWho'; Menu.who = 0; Menu.slot = 0; }
+  else if (id === 'party') { Menu.state = 'party'; Menu.who = 0; }
   else if (id === 'status') { Menu.state = 'status'; Menu.who = 0; }
   else if (id === 'sound') { menuNote(Audio_.toggleMute() ? 'Sound off.' : 'Sound on.'); }
   else if (id === 'save') { menuNote(saveGame() ? 'Journal saved.' : 'Could not save.'); }
@@ -2363,6 +2450,25 @@ function chooseEquip(i) {
   Menu.state = 'equipSlot';
 }
 
+/* Moving someone in or out of the line, from the confirm key or a tap. */
+function togglePartyMember(i) {
+  if (G.mode !== 'menu' || Menu.state !== 'party') return;
+  const all = roster();
+  const h = all[i];
+  if (!h) return;
+  Menu.who = i;
+  if (!benchSwap(h)) {
+    Audio_.sfx('cancel');
+    menuNote(h.id === 'aldric' ? 'Aldric leads. He stays.'
+      : G.party.indexOf(h) >= 0 ? 'Someone has to stand there.'
+      : 'The line is full.');
+    return;
+  }
+  Audio_.sfx('confirm');
+  // Keep the cursor on the same person after the two lists change under it.
+  Menu.who = roster().indexOf(h);
+}
+
 function drawMenu() {
   drawField();
   ctx.fillStyle = 'rgba(8,6,18,0.72)';
@@ -2371,13 +2477,13 @@ function drawMenu() {
   // Command column: buttons, so an entry can be hit rather than walked to.
   drawWindow(6, 6, 84, 108);
   MENU_ROOT.forEach((c, i) => {
-    const by = 10 + i * 14;
+    const by = 8 + i * 13;
     const dim = Menu.state !== 'root' && i !== Menu.root;
     const id = 'menu:' + c.id;
-    drawButton(10, by, 76, 13, c.label,
+    drawButton(10, by, 76, 12, c.label,
       { selected: i === Menu.root, pressed: Taps.pressed(id), dim: dim });
     if (Menu.state === 'root') {
-      Taps.add(id, 10, by, 76, 13, () => { Menu.root = i; runMenuRoot(c.id); });
+      Taps.add(id, 10, by, 76, 12, () => { Menu.root = i; runMenuRoot(c.id); });
     }
   });
 
@@ -2391,7 +2497,8 @@ function drawMenu() {
 
   // Right pane.
   drawWindow(96, 6, VW - 102, VH - 12);
-  if (Menu.state === 'status') drawStatusPane();
+  if (Menu.state === 'party') drawPartyRoster();
+  else if (Menu.state === 'status') drawStatusPane();
   else if (Menu.state.indexOf('equip') === 0) drawEquipPane();
   else if (Menu.state === 'item' || Menu.state === 'itemTarget') drawItemPane();
   else if (Menu.state.indexOf('magic') === 0) drawMagicPane();
@@ -2550,6 +2657,37 @@ function drawEquipPane() {
     drawText(delta, 246, by + 2, delta.charAt(0) === '-' ? '#e08a90' : '#8fd8a0');
     Taps.add(id, 112, by, 130, 11, () => chooseEquip(i));
   }
+}
+
+/* The line and the bench. Every row is a button; hitting one moves that
+   person across. */
+function drawPartyRoster() {
+  drawText('PARTY', 106, 12, '#f6e2a8');
+  drawText('In the line', 112, 26, '#8f97c0');
+  const all = roster();
+  let y = 38;
+  const row = (h, i, active) => {
+    const id = 'party:' + h.id;
+    // Name and level inside the button, class after it. 320 pixels does not
+    // leave room for all three side by side - the first pass had "Knight" and
+    // "Lv 11" printed on top of each other.
+    drawButton(112, y, 110, 13, '',
+      { selected: i === Menu.who, pressed: Taps.pressed(id), dim: !active });
+    drawText(h.name, 117, y + 3, active ? '#f2f4ff' : '#8a8fb0');
+    drawText('Lv ' + h.lv, 217, y + 3, active ? '#ffe9a0' : '#8a8fb0', { align: 'right' });
+    drawText(h.title, 226, y + 3, active ? '#c8d0f0' : '#7a82a8');
+    Taps.add(id, 112, y, 110, 13, () => togglePartyMember(i));
+    y += 15;
+  };
+  all.forEach((h, i) => {
+    if (i === G.party.length) {
+      drawText(G.bench.length ? 'Waiting' : '', 112, y + 2, '#8f97c0');
+      y += 14;
+    }
+    row(h, i, i < G.party.length);
+  });
+  drawText(G.party.length + '/' + PARTY_MAX + ' fighting', 112, VH - 26, '#7a82a8');
+  drawText('[Z] move  [X] back', VW - 14, VH - 26, '#7a82a8', { align: 'right' });
 }
 
 function drawStatusPane() {

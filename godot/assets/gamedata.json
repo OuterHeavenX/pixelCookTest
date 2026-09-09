@@ -75,6 +75,29 @@
    "sprite": "aldric",
    "title": "Knight"
   },
+  "bram": {
+   "base": {
+    "atk": 15,
+    "def": 16,
+    "hp": 158,
+    "mag": 3,
+    "mp": 0,
+    "spd": 7
+   },
+   "grow": {
+    "atk": 2.8,
+    "def": 3.0,
+    "hp": 27,
+    "mag": 0.3,
+    "mp": 0,
+    "spd": 0.6
+   },
+   "name": "Bram",
+   "skill": null,
+   "spells": [],
+   "sprite": "bram",
+   "title": "Shieldman"
+  },
   "lyra": {
    "base": {
     "atk": 8,
@@ -160,6 +183,45 @@
    ],
    "sprite": "mira",
    "title": "White Mage"
+  },
+  "sera": {
+   "base": {
+    "atk": 11,
+    "def": 11,
+    "hp": 96,
+    "mag": 14,
+    "mp": 26,
+    "spd": 12
+   },
+   "grow": {
+    "atk": 1.4,
+    "def": 2.0,
+    "hp": 16,
+    "mag": 2.8,
+    "mp": 6,
+    "spd": 1.2
+   },
+   "name": "Sera",
+   "spells": [
+    {
+     "id": "ward",
+     "lv": 1
+    },
+    {
+     "id": "cure",
+     "lv": 1
+    },
+    {
+     "id": "holy",
+     "lv": 4
+    },
+    {
+     "id": "vigil",
+     "lv": 7
+    }
+   ],
+   "sprite": "sera",
+   "title": "Sealkeeper"
   }
  },
  "encounters": {
@@ -609,6 +671,21 @@
     "aldric"
    ]
   },
+  "frost_pike": {
+   "desc": "Cold to carry. Colder to be hit by.",
+   "element": "ice",
+   "icon": "i_sword",
+   "name": "Frost Pike",
+   "price": 1500,
+   "slot": "weapon",
+   "stats": {
+    "atk": 29,
+    "def": 3
+   },
+   "users": [
+    "bram"
+   ]
+  },
   "guard_charm": {
    "desc": "Someone wanted you to come home.",
    "icon": "i_ring",
@@ -620,6 +697,20 @@
     "hp": 30
    },
    "users": null
+  },
+  "iron_halberd": {
+   "desc": "Long enough to keep trouble at arm's length.",
+   "icon": "i_sword",
+   "name": "Iron Halberd",
+   "price": 620,
+   "slot": "weapon",
+   "stats": {
+    "atk": 18,
+    "def": 2
+   },
+   "users": [
+    "bram"
+   ]
   },
   "iron_sword": {
    "desc": "Heavier, and it tells.",
@@ -658,6 +749,21 @@
     "def": 4
    },
    "users": null
+  },
+  "mere_wand": {
+   "desc": "Lake-glass, still cold from the water.",
+   "icon": "i_staff",
+   "name": "Mere Wand",
+   "price": 900,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 17
+   },
+   "users": [
+    "lyra",
+    "sera"
+   ]
   },
   "moon_rod": {
    "desc": "Cold to hold. Sharpens a spell.",
@@ -739,6 +845,21 @@
     "spd": 5
    },
    "users": null
+  },
+  "warden_staff": {
+   "desc": "Hollowmere work. The head is a seal, not an ornament.",
+   "icon": "i_staff",
+   "name": "Warden Staff",
+   "price": 640,
+   "slot": "weapon",
+   "stats": {
+    "atk": 4,
+    "def": 3,
+    "mag": 11
+   },
+   "users": [
+    "sera"
+   ]
   }
  },
  "gear_slots": [
@@ -1227,6 +1348,14 @@
    "name": "Vigil",
    "power": 40,
    "target": "allies"
+  },
+  "ward": {
+   "fx": "holy",
+   "kind": "guardAll",
+   "mp": 6,
+   "name": "Ward",
+   "power": 0,
+   "target": "allies"
   }
  },
  "starting_gear": {
@@ -1234,6 +1363,11 @@
    "armour": "leather_vest",
    "trinket": null,
    "weapon": "bronze_sword"
+  },
+  "bram": {
+   "armour": "chain_mail",
+   "trinket": null,
+   "weapon": "iron_halberd"
   },
   "lyra": {
    "armour": null,
@@ -1244,6 +1378,11 @@
    "armour": null,
    "trinket": null,
    "weapon": "oak_staff"
+  },
+  "sera": {
+   "armour": "silk_robe",
+   "trinket": "copper_ring",
+   "weapon": "warden_staff"
   }
  },
  "underlay": {

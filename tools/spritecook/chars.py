@@ -396,6 +396,21 @@ PARTY_STYLES = {
         cloth=rgb("f0ece0"), cloth_dk=rgb("c8c0ae"), trim=rgb("c04a58"),
         boot=rgb("8a6a3a"), hood=True, skirt=True, robe_trim=True,
         weapon="staff", weapon_dk=rgb("a08050"), prop="staff"),
+    # Chapter two. Bram is built wide and reads as a wall on purpose - he is
+    # the one who stands in front. Sera is the pale one, cold colours, the
+    # only person in Hollowmere who knows what the seal is for.
+    "bram": style(
+        skin=rgb("d9a06e"), skin_sh=rgb("b07c4e"),
+        hair=rgb("8f4a2a"), hair_dk=rgb("5f2d18"),
+        cloth=rgb("8a5a34"), cloth_dk=rgb("5c3a20"), trim=rgb("c8b070"),
+        boot=rgb("4a3423"), beard=rgb("8f4a2a"), build=2,
+        weapon="spear", weapon_dk=rgb("6b4423"), prop="spear"),
+    "sera": style(
+        skin=rgb("f2dcc8"), skin_sh=rgb("cdb3a0"),
+        hair=rgb("2f3550"), hair_dk=rgb("1b1f33"), hair_style="long",
+        cloth=rgb("9fc4dc"), cloth_dk=rgb("5f88a8"), trim=rgb("e8e0c0"),
+        boot=rgb("46506e"), cape=rgb("cfe4f0"), skirt=True, robe_trim=True,
+        weapon="staff", weapon_dk=rgb("8fa8c0"), prop="staff"),
 }
 
 NPC_STYLES = {

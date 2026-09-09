@@ -27,8 +27,11 @@ folder, and press play. Same game, same art, same numbers.
   freeze while a command window is open. Fight / Magic / Item / Guard / Run,
   target selection, criticals, elemental weaknesses, damage numbers, EXP, gil,
   level-ups, and spells learned on level.
-- **A three-hero party** — Aldric the Knight, Lyra the Black Mage, Mira the White
-  Mage — each with their own growth curve and spell list.
+- **A party that changes.** Aldric the Knight, Lyra the Black Mage and Mira the
+  White Mage start out; Bram the Shieldman and Sera the Sealkeeper join in
+  chapter two. Four fight, the rest wait, and the Party screen moves people
+  between the two. Anyone who joins arrives at the party's level, and anyone
+  who leaves hands their gear back.
 - **The Barrow** — two floors of dark stone under the shrine in the south-east:
   a gallery ringed with chambers, an iron gate that wants a key, and a stair
   down to the chieftain's floor. Its own monsters (Barrow Guards and Wights),
@@ -89,6 +92,15 @@ register themselves as screen rectangles while they draw, and a tap is matched
 against them on the next frame - so hitting Magic means putting a thumb on
 Magic, not steering a cursor to it. Keys and taps go through the same
 functions, so neither can drift away from the other.
+
+## The roster
+
+`G.party` is who fights - at most four - and every system in the game already
+read it, so it stayed exactly what it was; `G.bench` is everyone else who has
+joined. Recruiting and losing people is then just moving them between two
+arrays, which is why adding a fifth character touched almost nothing. Aldric
+cannot be benched, the line can never be emptied, and someone who leaves the
+story returns their equipment to the pack rather than walking off in it.
 
 ## The ending
 

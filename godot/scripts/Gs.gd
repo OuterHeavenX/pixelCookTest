@@ -3,7 +3,10 @@ extends Node
 
 const SAVE_PATH := "user://rivenbrook_save.json"
 
+const PARTY_MAX := 4
+
 var party := []
+var bench := []       ## everyone who has joined but is not in the line
 var gil := 200
 var bag := {}
 var gear := {}          ## unequipped pieces in the pack, id -> count
@@ -65,6 +68,76 @@ func refresh_stats(h: Dictionary) -> void:
 		if int(entry["lv"]) <= int(h["lv"]):
 			known.append(entry["id"])
 	h["spells"] = known
+
+
+## ----------------------------------------------------------------- roster --
+## `party` is who fights: at most PARTY_MAX of them, and every system already
+## reads it, so it stays exactly what it was. `bench` is everyone else who has
+## joined. Recruiting and losing people is then moving them between two arrays.
+
+func roster() -> Array:
+	return party + bench
+
+
+func find_hero(id: String) -> Variant:
+	for h in roster():
+		if h["id"] == id:
+			return h
+	return null
+
+
+## Someone joins. They arrive at a level that keeps up with the party rather
+## than at 1, because a level-1 friend in a level-12 party is a liability
+## dressed as a gift.
+func join_party(id: String, level := 0) -> Variant:
+	var existing = find_hero(id)
+	if existing != null:
+		return existing
+	var lv := level
+	if lv <= 0:
+		var total := 0
+		for h in party:
+			total += int(h["lv"])
+		lv = maxi(1, roundi(float(total) / maxi(1, party.size())))
+	var h := make_hero(id, lv)
+	if party.size() < PARTY_MAX:
+		party.append(h)
+	else:
+		bench.append(h)
+	return h
+
+
+## Someone goes. Their gear goes back in the pack - they are not taking your
+## halberd with them.
+func leave_party(id: String) -> Variant:
+	var h = find_hero(id)
+	if h == null:
+		return null
+	for slot in h["gear"]:
+		if h["gear"][slot] != null:
+			take_gear(h["gear"][slot])
+	party.erase(h)
+	bench.erase(h)
+	# The line never empties: somebody has to be standing there.
+	if party.is_empty() and not bench.is_empty():
+		party.append(bench.pop_front())
+	return h
+
+
+## Swap someone between the line and the bench. Aldric cannot be benched - he
+## is the one the story is happening to.
+func bench_swap(h: Dictionary) -> bool:
+	if party.has(h):
+		if party.size() <= 1 or h["id"] == "aldric":
+			return false
+		party.erase(h)
+		bench.append(h)
+		return true
+	if party.size() >= PARTY_MAX:
+		return false
+	bench.erase(h)
+	party.append(h)
+	return true
 
 
 ## ------------------------------------------------------------------- gear --
@@ -172,6 +245,7 @@ func living_heroes() -> Array:
 
 func new_game() -> void:
 	party = [make_hero("aldric"), make_hero("lyra"), make_hero("mira")]
+	bench = []
 	gil = 200
 	bag = {"potion": 5, "ether": 1, "phoenix": 1}
 	gear = {"leather_vest": 2}   # two spare vests: the mages start bare
@@ -203,13 +277,35 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
-func save_game() -> bool:
-	var slim := []
-	for h in party:
-		slim.append({"id": h["id"], "lv": h["lv"], "exp": h["exp"],
+func _slim(who: Array) -> Array:
+	var out := []
+	for h in who:
+		out.append({"id": h["id"], "lv": h["lv"], "exp": h["exp"],
 			"hp": h["hp"], "mp": h["mp"], "alive": h["alive"], "gear": h["gear"]})
+	return out
+
+
+func _fat(rows) -> Array:
+	var out := []
+	for p in rows:
+		var h := make_hero(p["id"], int(p["lv"]))
+		# Saves from before equipment existed just keep their starting kit.
+		if p.has("gear"):
+			for slot in p["gear"]:
+				h["gear"][slot] = p["gear"][slot]
+			refresh_stats(h)
+		h["exp"] = int(p["exp"])
+		h["hp"] = int(p["hp"])
+		h["mp"] = int(p["mp"])
+		h["alive"] = bool(p.get("alive", true))
+		out.append(h)
+	return out
+
+
+func save_game() -> bool:
 	var payload := {
-		"party": slim, "gil": gil, "bag": bag, "gear": gear, "map_id": map_id,
+		"party": _slim(party), "bench": _slim(bench),
+		"gil": gil, "bag": bag, "gear": gear, "map_id": map_id,
 		"px": px, "py": py, "dir": dir, "flags": flags, "playtime": playtime,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -227,19 +323,8 @@ func load_game() -> bool:
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false
 	var d: Dictionary = parsed
-	party = []
-	for p in d.get("party", []):
-		var h := make_hero(p["id"], int(p["lv"]))
-		# Saves from before equipment existed just keep their starting kit.
-		if p.has("gear"):
-			for slot in p["gear"]:
-				h["gear"][slot] = p["gear"][slot]
-			refresh_stats(h)
-		h["exp"] = int(p["exp"])
-		h["hp"] = int(p["hp"])
-		h["mp"] = int(p["mp"])
-		h["alive"] = bool(p.get("alive", true))
-		party.append(h)
+	party = _fat(d.get("party", []))
+	bench = _fat(d.get("bench", []))
 	gil = int(d.get("gil", 200))
 	bag = d.get("bag", {})
 	gear = d.get("gear", {})

@@ -6,6 +6,7 @@ const ROOT_ENTRIES := [
 	{"id": "item", "label": "Item"},
 	{"id": "magic", "label": "Magic"},
 	{"id": "equip", "label": "Equip"},
+	{"id": "party", "label": "Party"},
 	{"id": "status", "label": "Status"},
 	{"id": "save", "label": "Save"},
 	{"id": "sound", "label": "Sound"},
@@ -58,6 +59,8 @@ func update(dt: float) -> void:
 			_update_magic_list(dt)
 		"magicTarget":
 			_update_magic_target(dt)
+		"party":
+			_update_party(dt)
 		"equipWho":
 			_update_equip_who(dt)
 		"equipSlot":
@@ -95,6 +98,9 @@ func _update_root(dt: float) -> void:
 			state = "equipWho"
 			who = 0
 			slot = 0
+		"party":
+			state = "party"
+			who = 0
 		"status":
 			state = "status"
 			who = 0
@@ -102,6 +108,35 @@ func _update_root(dt: float) -> void:
 			say("Sound off." if Snd.toggle_mute() else "Sound on.")
 		"save":
 			say("Journal saved." if Gs.save_game() else "Could not save.")
+
+
+func _update_party(dt: float) -> void:
+	if Inp.tap("cancel"):
+		state = "root"
+		Snd.sfx("cancel")
+		return
+	var all := Gs.roster()
+	if Inp.nav("up", dt):
+		who = (who + all.size() - 1) % all.size()
+		Snd.sfx("cursor")
+	if Inp.nav("down", dt):
+		who = (who + 1) % all.size()
+		Snd.sfx("cursor")
+	if not Inp.tap("confirm"):
+		return
+	var h: Dictionary = all[who]
+	if not Gs.bench_swap(h):
+		Snd.sfx("cancel")
+		if h["id"] == "aldric":
+			say("Aldric leads. He stays.")
+		elif Gs.party.has(h):
+			say("Someone has to stand there.")
+		else:
+			say("The line is full.")
+		return
+	Snd.sfx("confirm")
+	# Keep the cursor on the same person after the lists change under it.
+	who = Gs.roster().find(h)
 
 
 ## The equip flow: who -> which slot -> which piece.
@@ -379,9 +414,9 @@ func draw(c: CanvasItem, anim: float) -> void:
 	# Command column: buttons, so an entry can be hit rather than walked to.
 	Art.draw_window(c, Rect2(6, 6, 84, 108))
 	for i in ROOT_ENTRIES.size():
-		var by := 10 + i * 14
+		var by := 8 + i * 13
 		var dim := state != "root" and i != root
-		Art.draw_button(c, Rect2(10, by, 76, 13), ROOT_ENTRIES[i]["label"],
+		Art.draw_button(c, Rect2(10, by, 76, 12), ROOT_ENTRIES[i]["label"],
 			i == root, false, dim)
 
 	Art.draw_window(c, Rect2(6, 118, 84, 56))
@@ -398,6 +433,8 @@ func draw(c: CanvasItem, anim: float) -> void:
 		_draw_items(c, anim)
 	elif state.begins_with("magic"):
 		_draw_magic(c, anim)
+	elif state == "party":
+		_draw_party_roster(c)
 	elif state.begins_with("equip"):
 		_draw_equip(c)
 	else:
@@ -520,6 +557,36 @@ func _draw_magic(c: CanvasItem, anim: float) -> void:
 			Vector2(250, y), hp_color(h), "right")
 		if i == target:
 			Art.draw_cursor(c, Vector2(116, y - 1), anim)
+
+
+## The line and the bench.
+func _draw_party_roster(c: CanvasItem) -> void:
+	Art.draw_text(c, "PARTY", Vector2(106, 12), Color("#f6e2a8"))
+	Art.draw_text(c, "In the line", Vector2(112, 26), Color("#8f97c0"))
+	var all := Gs.roster()
+	var y := 38
+	for i in all.size():
+		if i == Gs.party.size():
+			if not Gs.bench.is_empty():
+				Art.draw_text(c, "Waiting", Vector2(112, y + 2), Color("#8f97c0"))
+			y += 14
+		var h: Dictionary = all[i]
+		var active := i < Gs.party.size()
+		# Name and level inside the button, class after it. 320 pixels does not
+		# leave room for all three side by side - the first pass had "Knight"
+		# and "Lv 11" printed on top of each other.
+		Art.draw_button(c, Rect2(112, y, 110, 13), "", i == who, false, not active)
+		Art.draw_text(c, h["name"], Vector2(117, y + 3),
+			Color("#f2f4ff") if active else Color("#8a8fb0"))
+		Art.draw_text(c, "Lv %d" % int(h["lv"]), Vector2(217, y + 3),
+			Color("#ffe9a0") if active else Color("#8a8fb0"), "right")
+		Art.draw_text(c, h["title"], Vector2(226, y + 3),
+			Color("#c8d0f0") if active else Color("#7a82a8"))
+		y += 15
+	Art.draw_text(c, "%d/%d fighting" % [Gs.party.size(), Gs.PARTY_MAX],
+		Vector2(112, Art.VH - 26), Color("#7a82a8"))
+	Art.draw_text(c, "[Z] move  [X] back", Vector2(Art.VW - 14, Art.VH - 26),
+		Color("#7a82a8"), "right")
 
 
 ## The equip pane: who, then their three slots, then what the pack offers.

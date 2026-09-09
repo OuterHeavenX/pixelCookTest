@@ -104,7 +104,7 @@ func living_enemies() -> Array:
 ## The backdrop's meadow starts about 6px below the geometric horizon, so the
 ## front of the line stands on grass rather than in the treeline.
 func hero_slot(i: int) -> Vector2:
-	return Vector2(266 - i * 18, 52 + i * 13)
+	return Vector2(266 - i * 16, 50 + i * 12)
 
 
 ## Humanoid monsters are drawn at hero scale; beasts and the boss stay chunky.
@@ -621,6 +621,14 @@ func resolve_hero_action(h: Dictionary, act: Dictionary) -> void:
 			for ally in Gs.living_heroes():
 				add_fx("heal", hero_slot(int(ally["slot"])) + Vector2(8, -4), 0.7)
 				heal_target(ally, int(round(float(sp["power"]) + float(h["mag"]) * 0.9)), true)
+		elif spell_kind == "guardAll":
+			# Sera's Ward: the thing her family has been doing for four hundred
+			# years, scaled down to one fight. Everyone guards without spending
+			# their turn on it.
+			for ally in Gs.living_heroes():
+				ally["defending"] = true
+				add_fx("holy", hero_slot(int(ally["slot"])) + Vector2(8, -4), 0.6)
+			flash_banner("A ward closes over the party!")
 		elif spell_kind == "revive":
 			var ally: Dictionary = act["target"]
 			if not bool(ally["alive"]):
@@ -935,7 +943,7 @@ func draw_ui(c: CanvasItem) -> void:
 	Art.draw_window(c, Rect2(120, panel_y, 196, panel_h))
 	for i in Gs.party.size():
 		var h: Dictionary = Gs.party[i]
-		var y := panel_y + 8 + i * 16
+		var y := panel_y + 6 + i * 14
 		var active := actor != null and is_same(actor, h)
 		var name_color := Color("#9a8090")
 		if bool(h["alive"]):
