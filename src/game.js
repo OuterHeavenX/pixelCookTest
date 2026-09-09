@@ -46,11 +46,11 @@ function sprFoot(name, cx, footY, opts) {
 }
 
 /* Pick the crispest whole-ish zoom that lands near a target height. */
-function scaleFor(name, targetH) {
+function scaleFor(name, targetH, steps) {
   const f = FRAMES[name];
   if (!f) return 1;
   let best = 1, bestErr = Infinity;
-  for (const s of [1, 1.5, 2, 3]) {
+  for (const s of (steps || [1, 1.5, 2, 3])) {
     const err = Math.abs(f[3] * s - targetH);
     if (err < bestErr) { bestErr = err; best = s; }
   }
@@ -1284,16 +1284,26 @@ function livingHeroes() { return G.party.filter(h => h.alive); }
 function heroSlot(i) { return { x: 266 - i * 18, y: 52 + i * 13 }; }
 /* Enemies are baseline-anchored so tall and short monsters share a ground
    line and none of them dips behind the HUD. */
-function enemyScale(e) { return e.scale || 2; }
+/* How big a monster stands, from the height its data asks for rather than
+   from a blanket multiplier. Whole steps only: a monster at 1.5x lands half
+   its pixels on double size and half on single, and the sprite crawls. */
+function enemyScale(e) { return scaleFor(e.sprite, e.height || 32, [1, 2, 3]); }
 
 function enemySlot(e, i, n) {
   const [w0, h0] = sprSize(e.sprite);
-  const z = enemyScale(e);
-  const w = w0 * z / 2, h = h0 * z / 2;
+  const w = w0 * enemyScale(e), h = h0 * enemyScale(e);
   const cols = Math.min(3, n);
   const col = i % cols, row = Math.floor(i / cols);
+  // Pack the line from the monsters' own widths. A fixed 48px column was
+  // spaced for sprites drawn at double size; once they were sized honestly it
+  // left them scattered across the field with holes between them.
+  let x = 30 + row * 20;
+  for (let k = 0; k < col; k++) {
+    const prev = Battle.enemies[row * cols + k];
+    x += (prev ? sprSize(prev.sprite)[0] * enemyScale(prev) : 32) + 16;
+  }
   const baseY = 92 + col * 8 - row * 20;
-  return { x: 24 + col * 48 + row * 20, y: baseY - h * 2, w: w * 2, h: h * 2, baseY };
+  return { x: x, y: baseY - h, w: w, h: h, baseY };
 }
 
 /* ------------------------------------------------------------ mechanics -- */

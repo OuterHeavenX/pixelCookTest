@@ -108,8 +108,11 @@ func hero_slot(i: int) -> Vector2:
 
 
 ## Humanoid monsters are drawn at hero scale; beasts and the boss stay chunky.
+## How big a monster stands, from the height its data asks for rather than from
+## a blanket multiplier. Whole steps only: a monster at 1.5x lands half its
+## pixels on double size and half on single, and the sprite crawls.
 func enemy_scale(e: Dictionary) -> float:
-	return float(e.get("scale", 2))
+	return Art.scale_for(e["sprite"], float(e.get("height", 32)), [1.0, 2.0, 3.0])
 
 
 ## Enemies are baseline-anchored so tall and short monsters share a ground line
@@ -117,12 +120,24 @@ func enemy_scale(e: Dictionary) -> float:
 func enemy_slot(e: Dictionary, i: int, n: int) -> Dictionary:
 	var size := Art.frame_size(e["sprite"])
 	var z := enemy_scale(e)
-	var cols := mini(3, n)
+	var w := size.x * z
+	var h := size.y * z
+	var cols: int = mini(3, n)
 	var col := i % cols
-	var row := i / cols
-	var base_y := 92 + col * 8 - row * 20
-	return {"x": 24 + col * 48 + row * 20, "y": base_y - size.y * z,
-		"w": size.x * z, "h": size.y * z, "base_y": base_y}
+	var row: int = i / cols
+	# Pack the line from the monsters' own widths. A fixed 48px column was
+	# spaced for sprites drawn at double size; once they were sized honestly it
+	# left them scattered across the field with holes between them.
+	var x := 30.0 + row * 20.0
+	for k in col:
+		var idx := row * cols + k
+		if idx < enemies.size():
+			var prev: Dictionary = enemies[idx]
+			x += Art.frame_size(prev["sprite"]).x * enemy_scale(prev) + 16.0
+		else:
+			x += 48.0
+	var base_y := 92.0 + col * 8.0 - row * 20.0
+	return {"x": x, "y": base_y - h, "w": w, "h": h, "base_y": base_y}
 
 
 func enemy_center(e: Dictionary) -> Vector2:

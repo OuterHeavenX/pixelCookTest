@@ -86,13 +86,13 @@ func spr_foot(c: CanvasItem, sprite_name: String, foot: Vector2, scale := 1.0,
 
 
 ## Pick the crispest whole-ish zoom that lands near a target height.
-func scale_for(sprite_name: String, target_h: float) -> float:
+func scale_for(sprite_name: String, target_h: float, steps := [1.0, 1.5, 2.0, 3.0]) -> float:
 	var size := frame_size(sprite_name)
 	if size.y <= 0.0:
 		return 1.0
 	var best := 1.0
 	var best_err := INF
-	for s in [1.0, 1.5, 2.0, 3.0]:
+	for s in steps:
 		var err: float = abs(size.y * s - target_h)
 		if err < best_err:
 			best_err = err

@@ -142,8 +142,13 @@ CLASSES = {'aldric': {'name': 'Aldric',
                      {'id': 'holy', 'lv': 8}]}}
 
 # Monsters. `ai` entries are weighted; `weak` names a doubled-down element.
+# `height` is how tall the thing should stand on screen, in game pixels. That
+# used to be a bare `scale` multiplier, which nobody could sanity-check: x2 on
+# a 20-pixel bat and x2 on a 40-pixel ogre are not the same decision, and the
+# result was a cave bat taller than the knight fighting it. A hero is drawn 36
+# pixels tall, so these numbers can be read against that and argued with.
 ENEMIES = {'slime': {'name': 'Bog Slime',
-          'scale': 2,
+          'height': 22,   # a blob you could step over
            'sprite': 'e_slime',
            'hp': 34,
            'atk': 10,
@@ -155,7 +160,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
            'weak': 'bolt',
            'ai': [{'w': 100, 'act': 'attack'}]},
  'bat': {'name': 'Cave Bat',
-        'scale': 2,
+        'height': 20,   # a cave bat, not a roc
          'sprite': 'e_bat',
          'hp': 26,
          'atk': 12,
@@ -167,7 +172,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
          'weak': 'fire',
          'ai': [{'w': 80, 'act': 'attack'}, {'w': 20, 'act': 'drain'}]},
  'goblin': {'name': 'Goblin',
-           'scale': 1,
+           'height': 30,   # a head shorter than a knight
             'sprite': 'e_goblin',
             'hp': 52,
             'atk': 15,
@@ -178,7 +183,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
             'gil': 16,
             'ai': [{'w': 85, 'act': 'attack'}, {'w': 15, 'act': 'rally'}]},
  'wolf': {'name': 'Direwolf',
-         'scale': 2,
+         'height': 24,   # tall at the shoulder, long in the body
           'sprite': 'e_wolf',
           'hp': 68,
           'atk': 19,
@@ -190,7 +195,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
           'weak': 'fire',
           'ai': [{'w': 70, 'act': 'attack'}, {'w': 30, 'act': 'pounce'}]},
  'wisp': {'name': 'Marsh Wisp',
-         'scale': 2,
+         'height': 24,   # a drifting light
           'sprite': 'e_wisp',
           'hp': 58,
           'atk': 11,
@@ -202,7 +207,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
           'weak': 'holy',
           'ai': [{'w': 45, 'act': 'attack'}, {'w': 55, 'act': 'spell', 'spell': 'fire'}]},
  'bandit': {'name': 'Road Bandit',
-           'scale': 1,
+           'height': 32,   # a man
             'sprite': 'e_bandit',
             'hp': 92,
             'atk': 22,
@@ -213,7 +218,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
             'gil': 45,
             'ai': [{'w': 70, 'act': 'attack'}, {'w': 30, 'act': 'steal'}]},
  'skeleton': {'name': 'Barrow Guard',
-              'scale': 2,
+              'height': 30,   # was a man
               'sprite': 'e_skeleton',
               'hp': 78,
               'atk': 22,
@@ -225,7 +230,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
               'weak': 'quake',
               'ai': [{'w': 75, 'act': 'attack'}, {'w': 25, 'act': 'rally'}]},
  'wight': {'name': 'Barrow Wight',
-           'scale': 2,
+           'height': 34,   # was a man, and stands taller for it
            'sprite': 'e_wight',
            'hp': 96,
            'atk': 20,
@@ -239,7 +244,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
                   {'w': 35, 'act': 'spell', 'spell': 'ice'},
                   {'w': 25, 'act': 'drain'}]},
  'ogre': {'name': 'Ogre Chieftain',
-         'scale': 2,
+         'height': 76,   # the boss, and the only thing here bigger than you
           'sprite': 'e_ogre',
           'boss': True,
           'hp': 520,

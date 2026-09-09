@@ -20,6 +20,9 @@ folder, and press play. Same game, same art, same numbers.
   innkeeper who restores the party for 50 gil and a quartermaster who sells items.
 - **The Thornwilds** — leave by the south gate into open country: roads, a river
   with bridges, woods, boulders, and random encounters in the grass.
+- **Monsters sized against the party** — each one's data says how tall it should
+  stand in game pixels, next to a hero drawn 32 tall, so a cave bat is a cave
+  bat and only the chieftain is bigger than you.
 - **ATB combat** in the Final Fantasy IV–VI mould: gauges fill in real time and
   freeze while a command window is open. Fight / Magic / Item / Guard / Run,
   target selection, criticals, elemental weaknesses, damage numbers, EXP, gil,
