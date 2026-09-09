@@ -151,7 +151,7 @@ func phys_damage(attacker: Dictionary, victim: Dictionary, mult := 1.0) -> Dicti
 
 func magic_damage(caster: Dictionary, victim: Dictionary, spell: Dictionary) -> Dictionary:
 	var dmg := int(round((float(caster["mag"]) * 1.6 + float(spell["power"])) * randf_range(0.92, 1.1)))
-	var weak := victim.get("weak", null) != null and spell.get("element", null) == victim.get("weak")
+	var weak: bool = victim.get("weak", null) != null and spell.get("element", null) == victim.get("weak")
 	if weak:
 		dmg = int(round(dmg * 1.6))
 	dmg = maxi(1, dmg - int(round(float(victim["def"]) * 0.35)))
@@ -775,7 +775,7 @@ func draw_backdrop(c: CanvasItem) -> void:
 
 
 func draw(c: CanvasItem) -> void:
-	var sh := round(randf_range(-shake, shake)) if shake > 0.0 else 0.0
+	var sh: float = round(randf_range(-shake, shake)) if shake > 0.0 else 0.0
 	c.draw_set_transform(Vector2(sh, 0))
 	draw_backdrop(c)
 

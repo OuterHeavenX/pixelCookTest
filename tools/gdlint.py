@@ -9,6 +9,7 @@ scripts ask for exists in the cooked atlas.
     python3 tools/gdlint.py
 """
 
+import re
 import json
 import os
 import re
@@ -148,11 +149,41 @@ def check_redeclarations(srcs, problems):
                 stack.append([indent, set()])
 
 
+# Godot's global maths helpers are Variant utility functions: they return
+# Variant, so `var x := max(a, b)` fails the project's inferred-declaration
+# warning and the engine refuses to load the script. Every one of these has a
+# typed sibling (maxf/maxi, absf/absi, ...) that returns a real number.
+VARIANT_UTILS = {
+    "max": "maxf/maxi", "min": "minf/mini", "clamp": "clampf/clampi",
+    "abs": "absf/absi", "round": "roundf/roundi", "floor": "floorf/floori",
+    "ceil": "ceilf/ceili", "sign": "signf/signi", "snapped": "snappedf/snappedi",
+    "lerp": "lerpf", "wrap": "wrapf/wrapi", "posmod": "posmod on ints",
+}
+INFER_RE = re.compile(r"^\s*var\s+(\w+)\s*:=\s*(\w+)\(")
+
+
+def check_inferred_variants(srcs, problems):
+    """`var x := max(...)` is a fatal parse error in Godot 4, not a warning.
+
+    It cost a boot failure once: gdlint was clean, the syntax checker was
+    clean, and the engine refused to load half the project. Cheap to catch
+    here, so it never reaches the engine again.
+    """
+    for path, src in srcs.items():
+        for i, line in enumerate(src.split("\n"), 1):
+            m = INFER_RE.match(line)
+            if m and m.group(2) in VARIANT_UTILS:
+                problems.append(
+                    "%s:%d  `var %s := %s(...)` infers Variant; use %s or annotate the type"
+                    % (path, i, m.group(1), m.group(2), VARIANT_UTILS[m.group(2)]))
+
+
 def main():
     srcs = scripts()
     problems = []
     check_references(srcs, problems)
     check_redeclarations(srcs, problems)
+    check_inferred_variants(srcs, problems)
     check_sprites(srcs, problems)
     check_generated_sprites(problems)
     check_data_keys(srcs, problems)
@@ -169,7 +200,8 @@ def main():
         for p in problems:
             print("  " + p)
         return 1
-    print("gdlint: %d scripts clean (references, redeclarations, sprites, data keys)"
+    print("gdlint: %d scripts clean (references, redeclarations, inferred types,"
+          " sprites, data keys)"
           % len(srcs))
     return 0
 

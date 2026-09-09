@@ -80,14 +80,14 @@ func solid_at(x: int, y: int) -> bool:
 	return int(Dat.legend[ch][1]) != 0
 
 
-func npc_at(x: int, y: int):
+func npc_at(x: int, y: int) -> Variant:
 	for n in npcs:
 		if n["tx"] == x and n["ty"] == y:
 			return n
 	return null
 
 
-func warp_at(x: int, y: int):
+func warp_at(x: int, y: int) -> Variant:
 	for w in map.get("warps", []):
 		if int(w["x"]) == x and int(w["y"]) == y:
 			return w
@@ -136,7 +136,7 @@ func try_step(dx: int, dy: int) -> bool:
 		if blocked(Gs.px + dx, Gs.py) or blocked(Gs.px, Gs.py + dy):
 			return false
 	# Scale the step so a diagonal is not a free speed boost.
-	var span := sqrt(2.0) if dx != 0 and dy != 0 else 1.0
+	var span: float = sqrt(2.0) if dx != 0 and dy != 0 else 1.0
 	moving = {"fx": Gs.px, "fy": Gs.py, "tx": nx, "ty": ny, "t": 0.0, "dur": 0.155 * span}
 	return true
 

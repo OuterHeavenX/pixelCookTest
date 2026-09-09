@@ -9,8 +9,8 @@ dependencies.
     open index.html          # macOS
     xdg-open index.html      # Linux
 
-**Open in Godot** — Godot 4.3 or newer, `Import` the `godot/` folder, and press
-play. Same game, same art, same numbers.
+**Open in Godot** — Godot 4.3 or newer (verified on 4.5), `Import` the `godot/`
+folder, and press play. Same game, same art, same numbers.
 
 ## What's in it
 
@@ -138,6 +138,7 @@ builds.
 | `tools/godotcook.py` | stages the cooked assets and the font under `godot/` |
 | `tools/build.py` | runs every cook, inlines the atlas into `index.html` |
 | `tools/gdlint.py` | cross-reference check for the Godot scripts |
+| `tools/godotsmoke.py` | boots the Godot build in the engine and plays it |
 
 ## Layout
 
@@ -149,10 +150,12 @@ builds.
       project.godot     autoloads, 320x180 viewport, nearest-neighbour filtering
       scenes/Main.tscn  a single Node2D; everything else is built in code
       scripts/          Art, Dat, Gs, Snd, Inp autoloads + the five game modes
+      scripts/Smoke.gd  the smoke test that drives the game (see godotsmoke.py)
       assets/           staged copies of the cooked atlas, maps, rules, font
     assets/             cooked atlas.png, atlas.json, maps.json, gamedata.json
     art/blender/        raw Blender renders of the battle backdrops
     art/backdrops/      the same renders quantised to the game palette
+    art/godot/          screenshots of the Godot build, taken by the smoke test
     tools/              spritecook, mapcook, datacook, godotcook, build, gdlint
     tools/blender/      the Blender scene for the battle backdrops
 
@@ -166,14 +169,30 @@ dialogue, warps, random and boss encounters, magic, items, revival, running,
 victory, defeat, save and load — plus a 2,600-input randomized soak across every
 battle phase.
 
-The Godot project has **not been run**: no Godot binary is available in the
-environment it was written in, and the engine could not be fetched. It is
-statically verified instead — every `.gd` file is parsed with a GDScript
-grammar, and `tools/gdlint.py` resolves every `Object.member` reference against
-the script that owns it, flags same-block redeclarations (a hard parse error in
-Godot), and checks that every sprite the scripts ask for exists in the atlas.
-That catches typos and missing members; it cannot catch a wrong number or a bad
-layout. Expect to open it once in the editor and shake out anything visual.
+The Godot project is run, by the engine, on every check:
+
+    python3 tools/godotsmoke.py          # godot on PATH, or $GODOT, or --godot
+
+It imports the project, boots the real `Main.tscn`, and plays it - New Game,
+the field, the equip screen, the shop and its armoury, an encounter through
+the command window to a resolved attack, and a save/load round trip - pressing
+real keys and asserting on the game's own state at each step. It screenshots
+every mode into `art/godot/`, so the two builds can be compared frame by frame.
+Rendering needs an OpenGL context, so on a headless machine it wraps the run in
+`xvfb-run` with Mesa's software rasteriser: slow, but it draws what a GPU would.
+
+This was worth doing. The project had passed `tools/gdlint.py` and a GDScript
+grammar parse for its whole life, and the engine still refused to load half of
+it: `var x := max(a, b)` infers Variant, which Godot 4 treats as a fatal parse
+error, and eighteen declarations across five scripts did exactly that. gdlint
+now knows about that class of mistake, and is self-tested against it, but the
+lesson is the obvious one - a linter is not an engine.
+
+`tools/gdlint.py` still runs first and is still worth having: it resolves every
+`Object.member` reference against the script that owns it, flags same-block
+redeclarations, catches Variant-inferring declarations, and checks that every
+sprite the scripts ask for exists in the atlas. It is a second of work against
+a minute of engine boot.
 
 ## A note on tooling
 

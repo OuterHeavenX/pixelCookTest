@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Godot's import cache. The .import and .uid files beside the assets are
+# generated too, but Godot wants them committed - they are the stable identity
+# of each resource.
+godot/.godot/

@@ -83,10 +83,10 @@ func _render_note(data: PackedByteArray, start: int, count: int, freq: float,
 		if decay:
 			env = clamp(1.0 - float(i) / float(count), 0.0, 1.0)
 			env = env * env
-		var attack := min(1.0, float(i) / 80.0)
-		var phase := fmod(t * freq, 1.0)
-		var sample := _wave(kind, phase) * env * attack * volume
-		var mixed := clamp(float(data.decode_s16(idx * 2)) / 32767.0 + sample, -1.0, 1.0)
+		var attack: float = min(1.0, float(i) / 80.0)
+		var phase: float = fmod(t * freq, 1.0)
+		var sample: float = _wave(kind, phase) * env * attack * volume
+		var mixed: float = clamp(float(data.decode_s16(idx * 2)) / 32767.0 + sample, -1.0, 1.0)
 		data.encode_s16(idx * 2, int(mixed * 32767.0))
 
 

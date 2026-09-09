@@ -54,7 +54,7 @@ func draw(c: CanvasItem) -> void:
 			var px := x - 4 + dx
 			if px < 0 or px >= Art.VW:
 				continue
-			var k := 1.0 - abs(float(dx) - 19.0) / 19.0
+			var k := 1.0 - absf(float(dx) - 19.0) / 19.0
 			c.draw_rect(Rect2(px, 128 - h - 12.0 * k, 1, 12.0 * k + 1), Color("#171a38"))
 	for i in 14:
 		c.draw_rect(Rect2(10 + i * 22, 118 + (i % 3) * 6, 2, 3), Color(0.96, 0.89, 0.66, 0.9))

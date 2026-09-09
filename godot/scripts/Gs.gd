@@ -79,7 +79,7 @@ func gear_on(h: Dictionary) -> Array:
 	return out
 
 
-func equipped(h: Dictionary, slot: String):
+func equipped(h: Dictionary, slot: String) -> Variant:
 	var id = h.get("gear", {}).get(slot, null)
 	return Dat.gear[id] if id != null and Dat.gear.has(id) else null
 
