@@ -773,7 +773,10 @@ function enterMap(id, tx, ty, dir) {
     });
   }
   G.stepsToEncounter = rollEncounterCountdown();
-  Audio_.play(Field.map.music === 'town' ? 'town' : Field.map.music === 'inn' ? 'inn' : 'field');
+  // Whatever track the map names. This used to be a chain of equality tests
+  // that fell through to 'field', so the barrow's theme was written, cooked
+  // and never once played in this build.
+  Audio_.play(Audio_.themes[Field.map.music] ? Field.map.music : 'field');
 }
 
 /* Scenery is scattered procedurally, so an NPC's authored tile can end up
@@ -1806,7 +1809,10 @@ function endBattle(how) {
       Field.msg = makeMessage(['The chieftain crumbles into the shrine stones.',
         'The Thornwilds are quiet. Return to Rivenbrook a hero.']);
     }
-    Audio_.play(Field.map.music === 'town' ? 'town' : Field.map.music === 'inn' ? 'inn' : 'field');
+    // Whatever track the map names. This used to be a chain of equality tests
+  // that fell through to 'field', so the barrow's theme was written, cooked
+  // and never once played in this build.
+  Audio_.play(Audio_.themes[Field.map.music] ? Field.map.music : 'field');
   });
 }
 
