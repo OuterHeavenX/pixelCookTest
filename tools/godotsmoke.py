@@ -17,6 +17,7 @@ draws exactly what a real GPU would.
 
 import argparse
 import os
+import time
 import re
 import shutil
 import subprocess
@@ -27,6 +28,9 @@ PROJECT = os.path.join(ROOT, "godot")
 
 # Engine noise that says nothing about the game: no sound card and no GPU in a
 # container, and Godot's exit-time accounting of its own reference cycles.
+SECTIONS = ("title", "field", "equipment", "menu", "shop", "battle", "barrow",
+            "ending", "aftermath", "chapter two", "save")
+
 IGNORED = (
     re.compile(r"ALSA|libpulse|audio driver|Condition \"status < 0\"|init_output_device"),
     re.compile(r"V-Sync"),
@@ -45,10 +49,47 @@ def find_godot(explicit):
     return None
 
 
-def run(argv, env, timeout):
-    p = subprocess.run(argv, cwd=ROOT, env=env, timeout=timeout,
-                       capture_output=True, text=True)
-    return p.returncode, (p.stdout or "") + (p.stderr or "")
+def run(argv, env, timeout, stream=False):
+    """Run the engine, optionally echoing its output as it arrives.
+
+    Buffering the whole run and printing at the end is fine until it hangs,
+    and then there is nothing to look at: a run that stalls before its first
+    screenshot gives you a silent process and no idea which line it stopped
+    on. With stream on, every check prints the moment the engine prints it.
+    """
+    if not stream:
+        try:
+            p = subprocess.run(argv, cwd=ROOT, env=env, timeout=timeout,
+                               capture_output=True, text=True)
+        except subprocess.TimeoutExpired as e:
+            # Report the timeout rather than dying on a traceback: a run that
+            # overruns should still say what it managed to print.
+            out = (e.stdout or b"").decode("utf-8", "replace") if e.stdout else ""
+            return 1, out + "\nERROR: timed out after %ds\n" % timeout
+        return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+    proc = subprocess.Popen(argv, cwd=ROOT, env=env, text=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            bufsize=1)
+    lines = []
+    deadline = time.time() + timeout
+    try:
+        for line in proc.stdout:
+            lines.append(line)
+            if line.startswith(("  ok ", "  FAIL", "SMOKE", "  - ")) or \
+                    line.strip() in SECTIONS:
+                print(line.rstrip(), flush=True)
+            if time.time() > deadline:
+                proc.kill()
+                print("  TIMED OUT after %ds" % timeout, flush=True)
+                break
+    finally:
+        proc.stdout.close()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+    return proc.returncode or 0, "".join(lines)
 
 
 def engine_errors(output):
@@ -95,12 +136,7 @@ def main():
             "--rendering-driver", "opengl3"]
     if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
         argv = ["xvfb-run", "-a", "-s", "-screen 0 1280x720x24"] + argv
-    code, out = run(argv, env, args.timeout)
-
-    for line in out.splitlines():
-        if line.startswith(("  ok ", "  FAIL", "SMOKE", "  - ")) or line in (
-                "title", "field", "equipment", "menu", "shop", "battle", "save"):
-            print(line)
+    code, out = run(argv, env, args.timeout, stream=True)
     errs = engine_errors(out)
     if errs:
         print("engine errors:")

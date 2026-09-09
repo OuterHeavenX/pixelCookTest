@@ -139,14 +139,16 @@ func _run() -> void:
 
 	print("shop")
 	Gs.gil = 5000
-	main.open_shop()
+	main.open_shop("amber")
 	_expect(await _until(func(): return main.mode == "shop"), "the shop opens")
 	await _shot("shop_wares")
 	main.shop.set_tab(1)
 	await _step(6)
 	var stock: Array = main.shop.shop_stock()
-	_expect(stock.size() == Dat.gear_stock.size(),
-		"the armoury lists every piece (%d)" % stock.size())
+	# gear_stock is keyed by shelf now, so this has to compare against the
+	# shelf this counter sells, not against the number of shelves.
+	_expect(stock.size() == Dat.gear_stock["amber"].size(),
+		"the armoury lists every piece on its shelf (%d)" % stock.size())
 	await _shot("shop_armoury")
 	var gil_before := Gs.gil
 	await _press("confirm", 8)
@@ -270,8 +272,11 @@ func _run() -> void:
 	_expect(await _until(func(): return main.battle.phase == "result"),
 		"killing him ends the fight")
 	_expect(bool(Gs.flags.get("seal_broken", false)), "his death breaks the ward")
-	while main.mode == "battle" and main.battle.phase == "result":
+	var pages := 0
+	while main.mode == "battle" and main.battle.phase == "result" and pages < 30:
 		await _press("confirm", 3)
+		pages += 1
+	_expect(pages < 30, "the victory window pages through")
 	await _settle()
 	_expect(await _until(func(): return main.mode == "ending"), "the chapter closes")
 	_expect(Gs.map_id == "town", "and leaves the party in Rivenbrook")
@@ -365,8 +370,11 @@ func _run() -> void:
 	await _step(8)
 	_expect(not main.field.msg.is_empty(), "the road has something to say about it")
 	await _shot("ch2_bram")
-	while not main.field.msg.is_empty():
+	var beats_read := 0
+	while not main.field.msg.is_empty() and beats_read < 30:
 		await _press("confirm", 3)
+		beats_read += 1
+	_expect(beats_read < 30, "the scene reads to the end")
 	_expect(Gs.find_hero("bram") == null, "Bram stays behind")
 	_expect(Gs.gear.size() > pack_before, "and leaves his kit with you")
 	main.field.enter_map("hollow", 21, 31)
