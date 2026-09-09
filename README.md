@@ -35,6 +35,12 @@ folder, and press play. Same game, same art, same numbers.
   its own encounter table, its own theme, and its own night sky over every
   fight. The three best pieces of gear are down there.
 - **An ogre chieftain** on the bier at the bottom of the barrow.
+- **An ending, and a cliffhanger.** The chieftain is not the barrow's tenant, he
+  is its lock, and killing him breaks a ward that was there for a reason. The
+  chapter closes with a staged sequence, a card, credits and a hook - and then
+  hands you back a saved game in a Rivenbrook that reacts, a shrine sign
+  someone has re-cut, and a rift in the barrow floor you have nothing to fight
+  with yet.
 - **A stylised menu** (items, magic, status, save), a title screen, a game over
   screen, `localStorage` saves, and a small chiptune soundtrack.
 
@@ -83,6 +89,16 @@ register themselves as screen rectangles while they draw, and a tap is matched
 against them on the next frame - so hitting Magic means putting a thumb on
 Magic, not steering a cursor to it. Keys and taps go through the same
 functions, so neither can drift away from the other.
+
+## The ending
+
+`tools/datacook.py` holds the whole closing sequence as data - the beats and
+their scenes, the card, the credits and the hook - so both runtimes play the
+same chapter from one script and neither one restates a line of it. The world
+after it is flag-driven: `bossDown` swaps in `after` dialogue for the townsfolk
+and re-cut text for the signs, `sealBroken` turns the ward tile in the barrow
+floor into a rift. The journal is written *before* the credits roll, so nothing
+in the sequence can cost anyone their save.
 
 ## Two builds, one source of truth
 

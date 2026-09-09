@@ -230,6 +230,44 @@ BONES = [
 ]
 
 
+SEAL = [
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVVVVVVVVVX",
+    "XVCCCCCCCCCCCCVX",
+    "XVCVVVVVVVVVVCVX",
+    "XVCVEEEEEEEEVCVX",
+    "XVCVEVVVVVVEVCVX",
+    "XVCVEVCCCCVEVCVX",
+    "XVCVEVCEECVEVCVX",
+    "XVCVEVCEECVEVCVX",
+    "XVCVEVCCCCVEVCVX",
+    "XVCVEVVVVVVEVCVX",
+    "XVCVEEEEEEEEVCVX",
+    "XVCVVVVVVVVVVCVX",
+    "XVCCCCCCCCCCCCVX",
+    "XVVVVVVVVVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+]
+
+RIFT = [
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVVVVVVVVVX",
+    "XVCCCVXXXXVCCCVX",
+    "XVCVVXX00XXVVCVX",
+    "XVCVXX0EE0XXVCVX",
+    "XVCXX0EEEE0XXCVX",
+    "XVXX0EEXXEE0XXVX",
+    "XVX0EEXXXXEE0XVX",
+    "XVX0EEXXXXEE0XVX",
+    "XVXX0EEXXEE0XXVX",
+    "XVCXX0EEEE0XXCVX",
+    "XVCVXX0EE0XXVCVX",
+    "XVCVVXX00XXVVCVX",
+    "XVCCCVXXXXVCCCVX",
+    "XVVVVVVVVVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+]
+
 def crypt_floor(seed=31):
     """Flagstones underfoot: big pale slabs, chipped, with the odd wet patch.
 
@@ -695,5 +733,7 @@ def cook():
         "t_gate": _art(BARRED_GATE),
         "t_brazier": _art(BRAZIER),
         "t_bones": _art(BONES),
+        "t_seal": _art(SEAL),
+        "t_rift": _art(RIFT),
     }
     return out

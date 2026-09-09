@@ -46,7 +46,7 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 			"cool": randf_range(1.0, 4.0), "move": {}, "boss": false,
 			"sprite": n["sprite"], "dir": n["dir"], "name": n["name"],
 			"wander": bool(n.get("wander", false)), "lines": n["lines"],
-			"service": n.get("service", ""),
+			"after": n.get("after", null), "service": n.get("service", ""),
 		}
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
@@ -54,7 +54,7 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		npcs.append({
 			"tx": int(map["boss"]["x"]), "ty": int(map["boss"]["y"]),
 			"ox": 0.0, "oy": 0.0, "phase": 0.0, "cool": 999.0, "move": {},
-			"boss": true, "sprite": "e_ogre", "dir": "down",
+			"boss": true, "after": null, "sprite": "e_ogre", "dir": "down",
 			"name": "Ogre Chieftain", "wander": false, "lines": [], "service": "",
 		})
 	Gs.steps_to_encounter = roll_encounter_countdown()
@@ -206,8 +206,11 @@ func interact() -> void:
 		if npc["service"] == "shop":
 			main.open_shop()
 			return
+		var script: Array = npc["lines"]
+		if bool(Gs.flags.get("boss_down", false)) and npc.get("after", null) != null:
+			script = npc["after"]
 		var lines := []
-		for l in npc["lines"]:
+		for l in script:
 			lines.append(fill_tokens(l))
 		msg = make_message(lines, npc["name"])
 		Snd.sfx("confirm")
@@ -220,7 +223,22 @@ func interact() -> void:
 	var tag: String = str(entry[2]) if entry.size() > 2 else ""
 	match tag:
 		"sign":
-			msg = make_message([Dat.sign_text.get(Gs.map_id, "The paint has weathered away.")])
+			var text: String = Dat.sign_text.get(Gs.map_id, "The paint has weathered away.")
+			if bool(Gs.flags.get("boss_down", false)) and Dat.sign_after.has(Gs.map_id):
+				text = Dat.sign_after[Gs.map_id]
+			msg = make_message([text])
+		"seal":
+			if bool(Gs.flags.get("seal_broken", false)):
+				msg = make_message([
+					"The ward is split end to end.",
+					"Cold comes up out of it, and the dark below does not end.",
+					"Whatever is down there, you have nothing that would touch it. Not yet.",
+				])
+			else:
+				msg = make_message([
+					"A ward cut into the flagstones, deep and very old.",
+					"The chieftain's bier sits exactly on top of it.",
+				])
 		"chest":
 			open_chest(tx, ty)
 		"well":
@@ -503,7 +521,12 @@ func draw(c: CanvasItem) -> void:
 				if under == "t_water0":
 					under = "t_water%d" % water_frame
 				Art.spr(c, under, pos)
-			var name: String = Dat.legend[ch][0]
+			var entry: Array = Dat.legend[ch]
+			var name: String = entry[0]
+			# The ward under the bier cracks open once its warden is dead.
+			if entry.size() > 2 and str(entry[2]) == "seal" \
+					and bool(Gs.flags.get("seal_broken", false)):
+				name = "t_rift"
 			if name == "t_water0":
 				name = "t_water%d" % water_frame
 			elif name == "t_grass":

@@ -358,9 +358,10 @@ def barrow_deep():
     hall(12, 4, 14, 9)                   # the chieftain's floor
     hall(24, 8, 4, 3)                    # joined to the east arm
 
+    g.set(18, 6, "%")                    # the ward the chieftain sits on
     g.set(4, 6, "c")                     # knight plate
     g.set(32, 22, "c")                   # a purse
-    g.set(18, 4, "c")                    # flame brand, behind the boss
+    g.set(19, 4, "c")                    # flame brand, behind the boss
     for bx, by in ((13, 5), (24, 5), (13, 11), (24, 11), (4, 17), (33, 19), (16, 23)):
         g.set(bx, by, "i")
     for jx, jy in ((19, 6), (15, 9), (22, 10), (5, 12), (31, 15), (26, 21), (8, 19)):

@@ -288,6 +288,9 @@ NPCS = {'town': [{'x': 20,
            'y': 17,
            'sprite': 'elder',
            'dir': 'down',
+                      'after': ['You came back. Sit down, {name}. You look like the barrow looked at you.',
+                      'The scouts found the shrine sign re-cut. Fresh chisel marks, this week.',
+                      'Somebody is still tending that seal. It is not us.'],
            'name': 'Elder Halvard',
            'wander': False,
            'lines': ['Rivenbrook has stood a hundred years, {name}.',
@@ -297,6 +300,8 @@ NPCS = {'town': [{'x': 20,
            'y': 21,
            'sprite': 'villager',
            'dir': 'right',
+                      'after': ['Carrots this spring, maybe. The fence held.',
+                      'Ground has gone cold at the south end, mind. Nothing takes root there.'],
            'name': 'Gardener Pell',
            'wander': True,
            'lines': ['These beds were carrots last spring.',
@@ -305,6 +310,8 @@ NPCS = {'town': [{'x': 20,
            'y': 14,
            'sprite': 'child',
            'dir': 'left',
+                      'after': ['Did you SEE it? Was it big? Was it bigger than the mill?',
+                      'Ma says stay off the south road. Ma says a lot of things.'],
            'name': 'Tam',
            'wander': True,
            'lines': ['I saw a wolf as big as a cart!', 'Mum says I made it up. I did not.']},
@@ -328,6 +335,8 @@ NPCS = {'town': [{'x': 20,
            'y': 12,
            'sprite': 'villager',
            'dir': 'down',
+                      "after": ["Bring me the chieftain's plate and I will make you something out of it.",
+                      "Whatever cracked in that barrow, you will want better steel than this."],
            'name': 'Smith Orla',
            'wander': True,
            'lines': ['Steel I can give you. Courage you bring yourself.',
@@ -344,6 +353,8 @@ NPCS = {'town': [{'x': 20,
           'y': 4,
           'sprite': 'merchant',
           'dir': 'down',
+                    'after': ['Room is on the house tonight. You have earned the bed.',
+                     'Do not tell the others, but I have been leaving a lamp lit facing south.'],
           'name': 'Innkeeper Bryn',
           'wander': False,
           'service': 'inn',
@@ -375,6 +386,7 @@ LEGEND = {'1': ['t_bedtop', 1, 'bed'],
  '>': ['t_stairdown', 0, 'stair'],
  'g': ['t_gate', 1, 'gate'],
  'i': ['t_brazier', 1],
+ '%': ['t_seal', 0, 'seal'],
  'j': ['t_bones', 0],
  '2': ['t_bedbot', 1, 'bed'],
  '.': ['t_grass', 0],
@@ -412,6 +424,7 @@ UNDERLAY = {'1': 'ground',
  'i': 't_crypt',
  'j': 't_crypt',
  'g': 't_crypt',
+ '%': 't_crypt',
  '2': 'ground',
  'T': 'ground',
  'b': 'ground',
@@ -428,6 +441,11 @@ UNDERLAY = {'1': 'ground',
 SIGN_TEXT = {'town': 'RIVENBROOK - The Amber Lantern, rooms and remedies.',
  'wild': 'THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason.',
  'barrow1': 'Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.'}
+
+# Signs that read differently once the ward is broken.
+SIGN_AFTER = {
+ 'wild': 'THORNWILDS SHRINE - The barrow below is sealed. The letters are fresh cut. Someone re-carved this recently.',
+ 'barrow1': 'Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.'}
 
 # --------------------------------------------------------------------- gear
 # Three slots per character. `users` is None when anyone can wear it, and the
@@ -502,6 +520,55 @@ GEAR_STOCK = ['bronze_sword', 'iron_sword', 'oak_staff', 'moon_rod', 'sage_cane'
               'leather_vest', 'chain_mail', 'silk_robe',
               'copper_ring', 'sage_pendant', 'swift_boots']
 
+# --------------------------------------------------------------------- ending
+# What the chieftain's death actually reveals. The shrine sign has said "the
+# barrow below is sealed, it was sealed for a reason" since the first map was
+# painted; this is the bill for ignoring it. The chieftain was not guarding a
+# tomb, he was the lock on one, and the party has just broken it.
+BOSS_VICTORY = [
+    'The chieftain falls, and the barrow goes very quiet.',
+    'Beneath the bier, something answers. A seam of light opens in the floor.',
+    'The stone had a ward carved into it. It is cracked now.',
+]
+
+# The closing sequence, played once. Each beat is a screen of text over a
+# scene; `scene` names what the ending draws behind it.
+ENDING = {
+    'beats': [
+        {'scene': 'barrow', 'lines': [
+            'The Ogre Chieftain was not the barrow\'s tenant.',
+            'He was its warden. Something older set him on that bier',
+            'and told him to sit, and he sat for four hundred years.']},
+        {'scene': 'rift', 'lines': [
+            'Cold comes up through the crack in the ward.',
+            'Not the cold of a cellar. The cold of somewhere with no season.',
+            'Far below, in the dark, something turns over and settles.']},
+        {'scene': 'town', 'lines': [
+            'You walk back into Rivenbrook at dawn.',
+            'The lanterns are still lit. The gate is still standing.',
+            'Elder Halvard meets you at the well and does not ask what you saw.']},
+        {'scene': 'town', 'lines': [
+            'For tonight, the Thornwilds are quiet, and that is enough.',
+            'The seal will hold a while yet.',
+            'A while.']},
+    ],
+    'title': 'CHAPTER ONE',
+    'subtitle': 'THE WARDEN OF THE BARROW',
+    'credits': [
+        'RIVENBROOK',
+        'A Tale of the Thornwilds',
+        '',
+        'Every sprite cooked by spritecook',
+        'Backdrops and monsters modelled in Blender',
+        'Maps painted by mapcook, rules by datacook',
+        'Played in a browser and in Godot 4',
+        '',
+        'Chapter Two: THE COLD BELOW',
+        'coming up out of the floor',
+    ],
+    'hook': 'Your journal is saved. The rift is still open.',
+}
+
 # Keyed "<map>:<x>,<y>".
 CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
  'town:35,24': {'item': 'ether', 'n': 1},
@@ -518,7 +585,7 @@ CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
                   'text': 'A heavy iron key, green with age.'},
  'barrow2:4,6': {'gear': 'knight_plate'},
  'barrow2:32,22': {'gil': 600},
- 'barrow2:18,4': {'gear': 'flame_brand'}}
+ 'barrow2:19,4': {'gear': 'flame_brand'}}
 
 
 def _check_chests():
@@ -558,7 +625,10 @@ def build():
         "legend": LEGEND,
         "underlay": UNDERLAY,
         "sign_text": SIGN_TEXT,
+        "sign_after": SIGN_AFTER,
         "chest_loot": CHEST_LOOT,
+        "boss_victory": BOSS_VICTORY,
+        "ending": ENDING,
         "gear": GEAR,
         "gear_slots": GEAR_SLOTS,
         "gear_stock": GEAR_STOCK,

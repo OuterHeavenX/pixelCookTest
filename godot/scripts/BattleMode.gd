@@ -269,6 +269,18 @@ func update(dt: float) -> void:
 		h["hurt"] = max(0.0, float(h["hurt"]) - dt)
 		h["offset"] = lerp(float(h["offset"]), 0.0, min(1.0, dt * 8.0))
 
+	# The side that has run out ends the fight, whichever settled phase we are
+	# in. This used to be checked only while gauges were filling, so killing the
+	# last enemy with a command window open left a battle that could never end -
+	# nothing does that today, but nothing should be able to.
+	if phase == "active" or phase == "command" or phase == "target":
+		if living_enemies().is_empty():
+			begin_victory()
+			return
+		if Gs.living_heroes().is_empty():
+			begin_defeat()
+			return
+
 	match phase:
 		"intro":
 			intro -= dt
@@ -738,7 +750,9 @@ func begin_victory() -> void:
 				lines.append("%s learned %s!" % [h["name"], Dat.spells[sp]["name"]])
 	if is_boss:
 		Gs.flags["boss_down"] = true
-		lines.append("The Thornwilds fall quiet. Rivenbrook is safe.")
+		Gs.flags["seal_broken"] = true
+		for line in Dat.boss_victory:
+			lines.append(line)
 	result_lines = lines
 	result_page = 0
 	result = "win"

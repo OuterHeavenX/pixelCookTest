@@ -1,4 +1,9 @@
 {
+ "boss_victory": [
+  "The chieftain falls, and the barrow goes very quiet.",
+  "Beneath the bier, something answers. A seam of light opens in the floor.",
+  "The stone had a ward carved into it. It is cracked now."
+ ],
  "chest_loot": {
   "barrow1:30,16": {
    "item": "hipotion",
@@ -11,7 +16,7 @@
   "barrow1:6,6": {
    "gear": "guard_charm"
   },
-  "barrow2:18,4": {
+  "barrow2:19,4": {
    "gear": "flame_brand"
   },
   "barrow2:32,22": {
@@ -284,6 +289,57 @@
     "w": 4
    }
   ]
+ },
+ "ending": {
+  "beats": [
+   {
+    "lines": [
+     "The Ogre Chieftain was not the barrow's tenant.",
+     "He was its warden. Something older set him on that bier",
+     "and told him to sit, and he sat for four hundred years."
+    ],
+    "scene": "barrow"
+   },
+   {
+    "lines": [
+     "Cold comes up through the crack in the ward.",
+     "Not the cold of a cellar. The cold of somewhere with no season.",
+     "Far below, in the dark, something turns over and settles."
+    ],
+    "scene": "rift"
+   },
+   {
+    "lines": [
+     "You walk back into Rivenbrook at dawn.",
+     "The lanterns are still lit. The gate is still standing.",
+     "Elder Halvard meets you at the well and does not ask what you saw."
+    ],
+    "scene": "town"
+   },
+   {
+    "lines": [
+     "For tonight, the Thornwilds are quiet, and that is enough.",
+     "The seal will hold a while yet.",
+     "A while."
+    ],
+    "scene": "town"
+   }
+  ],
+  "credits": [
+   "RIVENBROOK",
+   "A Tale of the Thornwilds",
+   "",
+   "Every sprite cooked by spritecook",
+   "Backdrops and monsters modelled in Blender",
+   "Maps painted by mapcook, rules by datacook",
+   "Played in a browser and in Godot 4",
+   "",
+   "Chapter Two: THE COLD BELOW",
+   "coming up out of the floor"
+  ],
+  "hook": "Your journal is saved. The rift is still open.",
+  "subtitle": "THE WARDEN OF THE BARROW",
+  "title": "CHAPTER ONE"
  },
  "enemies": {
   "bandit": {
@@ -764,6 +820,11 @@
    "t_cryptwall",
    1
   ],
+  "%": [
+   "t_seal",
+   0,
+   "seal"
+  ],
   "*": [
    "t_flowers",
    0
@@ -919,6 +980,10 @@
  "npcs": {
   "inn": [
    {
+    "after": [
+     "Room is on the house tonight. You have earned the bed.",
+     "Do not tell the others, but I have been leaving a lamp lit facing south."
+    ],
     "dir": "down",
     "lines": [
      "Welcome to the Amber Lantern."
@@ -956,6 +1021,11 @@
   ],
   "town": [
    {
+    "after": [
+     "You came back. Sit down, {name}. You look like the barrow looked at you.",
+     "The scouts found the shrine sign re-cut. Fresh chisel marks, this week.",
+     "Somebody is still tending that seal. It is not us."
+    ],
     "dir": "down",
     "lines": [
      "Rivenbrook has stood a hundred years, {name}.",
@@ -969,6 +1039,10 @@
     "y": 17
    },
    {
+    "after": [
+     "Carrots this spring, maybe. The fence held.",
+     "Ground has gone cold at the south end, mind. Nothing takes root there."
+    ],
     "dir": "right",
     "lines": [
      "These beds were carrots last spring.",
@@ -981,6 +1055,10 @@
     "y": 21
    },
    {
+    "after": [
+     "Did you SEE it? Was it big? Was it bigger than the mill?",
+     "Ma says stay off the south road. Ma says a lot of things."
+    ],
     "dir": "left",
     "lines": [
      "I saw a wolf as big as a cart!",
@@ -1017,6 +1095,10 @@
     "y": 26
    },
    {
+    "after": [
+     "Bring me the chieftain's plate and I will make you something out of it.",
+     "Whatever cracked in that barrow, you will want better steel than this."
+    ],
     "dir": "down",
     "lines": [
      "Steel I can give you. Courage you bring yourself.",
@@ -1050,6 +1132,10 @@
   "phoenix",
   "bomb"
  ],
+ "sign_after": {
+  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.",
+  "wild": "THORNWILDS SHRINE - The barrow below is sealed. The letters are fresh cut. Someone re-carved this recently."
+ },
  "sign_text": {
   "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
   "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
@@ -1161,6 +1247,7 @@
   }
  },
  "underlay": {
+  "%": "t_crypt",
   "1": "ground",
   "2": "ground",
   "A": "ground",

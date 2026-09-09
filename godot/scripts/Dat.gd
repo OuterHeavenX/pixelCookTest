@@ -20,6 +20,9 @@ var gear := {}
 var gear_slots := []
 var gear_stock := []
 var starting_gear := {}
+var sign_after := {}
+var boss_victory := []
+var ending := {}
 var inn_cost := 50
 var maps := {}
 
@@ -41,6 +44,9 @@ func _ready() -> void:
 	gear_slots = data.get("gear_slots", [])
 	gear_stock = data.get("gear_stock", [])
 	starting_gear = data.get("starting_gear", {})
+	sign_after = data.get("sign_after", {})
+	boss_victory = data.get("boss_victory", [])
+	ending = data.get("ending", {})
 	inn_cost = int(data.get("inn_cost", 50))
 	maps = _read_json("res://assets/maps.json")
 

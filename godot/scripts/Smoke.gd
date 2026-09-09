@@ -243,6 +243,67 @@ func _run() -> void:
 	main.finish_battle("win", false)
 	await _until(func(): return main.mode == "field")
 
+	print("ending")
+	# fade_to() is a no-op while a fade is already running, so an encounter
+	# started mid-transition never begins. Wait for the screen to settle first.
+	await _settle()
+	Gs.flags["boss_down"] = false
+	Gs.flags["seal_broken"] = false
+	main.field.enter_map("barrow2", 18, 12)
+	Gs.steps_to_encounter = 9999
+	await _step(6)
+	Gs.px = 18
+	Gs.py = 7
+	Gs.dir = "up"
+	await _step(4)
+	main.field.interact()
+	await _step(4)
+	_expect(not main.field.msg.is_empty(), "the ward in the floor can be read")
+	main.field.msg = {}
+
+	await _settle()
+	main.start_encounter(["ogre"], true)
+	_expect(await _until(func(): return main.mode == "battle"), "the chieftain fights")
+	await _until(func(): return main.battle.phase != "intro")
+	for e in main.battle.enemies:
+		main.battle.apply_damage(e, 99999, false)
+	_expect(await _until(func(): return main.battle.phase == "result"),
+		"killing him ends the fight")
+	_expect(bool(Gs.flags.get("seal_broken", false)), "his death breaks the ward")
+	while main.mode == "battle" and main.battle.phase == "result":
+		await _press("confirm", 3)
+	await _settle()
+	_expect(await _until(func(): return main.mode == "ending"), "the chapter closes")
+	_expect(Gs.map_id == "town", "and leaves the party in Rivenbrook")
+	_expect(Gs.has_save(), "with the journal already written")
+	await _shot("ending_beat")
+
+	for i in 12:
+		if main.ending.phase != "beats":
+			break
+		await _press("confirm", 3)
+	_expect(main.ending.phase == "card", "the beats give way to the card")
+	await _shot("ending_card")
+	# The card holds for 0.6s before it will accept a confirm, so a player
+	# mashing through the beats cannot skip past their own results.
+	await _until(func(): return main.ending.t > 0.7)
+	await _press("confirm", 6)
+	_expect(main.ending.phase == "credits", "then the credits roll")
+	await _shot("ending_credits")
+	_expect(await _until(func(): return main.ending.phase == "hook", 3000),
+		"and the credits reach the hook")
+	await _shot("ending_hook")
+
+	print("aftermath")
+	main.field.enter_map("town", 20, 24)
+	await _step(8)
+	var reacted := false
+	for n in main.field.npcs:
+		if n["name"] == "Elder Halvard" and n.get("after", null) != null:
+			reacted = true
+	_expect(reacted, "the town has something new to say")
+	await _shot("aftermath_town")
+
 	print("save")
 	_expect(Gs.save_game(), "the journal saves")
 	var gear_before := (Gs.party[1]["gear"] as Dictionary).duplicate()

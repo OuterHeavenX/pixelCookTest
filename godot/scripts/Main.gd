@@ -13,6 +13,7 @@ var battle: BattleMode
 var menu: MenuMode
 var shop: ShopMode
 var title: TitleMode
+var ending: EndingMode
 
 var fade := 0.0
 var fade_dir := 0
@@ -27,6 +28,7 @@ func _ready() -> void:
 	menu = MenuMode.new(self)
 	shop = ShopMode.new(self)
 	title = TitleMode.new(self)
+	ending = EndingMode.new(self)
 	Snd.play("town")
 
 
@@ -50,6 +52,8 @@ func _process(dt: float) -> void:
 				shop.update(dt)
 			"gameover":
 				title.update_over(dt)
+			"ending":
+				ending.update(dt)
 
 	Inp.end_frame()
 	queue_redraw()
@@ -59,6 +63,8 @@ func _draw() -> void:
 	match mode:
 		"title":
 			title.draw(self)
+		"ending":
+			ending.draw(self)
 		"field":
 			field.draw(self)
 		"battle":
@@ -135,15 +141,20 @@ func finish_battle(how: String, was_boss: bool) -> void:
 			h["defending"] = false
 			h["atb"] = 0.0
 		if was_boss and how == "win":
-			var kept := []
-			for n in field.npcs:
-				if not bool(n["boss"]):
-					kept.append(n)
-			field.npcs = kept
-			field.msg = field.make_message([
-				"The chieftain crumbles into the shrine stones.",
-				"The Thornwilds are quiet. Return to Rivenbrook a hero.",
-			])
+			# The chapter closes here. The party is put back in Rivenbrook and
+			# the journal written before the credits, so Continue picks up in a
+			# town that knows what happened rather than in the room where it
+			# happened.
+			for h in Gs.party:
+				h["hp"] = h["maxhp"]
+				h["mp"] = h["maxmp"]
+				h["alive"] = true
+			var spawn: Array = Dat.maps["town"]["spawn"]
+			field.enter_map("town", int(spawn[0]), int(spawn[1]), "up")
+			Gs.save_game()
+			mode = "ending"
+			ending.open()
+			return
 		Snd.play(field.map.get("music", "field"))
 	fade_to(wrap_up)
 

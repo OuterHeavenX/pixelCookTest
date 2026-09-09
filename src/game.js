@@ -568,6 +568,9 @@ const LEGEND = GAMEDATA.legend;
 const UNDERLAY = GAMEDATA.underlay;
 const SIGN_TEXT = GAMEDATA.sign_text;
 const CHEST_LOOT = GAMEDATA.chest_loot;
+const SIGN_AFTER = GAMEDATA.sign_after || {};
+const BOSS_VICTORY = GAMEDATA.boss_victory || [];
+const ENDING = GAMEDATA.ending;
 const GEAR = GAMEDATA.gear;
 const GEAR_SLOTS = GAMEDATA.gear_slots;
 const GEAR_STOCK = GAMEDATA.gear_stock;
@@ -767,7 +770,7 @@ function enterMap(id, tx, ty, dir) {
   // Any map that declares a boss gets one, so moving him is a map edit.
   if (!G.flags.bossDown && Field.map.boss) {
     Field.npcs.push({
-      boss: true, tx: Field.map.boss.x, ty: Field.map.boss.y, ox: 0, oy: 0,
+      boss: true, after: null, tx: Field.map.boss.x, ty: Field.map.boss.y, ox: 0, oy: 0,
       sprite: 'e_ogre', dir: 'down', name: 'Ogre Chieftain', phase: 0, cool: 99, move: null,
       lines: ['A shape rises from the bier...']
     });
@@ -910,7 +913,8 @@ function interact() {
     npc.cool = 3;
     if (npc.service === 'inn') { openInn(npc); return; }
     if (npc.service === 'shop') { openShop(npc); return; }
-    Field.msg = makeMessage(npc.lines.map(fillTokens), { speaker: npc.name });
+    const script = (G.flags.bossDown && npc.after) ? npc.after : npc.lines;
+    Field.msg = makeMessage(script.map(fillTokens), { speaker: npc.name });
     Audio_.sfx('confirm');
     return;
   }
@@ -918,7 +922,16 @@ function interact() {
   const def = LEGEND[ch];
   const tag = def && def[2];
   if (tag === 'sign') {
-    Field.msg = makeMessage([SIGN_TEXT[G.mapId] || 'The paint has weathered away.']);
+    const after = G.flags.bossDown && SIGN_AFTER[G.mapId];
+    Field.msg = makeMessage([after || SIGN_TEXT[G.mapId] ||
+      'The paint has weathered away.']);
+  } else if (tag === 'seal') {
+    Field.msg = makeMessage(G.flags.sealBroken
+      ? ['The ward is split end to end.',
+         'Cold comes up out of it, and the dark below does not end.',
+         'Whatever is down there, you have nothing that would touch it. Not yet.']
+      : ['A ward cut into the flagstones, deep and very old.',
+         'The chieftain\'s bier sits exactly on top of it.']);
   } else if (tag === 'chest') {
     openChest(tx, ty);
   } else if (tag === 'well') {
@@ -1135,6 +1148,8 @@ function drawField() {
       if (under === 'ground') under = m.ground || 't_grass';
       if (under) spr(under === 't_water0' ? 't_water' + waterFrame : under, sx, sy);
       let name = def[0];
+      // The ward under the bier cracks open once its warden is dead.
+      if (def[2] === 'seal' && G.flags.sealBroken) name = 't_rift';
       if (name === 't_water0') name = 't_water' + waterFrame;
       // Rotate through grass variants so open fields do not visibly tile.
       else if (name === 't_grass') name = GRASS_VARIANTS[(x * 7 + y * 13) % 3];
@@ -1395,6 +1410,15 @@ function updateBattle(dt) {
     h.hurt = Math.max(0, h.hurt - dt);
     h.offset = lerp(h.offset, 0, Math.min(1, dt * 8));
   });
+
+  // The side that has run out ends the fight, whichever settled phase we are
+  // in. This used to be checked only while gauges were filling, so killing the
+  // last enemy with a command window open left a battle that could never end -
+  // nothing does that today, but nothing should be able to.
+  if (Battle.phase === 'active' || Battle.phase === 'command' || Battle.phase === 'target') {
+    if (!livingEnemies().length) { beginVictory(); return; }
+    if (!livingHeroes().length) { beginDefeat(); return; }
+  }
 
   switch (Battle.phase) {
     case 'intro':
@@ -1767,7 +1791,8 @@ function beginVictory() {
   });
   if (Battle.boss) {
     G.flags.bossDown = true;
-    lines.push('The Thornwilds fall quiet. Rivenbrook is safe.');
+    G.flags.sealBroken = true;
+    BOSS_VICTORY.forEach(l => lines.push(l));
   }
   Battle.resultLines = lines;
   Battle.resultPage = 0;
@@ -1805,9 +1830,14 @@ function endBattle(how) {
     G.mode = 'field';
     G.party.forEach(h => { h.defending = false; h.atb = 0; });
     if (Battle.boss && how === 'win') {
-      Field.npcs = Field.npcs.filter(n => !n.boss);
-      Field.msg = makeMessage(['The chieftain crumbles into the shrine stones.',
-        'The Thornwilds are quiet. Return to Rivenbrook a hero.']);
+      // The chapter closes here. The party is put back in Rivenbrook and the
+      // journal written before the credits, so Continue picks up in a town
+      // that knows what happened rather than in the room where it happened.
+      G.party.forEach(h => { h.hp = h.maxhp; h.mp = h.maxmp; h.alive = true; });
+      enterMap('town', MAPS.town.spawn[0], MAPS.town.spawn[1], 'up');
+      saveGame();
+      startEnding();
+      return;
     }
     // Whatever track the map names. This used to be a chain of equality tests
   // that fell through to 'field', so the barrow's theme was written, cooked
@@ -2803,6 +2833,134 @@ function drawGameOver() {
   });
 }
 
+/* ================================================================= ending */
+/* The close of chapter one: staged text over a scene, a card with what the
+   party walked out with, credits, and the hook. The journal is already saved
+   by the time this starts, so nothing here can cost the player their game. */
+
+const Ending = { phase: 'beats', beat: 0, chars: 0, t: 0, scroll: 0 };
+
+function startEnding() {
+  G.mode = 'ending';
+  Ending.phase = 'beats';
+  Ending.beat = 0; Ending.chars = 0; Ending.t = 0; Ending.scroll = 0;
+  Audio_.play('barrow');
+}
+
+function endingBeat() { return ENDING.beats[Math.min(Ending.beat, ENDING.beats.length - 1)]; }
+
+function updateEnding(dt) {
+  Ending.t += dt;
+  if (Ending.phase === 'beats') {
+    const beat = endingBeat();
+    const total = beat.lines.join('').length;
+    if (Ending.chars < total) {
+      Ending.chars += dt * 46;
+      if (Input.tap('confirm') || Input.tap('cancel')) Ending.chars = total;
+      return;
+    }
+    if (Input.tap('confirm') || Input.tap('cancel')) {
+      Ending.beat++;
+      Ending.chars = 0;
+      Audio_.sfx('cursor');
+      if (Ending.beat >= ENDING.beats.length) { Ending.phase = 'card'; Ending.t = 0; }
+    }
+    return;
+  }
+  if (Ending.phase === 'card') {
+    if (Ending.t > 0.6 && Input.tap('confirm')) {
+      Ending.phase = 'credits'; Ending.scroll = 0; Audio_.sfx('confirm');
+    }
+    return;
+  }
+  if (Ending.phase === 'credits') {
+    Ending.scroll += dt * 16;
+    if (Input.held('confirm')) Ending.scroll += dt * 70;
+    if (Ending.scroll > ENDING.credits.length * 14 + 40) { Ending.phase = 'hook'; Ending.t = 0; }
+    return;
+  }
+  if (Ending.t > 1.0 && (Input.tap('confirm') || Input.tap('cancel'))) {
+    Audio_.sfx('confirm');
+    fadeTo(() => { G.mode = 'title'; Title.index = 0; Audio_.stop(); });
+  }
+}
+
+function drawEnding() {
+  const beat = endingBeat();
+  const night = Ending.phase !== 'beats' || beat.scene !== 'town';
+  spr(night ? 'bg_night' : 'bg_dusk', 0, 0);
+  ctx.fillStyle = night ? 'rgba(8,6,18,0.55)' : 'rgba(8,6,18,0.35)';
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#0b0a16';
+  ctx.fillRect(0, 116, VW, VH - 116);
+
+  if (Ending.phase === 'beats') {
+    // The rift beat gets a light coming up out of the floor.
+    if (beat.scene === 'rift') {
+      // A shaft of light, drawn as stacked bars that narrow and fade. A
+      // gradient in a rectangle gave it four hard corners and read as a pane
+      // of glass rather than as something coming up out of the ground.
+      const pulse = 0.34 + Math.sin(Ending.t * 2.2) * 0.10;
+      for (let y = 116; y > 34; y -= 2) {
+        const k = (116 - y) / 82;
+        const w = Math.round(46 * (1 - k * 0.72));
+        ctx.fillStyle = 'rgba(127,232,216,' + (pulse * (1 - k) * (1 - k)).toFixed(3) + ')';
+        ctx.fillRect(Math.round(VW / 2 - w), y, w * 2, 2);
+      }
+    }
+    let budget = Ending.chars;
+    beat.lines.forEach((line, i) => {
+      const show = line.slice(0, Math.max(0, Math.floor(budget)));
+      budget -= line.length;
+      drawText(show, 20, 128 + i * 14, '#f2ecd8');
+    });
+    if (Ending.chars >= beat.lines.join('').length && Math.sin(Ending.t * 5) > 0) {
+      drawText('\u25b8', VW - 20, 166, '#9aa4c8');
+    }
+    return;
+  }
+
+  if (Ending.phase === 'card') {
+    ctx.fillStyle = 'rgba(8,6,18,0.72)';
+    ctx.fillRect(0, 0, VW, VH);
+    drawTextBig(ENDING.title, VW / 2, 20, '#f6e2a8', 2, { align: 'center' });
+    drawText(ENDING.subtitle, VW / 2, 42, '#c8b9e8', { align: 'center' });
+    drawWindow(40, 58, VW - 80, 74, { tone: 'dark' });
+    G.party.forEach((h, i) => {
+      const y = 66 + i * 14;
+      drawText(h.name, 52, y, '#f2f4ff');
+      drawText(h.title, 116, y, '#8f97c0');
+      drawText('Lv ' + h.lv, VW - 52, y, '#ffe9a0', { align: 'right' });
+    });
+    drawText('Time', 52, 112, '#8f97c0');
+    drawText(fmtTime(G.playtime), 150, 112, '#f2f4ff', { align: 'right' });
+    drawText('Gil', 168, 112, '#8f97c0');
+    drawText(G.gil + '', VW - 52, 112, '#f6e2a8', { align: 'right' });
+    drawText('[Z]', VW / 2, 150, '#7a82a8', { align: 'center' });
+    return;
+  }
+
+  if (Ending.phase === 'credits') {
+    ctx.fillStyle = '#0b0a16';
+    ctx.fillRect(0, 0, VW, VH);
+    ENDING.credits.forEach((line, i) => {
+      const y = Math.round(VH + 6 + i * 14 - Ending.scroll);
+      if (y < -14 || y > VH) return;
+      const lead = i < 2;
+      drawText(line, VW / 2, y, lead ? '#f6e2a8' : '#c2c8e8', { align: 'center' });
+    });
+    return;
+  }
+
+  ctx.fillStyle = '#0b0a16';
+  ctx.fillRect(0, 0, VW, VH);
+  drawTextBig('TO BE CONTINUED', VW / 2, 62, '#f2ecd8', 2, { align: 'center' });
+  drawText(ENDING.hook, VW / 2, 96, '#8fd8c8', { align: 'center' });
+  if (Ending.t > 1.0 && Math.sin(Ending.t * 3) > 0) {
+    drawText('[Z]', VW / 2, 130, '#7a82a8', { align: 'center' });
+  }
+}
+
 /* ================================================================== fade */
 
 function fadeTo(action) {
@@ -2850,6 +3008,7 @@ function frame(now) {
       case 'menu': updateMenu(dt); break;
       case 'shop': updateShop(dt); break;
       case 'gameover': updateGameOver(dt); break;
+      case 'ending': updateEnding(dt); break;
     }
   }
   bannerTimer = Math.max(0, bannerTimer - dt);
@@ -2863,6 +3022,7 @@ function frame(now) {
     case 'menu': drawMenu(); break;
     case 'shop': drawShop(); break;
     case 'gameover': drawGameOver(); break;
+    case 'ending': drawEnding(); break;
   }
   drawFade();
   Input.endFrame();

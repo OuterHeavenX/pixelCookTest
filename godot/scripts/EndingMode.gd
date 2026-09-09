@@ -1,0 +1,174 @@
+class_name EndingMode
+extends RefCounted
+## The close of chapter one: staged text over a scene, a card with what the
+## party walked out with, credits, and the hook.
+##
+## The journal is already saved by the time this starts, so nothing here can
+## cost the player their game.
+
+var main
+var phase := "beats"
+var beat := 0
+var chars := 0.0
+var t := 0.0
+var scroll := 0.0
+
+
+func _init(owner) -> void:
+	main = owner
+
+
+func open() -> void:
+	phase = "beats"
+	beat = 0
+	chars = 0.0
+	t = 0.0
+	scroll = 0.0
+	Snd.play("barrow")
+
+
+func beats() -> Array:
+	return Dat.ending.get("beats", [])
+
+
+func current() -> Dictionary:
+	var list := beats()
+	if list.is_empty():
+		return {"scene": "barrow", "lines": []}
+	return list[mini(beat, list.size() - 1)]
+
+
+func _typed_length(lines: Array) -> int:
+	var n := 0
+	for line in lines:
+		n += (line as String).length()
+	return n
+
+
+func update(dt: float) -> void:
+	t += dt
+	match phase:
+		"beats":
+			_update_beats(dt)
+		"card":
+			if t > 0.6 and Inp.tap("confirm"):
+				phase = "credits"
+				scroll = 0.0
+				Snd.sfx("confirm")
+		"credits":
+			scroll += dt * 16.0
+			if Inp.held("confirm"):
+				scroll += dt * 70.0
+			if scroll > Dat.ending.get("credits", []).size() * 14.0 + 40.0:
+				phase = "hook"
+				t = 0.0
+		_:
+			if t > 1.0 and (Inp.tap("confirm") or Inp.tap("cancel")):
+				Snd.sfx("confirm")
+				main.fade_to(func() -> void:
+					main.mode = "title"
+					main.title.index = 0
+					Snd.stop())
+
+
+func _update_beats(dt: float) -> void:
+	var lines: Array = current()["lines"]
+	var total := _typed_length(lines)
+	if chars < total:
+		chars += dt * 46.0
+		if Inp.tap("confirm") or Inp.tap("cancel"):
+			chars = total
+		return
+	if Inp.tap("confirm") or Inp.tap("cancel"):
+		beat += 1
+		chars = 0.0
+		Snd.sfx("cursor")
+		if beat >= beats().size():
+			phase = "card"
+			t = 0.0
+
+
+func draw(c: CanvasItem) -> void:
+	var beat_now := current()
+	var night: bool = phase != "beats" or str(beat_now.get("scene", "")) != "town"
+	Art.spr(c, "bg_night" if night else "bg_dusk", Vector2.ZERO)
+	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH),
+		Color(0.03, 0.02, 0.07, 0.55 if night else 0.35))
+	c.draw_rect(Rect2(0, 116, Art.VW, Art.VH - 116), Color("#0b0a16"))
+
+	match phase:
+		"beats":
+			_draw_beats(c, beat_now)
+		"card":
+			_draw_card(c)
+		"credits":
+			_draw_credits(c)
+		_:
+			_draw_hook(c)
+
+
+func _draw_beats(c: CanvasItem, beat_now: Dictionary) -> void:
+	if str(beat_now.get("scene", "")) == "rift":
+		# A shaft of light, drawn as stacked bars that narrow and fade. A
+		# gradient in a rectangle gave it four hard corners and read as a pane
+		# of glass rather than as something coming up out of the ground.
+		var pulse := 0.34 + sin(t * 2.2) * 0.10
+		var y := 116.0
+		while y > 34.0:
+			var k := (116.0 - y) / 82.0
+			var w := roundf(46.0 * (1.0 - k * 0.72))
+			c.draw_rect(Rect2(round(Art.VW / 2.0 - w), y, w * 2.0, 2.0),
+				Color(0.50, 0.91, 0.85, pulse * (1.0 - k) * (1.0 - k)))
+			y -= 2.0
+
+	var budget := chars
+	var lines: Array = beat_now["lines"]
+	for i in lines.size():
+		var line: String = lines[i]
+		var shown: String = line.substr(0, maxi(0, int(budget)))
+		budget -= line.length()
+		Art.draw_text(c, shown, Vector2(20, 128 + i * 14), Color("#f2ecd8"))
+	if chars >= _typed_length(lines) and sin(t * 5.0) > 0.0:
+		Art.draw_text(c, ">", Vector2(Art.VW - 20, 166), Color("#9aa4c8"), "right")
+
+
+func _draw_card(c: CanvasItem) -> void:
+	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color(0.03, 0.02, 0.07, 0.72))
+	Art.draw_text_big(c, str(Dat.ending.get("title", "")), Vector2(Art.VW / 2.0, 20),
+		Color("#f6e2a8"), 2, "center")
+	Art.draw_text(c, str(Dat.ending.get("subtitle", "")), Vector2(Art.VW / 2.0, 42),
+		Color("#c8b9e8"), "center")
+	Art.draw_window(c, Rect2(40, 58, Art.VW - 80, 74), "dark")
+	for i in Gs.party.size():
+		var h: Dictionary = Gs.party[i]
+		var y := 66 + i * 14
+		Art.draw_text(c, h["name"], Vector2(52, y), Color("#f2f4ff"))
+		Art.draw_text(c, h["title"], Vector2(116, y), Color("#8f97c0"))
+		Art.draw_text(c, "Lv %d" % int(h["lv"]), Vector2(Art.VW - 52, y),
+			Color("#ffe9a0"), "right")
+	Art.draw_text(c, "Time", Vector2(52, 112), Color("#8f97c0"))
+	Art.draw_text(c, Gs.format_time(Gs.playtime), Vector2(150, 112), Color("#f2f4ff"), "right")
+	Art.draw_text(c, "Gil", Vector2(168, 112), Color("#8f97c0"))
+	Art.draw_text(c, str(Gs.gil), Vector2(Art.VW - 52, 112), Color("#f6e2a8"), "right")
+	Art.draw_text(c, "[Z]", Vector2(Art.VW / 2.0, 150), Color("#7a82a8"), "center")
+
+
+func _draw_credits(c: CanvasItem) -> void:
+	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color("#0b0a16"))
+	var lines: Array = Dat.ending.get("credits", [])
+	for i in lines.size():
+		var y := roundf(Art.VH + 6 + i * 14 - scroll)
+		if y < -14 or y > Art.VH:
+			continue
+		Art.draw_text(c, lines[i], Vector2(Art.VW / 2.0, y),
+			Color("#f6e2a8") if i < 2 else Color("#c2c8e8"), "center")
+
+
+func _draw_hook(c: CanvasItem) -> void:
+	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color("#0b0a16"))
+	Art.draw_text_big(c, "TO BE CONTINUED", Vector2(Art.VW / 2.0, 62),
+		Color("#f2ecd8"), 2, "center")
+	Art.draw_text(c, str(Dat.ending.get("hook", "")), Vector2(Art.VW / 2.0, 96),
+		Color("#8fd8c8"), "center")
+	if t > 1.0 and sin(t * 3.0) > 0.0:
+		Art.draw_text(c, "[Z]", Vector2(Art.VW / 2.0, 130), Color("#7a82a8"), "center")
