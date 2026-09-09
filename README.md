@@ -133,6 +133,30 @@ draws a sprite named `bg_dusk` or `bg_night`.
 Both intermediate renders are checked in, so a clone without Blender still
 builds.
 
+Six of the monsters are modelled and rendered there too. A slime is a sphere
+catching a light, a bat's wings fold over each other, an ogre is mass - those
+are things a renderer knows and a rectangle does not. The models are built from
+primitives (`ball`, `limb`, `cone`), lit by a key, a fill and a rim plus an
+ambient sky, and shot through an orthographic camera so a 24-pixel monster gets
+no perspective distortion across its own body.
+
+    python3 tools/blender/enemies.py            # art/enemies/raw/e_*.png at 8x
+    python3 tools/spritedown.py                 # art/enemies/e_*.png, sprite size
+
+`spritedown` crops each render to what it actually drew, fits it to the sprite
+box, hard-thresholds the alpha so the silhouette stays crisp, lifts contrast
+and saturation - a soft render averaged to 24 pixels is otherwise a wash of
+identical mid-tones - median-cuts it to 14 colours, and puts the ink outline
+back on. The outline is not decoration: it is what lets a monster read against
+grass, flagstones and a night sky alike.
+
+The goblin, the bandit and the skeleton stay hand-plotted. The pattern is
+consistent - a render wins where the character *is* its volume and loses on
+thin figures whose legibility comes from hard black edges around small
+features, which is exactly what averaging a render down destroys.
+`tools/spritecook/rendered.py` holds that list, so switching one over is a
+one-line change.
+
 | Piece | What it does |
 | --- | --- |
 | `tools/spritecook/imaging.py` | RGBA raster, PNG encoder, shelf packer |
@@ -143,6 +167,9 @@ builds.
 | `tools/spritecook/backdrops.py` | carries the rendered backdrops onto the atlas |
 | `tools/blender/backdrop.py` | builds and renders the battle backdrops in Blender |
 | `tools/pixelate.py` | quantises a render into a small palette with crisp edges |
+| `tools/blender/enemies.py` | models and renders six of the monsters |
+| `tools/spritedown.py` | takes a render down to sprite size, outline and all |
+| `tools/spritecook/rendered.py` | carries the rendered monsters onto the atlas |
 | `tools/mapcook.py` | the five maps, painted with drawing ops and walked for reachability |
 | `tools/datacook.py` | the rules: spells, items, growth, monsters, loot |
 | `tools/godotcook.py` | stages the cooked assets and the font under `godot/` |
@@ -165,6 +192,8 @@ builds.
     assets/             cooked atlas.png, atlas.json, maps.json, gamedata.json
     art/blender/        raw Blender renders of the battle backdrops
     art/backdrops/      the same renders quantised to the game palette
+    art/enemies/raw/    Blender renders of the monsters, at 8x sprite size
+    art/enemies/        the same renders taken down to sprite size
     art/godot/          screenshots of the Godot build, taken by the smoke test
     tools/              spritecook, mapcook, datacook, godotcook, build, gdlint
     tools/blender/      the Blender scene for the battle backdrops
