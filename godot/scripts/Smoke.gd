@@ -17,10 +17,22 @@ var main: Node2D
 var out_dir := ""
 var failures: Array[String] = []
 var shots := 0
+var log_path := ""
 
 
 func _ready() -> void:
 	out_dir = OS.get_environment("SMOKE_OUT")
+	if out_dir != "":
+		# Godot block-buffers its own stdout when that is a pipe, so print()
+		# tells a watching process nothing until the run exits - which is
+		# exactly no use when the run is the thing that hangs. Every line goes
+		# to a file as well, opened and closed per write so it is on disk
+		# immediately.
+		log_path = out_dir + "/progress.log"
+		var f := FileAccess.open(log_path, FileAccess.WRITE)
+		if f != null:
+			f.store_line("smoke start")
+			f.close()
 	var packed: PackedScene = load("res://scenes/Main.tscn")
 	main = packed.instantiate()
 	add_child(main)
@@ -64,6 +76,7 @@ func _press(action: String, frames := STEP_FRAMES) -> void:
 
 
 func _shot(name: String) -> void:
+	_say("    .. shot " + name)
 	await _settle()
 	await RenderingServer.frame_post_draw
 	if out_dir == "":
@@ -76,8 +89,20 @@ func _shot(name: String) -> void:
 		shots += 1
 
 
+func _say(line: String) -> void:
+	print(line)
+	if log_path == "":
+		return
+	var f := FileAccess.open(log_path, FileAccess.READ_WRITE)
+	if f == null:
+		return
+	f.seek_end()
+	f.store_line(line)
+	f.close()
+
+
 func _expect(ok: bool, what: String) -> void:
-	print(("  ok   " if ok else "  FAIL ") + what)
+	_say(("  ok   " if ok else "  FAIL ") + what)
 	if not ok:
 		failures.append(what)
 
@@ -85,11 +110,11 @@ func _expect(ok: bool, what: String) -> void:
 func _run() -> void:
 	await _step(8)
 
-	print("title")
+	_say("title")
 	_expect(main.mode == "title", "boots to the title screen")
 	await _shot("title")
 
-	print("field")
+	_say("field")
 	await _press("confirm", 2)           # New Game
 	_expect(await _until(func(): return main.mode == "field"),
 		"New Game reaches the field")
@@ -97,7 +122,7 @@ func _run() -> void:
 	_expect(Gs.map_id == "town", "starts in town")
 	await _shot("field")
 
-	print("equipment")
+	_say("equipment")
 	_expect(int(Gs.party[0]["atk"]) == 22,
 		"Aldric's bronze sword is counted (atk 22, got %d)" % int(Gs.party[0]["atk"]))
 	_expect(Gs.equipped(Gs.party[0], "weapon") != null, "Aldric starts armed")
@@ -113,7 +138,7 @@ func _run() -> void:
 	_expect(int(lyra["hp"]) == hp_before + 24,
 		"a +24 HP charm moves current HP too (%d -> %d)" % [hp_before, int(lyra["hp"])])
 
-	print("menu")
+	_say("menu")
 	await _press("menu", 2)
 	_expect(await _until(func(): return main.mode == "menu"), "the menu opens")
 	await _shot("menu")
@@ -137,7 +162,7 @@ func _run() -> void:
 	_expect(await _until(func(): return main.mode == "field"),
 		"the menu closes back to the field")
 
-	print("shop")
+	_say("shop")
 	Gs.gil = 5000
 	main.open_shop("amber")
 	_expect(await _until(func(): return main.mode == "shop"), "the shop opens")
@@ -158,7 +183,7 @@ func _run() -> void:
 	await _press("cancel", 2)
 	_expect(await _until(func(): return main.mode == "field"), "the shop closes")
 
-	print("battle")
+	_say("battle")
 	main.start_encounter(["goblin", "goblin", "slime"], false)
 	_expect(await _until(func(): return main.mode == "battle"), "an encounter starts")
 	await _shot("battle_intro")
@@ -187,7 +212,7 @@ func _run() -> void:
 		"the attack resolves")
 	await _shot("battle_action")
 
-	print("barrow")
+	_say("barrow")
 	main.field.enter_map("barrow1", 20, 27)
 	Gs.steps_to_encounter = 9999
 	await _step(10)
@@ -245,7 +270,7 @@ func _run() -> void:
 	main.finish_battle("win", false)
 	await _until(func(): return main.mode == "field")
 
-	print("ending")
+	_say("ending")
 	# fade_to() is a no-op while a fade is already running, so an encounter
 	# started mid-transition never begins. Wait for the screen to settle first.
 	await _settle()
@@ -299,7 +324,7 @@ func _run() -> void:
 		"and the credits reach the hook")
 	await _shot("ending_hook")
 
-	print("aftermath")
+	_say("aftermath")
 	main.field.enter_map("town", 20, 24)
 	await _step(8)
 	var reacted := false
@@ -309,7 +334,7 @@ func _run() -> void:
 	_expect(reacted, "the town has something new to say")
 	await _shot("aftermath_town")
 
-	print("chapter two")
+	_say("chapter two")
 	await _settle()
 	Gs.flags["boss_down"] = true
 	main.field.enter_map("shore", 3, 14)
@@ -383,7 +408,7 @@ func _run() -> void:
 	await _step(8)
 	_expect(main.field.msg.is_empty(), "and the scene does not play twice")
 
-	print("save")
+	_say("save")
 	_expect(Gs.save_game(), "the journal saves")
 	var gear_before := (Gs.party[1]["gear"] as Dictionary).duplicate()
 	Gs.party = []
@@ -391,12 +416,11 @@ func _run() -> void:
 	_expect(Gs.party.size() == 3, "the party comes back")
 	_expect((Gs.party[1]["gear"] as Dictionary) == gear_before, "equipment survives the round trip")
 
-	print("")
 	if failures.is_empty():
-		print("SMOKE OK  (%d screenshots)" % shots)
+		_say("SMOKE OK  (%d screenshots)" % shots)
 	else:
-		print("SMOKE FAILED (%d)" % failures.size())
+		_say("SMOKE FAILED (%d)" % failures.size())
 		for f in failures:
-			print("  - " + f)
+			_say("  - " + f)
 	await _step(2)
 	get_tree().quit(0 if failures.is_empty() else 1)

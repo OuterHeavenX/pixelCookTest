@@ -132,11 +132,26 @@ def main():
         return 1
     print("import : clean")
 
+    progress = os.path.join(args.shots, "progress.log")
+    if os.path.exists(progress):
+        os.remove(progress)
     argv = [godot, "--path", PROJECT, "res://scenes/Smoke.tscn",
             "--rendering-driver", "opengl3"]
+    if shutil.which("stdbuf"):
+        argv = ["stdbuf", "-oL", "-eL"] + argv
     if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
         argv = ["xvfb-run", "-a", "-s", "-screen 0 1280x720x24"] + argv
     code, out = run(argv, env, args.timeout, stream=True)
+    # The harness writes its own progress to a file because Godot buffers
+    # stdout into a pipe. On a timeout that file is the only record of how far
+    # the run actually got.
+    if os.path.exists(progress):
+        with open(progress) as fh:
+            written = [ln.rstrip() for ln in fh if ln.strip()]
+        if written and not any(ln.startswith("SMOKE") for ln in out.splitlines()):
+            print("last progress recorded:")
+            for ln in written[-12:]:
+                print("  " + ln)
     errs = engine_errors(out)
     if errs:
         print("engine errors:")
