@@ -1,9 +1,49 @@
 {
- "boss_victory": [
-  "The chieftain falls, and the barrow goes very quiet.",
-  "Beneath the bier, something answers. A seam of light opens in the floor.",
-  "The stone had a ward carved into it. It is cracked now."
- ],
+ "bosses": {
+  "chieftain": {
+   "banner": "The Ogre Chieftain blocks your path!",
+   "challenge": [
+    "The Ogre Chieftain hauls itself off the bier at the barrow's bottom.",
+    "There will be no fleeing from this one. Stand and fight?"
+   ],
+   "ending": "one",
+   "enemy": "ogre",
+   "flag": "bossDown",
+   "name": "Ogre Chieftain",
+   "returns": "town",
+   "sets": [
+    "sealBroken"
+   ],
+   "sprite": "e_ogre",
+   "victory": [
+    "The chieftain falls, and the barrow goes very quiet.",
+    "Beneath the bier, something answers. A seam of light opens in the floor.",
+    "The stone had a ward carved into it. It is cracked now."
+   ]
+  },
+  "drowned": {
+   "banner": "The Drowned Warden rises from the ward!",
+   "challenge": [
+    "The water above the ward turns over, and something stands up out of it.",
+    "It has been cutting the other side of these letters for four hundred years.",
+    "There is nowhere to run to down here. Stand and fight?"
+   ],
+   "ending": "two",
+   "enemy": "warden",
+   "flag": "wardenDown",
+   "name": "Drowned Warden",
+   "returns": "hollow",
+   "sets": [
+    "mereOpen"
+   ],
+   "sprite": "e_warden",
+   "victory": [
+    "The Warden comes apart, and the cutting stops.",
+    "For the first time in eleven years the ward is quiet.",
+    "Above you, very faintly, the lamps of Hollowmere go out one by one."
+   ]
+  }
+ },
  "chest_loot": {
   "barrow1:30,16": {
    "item": "hipotion",
@@ -27,6 +67,19 @@
   },
   "inn:11,2": {
    "gil": 120
+  },
+  "mere1:34,6": {
+   "item": "hipotion",
+   "n": 3
+  },
+  "mere1:6,6": {
+   "gear": "lantern_stone"
+  },
+  "mere2:28,5": {
+   "gil": 900
+  },
+  "mere2:7,5": {
+   "gear": "keeper_coat"
   },
   "town:35,24": {
    "item": "ether",
@@ -282,6 +335,63 @@
     "w": 5
    }
   ],
+  "mere": [
+   {
+    "group": [
+     "drownkeep"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "coldwisp"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "mereling",
+     "mereling"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "drownkeep",
+     "mereling"
+    ],
+    "w": 14
+   },
+   {
+    "group": [
+     "coldwisp",
+     "coldwisp"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "drownkeep",
+     "drownkeep"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "lampwraith",
+     "coldwisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "drownkeep",
+     "lampwraith",
+     "mereling"
+    ],
+    "w": 6
+   }
+  ],
   "shore": [
    {
     "group": [
@@ -408,56 +518,125 @@
    }
   ]
  },
- "ending": {
-  "beats": [
-   {
-    "lines": [
-     "The Ogre Chieftain was not the barrow's tenant.",
-     "He was its warden. Something older set him on that bier",
-     "and told him to sit, and he sat for four hundred years."
-    ],
-    "scene": "barrow"
-   },
-   {
-    "lines": [
-     "Cold comes up through the crack in the ward.",
-     "Not the cold of a cellar. The cold of somewhere with no season.",
-     "Far below, in the dark, something turns over and settles."
-    ],
-    "scene": "rift"
-   },
-   {
-    "lines": [
-     "You walk back into Rivenbrook at dawn.",
-     "The lanterns are still lit. The gate is still standing.",
-     "Elder Halvard meets you at the well and does not ask what you saw."
-    ],
-    "scene": "town"
-   },
-   {
-    "lines": [
-     "For tonight, the Thornwilds are quiet, and that is enough.",
-     "The seal will hold a while yet.",
-     "A while."
-    ],
-    "scene": "town"
-   }
-  ],
-  "credits": [
-   "RIVENBROOK",
-   "A Tale of the Thornwilds",
-   "",
-   "Every sprite cooked by spritecook",
-   "Backdrops and monsters modelled in Blender",
-   "Maps painted by mapcook, rules by datacook",
-   "Played in a browser and in Godot 4",
-   "",
-   "Chapter Two: THE COLD BELOW",
-   "coming up out of the floor"
-  ],
-  "hook": "Your journal is saved. The rift is still open.",
-  "subtitle": "THE WARDEN OF THE BARROW",
-  "title": "CHAPTER ONE"
+ "endings": {
+  "one": {
+   "beats": [
+    {
+     "lines": [
+      "The Chieftain was not the barrow's tenant.",
+      "He was its warden. Something older set him",
+      "on that bier and told him to sit, and he sat",
+      "for four hundred years."
+     ],
+     "scene": "barrow"
+    },
+    {
+     "lines": [
+      "Cold comes up through the crack in the ward.",
+      "Not the cold of a cellar. The cold of",
+      "somewhere with no season.",
+      "Far below, something turns over and settles."
+     ],
+     "scene": "rift"
+    },
+    {
+     "lines": [
+      "You walk back into Rivenbrook at dawn.",
+      "The lanterns are still lit. The gate is",
+      "still standing. Elder Halvard meets you at",
+      "the well and does not ask what you saw."
+     ],
+     "scene": "town"
+    },
+    {
+     "lines": [
+      "For tonight the Thornwilds are quiet,",
+      "and that is enough.",
+      "The seal will hold a while yet.",
+      "A while."
+     ],
+     "scene": "town"
+    }
+   ],
+   "credits": [
+    "RIVENBROOK",
+    "A Tale of the Thornwilds",
+    "",
+    "Every sprite cooked by spritecook",
+    "Backdrops and monsters modelled in Blender",
+    "Maps painted by mapcook, rules by datacook",
+    "Played in a browser and in Godot 4",
+    "",
+    "Chapter Two: THE COLD BELOW",
+    "coming up out of the floor"
+   ],
+   "hook": "Your journal is saved. The rift is still open.",
+   "subtitle": "THE WARDEN OF THE BARROW",
+   "title": "CHAPTER ONE"
+  },
+  "two": {
+   "beats": [
+    {
+     "lines": [
+      "The ward under the mere is one half",
+      "of a sentence. The other half was cut",
+      "under a barrow four hundred miles south,",
+      "and you broke that one in the spring."
+     ],
+     "scene": "mere"
+    },
+    {
+     "lines": [
+      "Kestrel Vail climbs the keepers' stair",
+      "for the first time in eleven years.",
+      "She does not say a great deal. She holds",
+      "her daughter's hand the whole way up."
+     ],
+     "scene": "mere"
+    },
+    {
+     "lines": [
+      "You come up into Hollowmere at noon,",
+      "and Hollowmere is dark. Every lantern.",
+      "The whole town, out, in daylight, at once,",
+      "and nobody put them out."
+     ],
+     "scene": "hollow"
+    },
+    {
+     "lines": [
+      "The mere is open water. In midwinter.",
+      "Steaming.",
+      "\"They only ever burned to keep it down,\"",
+      "Kestrel says. \"It is not down.\""
+     ],
+     "scene": "hollow"
+    },
+    {
+     "lines": [
+      "South, the Mere Road runs into the dark.",
+      "Every lamp along it is out, the whole way",
+      "to the bridge. Bram is out there with a",
+      "taper, wondering why."
+     ],
+     "scene": "road"
+    }
+   ],
+   "credits": [
+    "RIVENBROOK",
+    "A Tale of the Thornwilds",
+    "",
+    "Hollowmere, the Mere Road and the ward below",
+    "Monsters modelled in Blender, tiles cooked in Python",
+    "One set of rules, two engines, no drift",
+    "",
+    "Chapter Three: WHAT THE LAMPS WERE FOR",
+    "and who has been lighting them"
+   ],
+   "hook": "The road south is dark. Somebody should tell him.",
+   "subtitle": "THE COLD BELOW",
+   "title": "CHAPTER TWO"
+  }
  },
  "enemies": {
   "bandit": {
@@ -503,6 +682,62 @@
    "name": "Cave Bat",
    "spd": 15,
    "sprite": "e_bat",
+   "weak": "fire"
+  },
+  "coldwisp": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 30
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 45
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 22,
+   "def": 12,
+   "exp": 58,
+   "gil": 44,
+   "height": 24,
+   "hp": 116,
+   "mag": 34,
+   "name": "Cold Lamp",
+   "spd": 22,
+   "sprite": "e_wisp_ice",
+   "weak": "fire"
+  },
+  "drownkeep": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 25
+    },
+    {
+     "act": "defend",
+     "w": 20
+    }
+   ],
+   "atk": 30,
+   "def": 20,
+   "exp": 62,
+   "gil": 58,
+   "height": 30,
+   "hp": 148,
+   "mag": 14,
+   "name": "Drowned Keeper",
+   "spd": 14,
+   "sprite": "e_skeleton_ice",
    "weak": "fire"
   },
   "goblin": {
@@ -672,6 +907,39 @@
    "spd": 5,
    "sprite": "e_slime",
    "weak": "bolt"
+  },
+  "warden": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 45
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 25
+    },
+    {
+     "act": "smash",
+     "w": 18
+    },
+    {
+     "act": "drain",
+     "w": 12
+    }
+   ],
+   "atk": 44,
+   "boss": true,
+   "def": 24,
+   "exp": 620,
+   "gil": 1200,
+   "height": 74,
+   "hp": 940,
+   "mag": 34,
+   "name": "Drowned Warden",
+   "spd": 16,
+   "sprite": "e_warden",
+   "weak": "fire"
   },
   "wight": {
    "ai": [
@@ -879,6 +1147,19 @@
    "users": [
     "aldric"
    ]
+  },
+  "keeper_coat": {
+   "desc": "Waxed against water that is colder than water.",
+   "icon": "i_armor",
+   "name": "Keeper's Coat",
+   "price": 0,
+   "slot": "armour",
+   "stats": {
+    "def": 22,
+    "hp": 40,
+    "mag": 8
+   },
+   "users": null
   },
   "knight_plate": {
    "desc": "A wall you can walk in.",
@@ -1181,10 +1462,24 @@
    "t_cryptwall",
    1
   ],
+  "$": [
+   "t_ward",
+   0,
+   "ward"
+  ],
   "%": [
    "t_seal",
    0,
    "seal"
+  ],
+  "&": [
+   "t_drowned",
+   0
+  ],
+  "(": [
+   "t_lampsunk",
+   1,
+   "lamp"
   ],
   "*": [
    "t_flowers",
@@ -1230,6 +1525,10 @@
    "t_stairdown",
    0,
    "stair"
+  ],
+  "@": [
+   "t_drownwall",
+   1
   ],
   "A": [
    "t_barrel",
@@ -1328,6 +1627,11 @@
    1,
    "gate"
   ],
+  "h": [
+   "t_hatch",
+   1,
+   "hatch"
+  ],
   "i": [
    "t_brazier",
    1
@@ -1372,6 +1676,38 @@
    1,
    "water"
   ]
+ },
+ "locks": {
+  "gate": {
+   "flag": "barrowKey",
+   "open": [
+    "The iron gate stands open. The stair falls away below."
+   ],
+   "shut": [
+    "An iron gate, barred and locked.",
+    "The lock is old, and it is not going to give."
+   ]
+  },
+  "hatch": {
+   "flag": "mereOpened",
+   "open": [
+    "The keepers' hatch stands open. Cold comes up out of it."
+   ],
+   "shut": [
+    "Planks and iron, set flush into the shore.",
+    "There is no handle on this side. It opens for keepers."
+   ]
+  },
+  "pass": {
+   "flag": "bossDown",
+   "open": [
+    "The west pass. Someone has been keeping the road clear."
+   ],
+   "shut": [
+    "A pass west, choked with thorn and rockfall.",
+    "Nobody has come through here in a long time."
+   ]
+  }
  },
  "map_beats": {
   "hollow": [
@@ -1425,6 +1761,45 @@
      "sera"
     ],
     "speaker": "Sera"
+   },
+   {
+    "flag": "mereOpened",
+    "lines": [
+     "Come down to the shore. Past the lanterns. Right down to the ice.",
+     "There is a hatch under that snow with a keeper's lock on it. It has never been opened by anybody who was not one of us.",
+     "My mother went through it eleven years ago to re-cut the ward.",
+     "The town buried an empty box that winter and told me it was the cold. I was twelve. I believed them for about four years.",
+     "You have her key. I gave it to you and I knew exactly what I was doing.",
+     "Open it."
+    ],
+    "needs": [
+     "seraWater"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   }
+  ],
+  "mere1": [
+   {
+    "flag": "mereLamps",
+    "lines": [
+     "Lanterns. The whole length of it. Every one of them lit.",
+     "Nobody has been down here in eleven years, {name}.",
+     "So somebody has been lighting these."
+    ],
+    "speaker": "Sera"
+   }
+  ],
+  "mere2": [
+   {
+    "flag": "cuttingFloor",
+    "lines": [
+     "The room at the bottom of the keepers' stair is not a tomb.",
+     "It is a workshop. Stone chips underfoot. A whetstone worn into a saddle.",
+     "A tally scratched into the wall in fours, and the fours go on and on and on."
+    ]
    }
   ],
   "shore": [
@@ -1649,6 +2024,29 @@
     "y": 9
    }
   ],
+  "mere2": [
+   {
+    "after": [
+     "It is quiet. I had forgotten that was a thing rooms did.",
+     "Take my hand, girl. I have not let go of anything in eleven years and I am out of practice."
+    ],
+    "after_flag": "wardenDown",
+    "dir": "left",
+    "lines": [
+     "Do not touch the letters. Whatever else you do down here.",
+     "Eleven years. Forty letters. Cut them and it holds, and then the water takes the edges off them again, and you start at the first one.",
+     "You are Sera. You are grown.",
+     "I know. I know exactly what I did. Say it to me afterwards and I will stand still for it.",
+     "The thing on the other side of these is cutting too. It has been cutting the whole time.",
+     "Kill it, and I can stop."
+    ],
+    "name": "Kestrel Vail",
+    "sprite": "sera",
+    "wander": false,
+    "x": 20,
+    "y": 6
+   }
+  ],
   "town": [
    {
     "after": [
@@ -1778,6 +2176,7 @@
  "sign_text": {
   "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
   "hollow": "HOLLOWMERE - Keep the lanterns lit. Keep off the ice.",
+  "mere1": "Cut over the stair, in the keepers' hand: WE GO DOWN SO IT DOES NOT COME UP.",
   "shore": "THE MERE ROAD - Do not stop between the lamps.",
   "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
   "wild": "THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason."
@@ -1906,7 +2305,9 @@
   }
  },
  "underlay": {
+  "$": "t_drowned",
   "%": "t_crypt",
+  "(": "t_drowned",
   "1": "ground",
   "2": "ground",
   "A": "ground",
@@ -1918,6 +2319,7 @@
   "c": "ground",
   "f": "ground",
   "g": "t_crypt",
+  "h": "t_snow",
   "i": "t_crypt",
   "j": "t_crypt",
   "l": "t_cobble",

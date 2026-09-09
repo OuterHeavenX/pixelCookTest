@@ -10,7 +10,7 @@ var phase := "intro"
 var t := 0.0
 var intro := 0.0
 var enemies := []
-var is_boss := false
+var is_boss := ""   ## which boss, by id; empty for an ordinary fight
 var backdrop := "dusk"
 var escapable := true
 
@@ -41,15 +41,15 @@ func _init(owner) -> void:
 	main = owner
 
 
-func start(group: Array, boss: bool) -> void:
+func start(group: Array, boss: String) -> void:
 	phase = "intro"
 	intro = 0.6
 	t = 0.0
 	is_boss = boss
 	# The backdrop follows the place you were standing, so a fight in the
 	# barrow is not lit by a sunset that is four floors above you.
-	backdrop = "night" if boss else str(main.field.map.get("battle_bg", "dusk"))
-	escapable = not boss
+	backdrop = "night" if boss != "" else str(main.field.map.get("battle_bg", "dusk"))
+	escapable = boss == ""
 	popups = []
 	fx = []
 	shake = 0.0
@@ -60,7 +60,7 @@ func start(group: Array, boss: bool) -> void:
 	cmd = 0
 	sub = ""
 	sub_index = 0
-	banner = "The Ogre Chieftain blocks your path!" if boss else "Monsters appear!"
+	banner = str(Dat.bosses[boss]["banner"]) if boss != "" else "Monsters appear!"
 	banner_t = 2.2
 
 	enemies = []
@@ -756,10 +756,12 @@ func begin_victory() -> void:
 			lines.append("%s reached level %d!" % [h["name"], int(up["lv"])])
 			for sp in up["learned"]:
 				lines.append("%s learned %s!" % [h["name"], Dat.spells[sp]["name"]])
-	if is_boss:
-		Gs.flags["bossDown"] = true
-		Gs.flags["sealBroken"] = true
-		for line in Dat.boss_victory:
+	if is_boss != "":
+		var won: Dictionary = Dat.bosses[is_boss]
+		Gs.flags[str(won["flag"])] = true
+		for f in won.get("sets", []):
+			Gs.flags[str(f)] = true
+		for line in won["victory"]:
 			lines.append(line)
 	result_lines = lines
 	result_page = 0

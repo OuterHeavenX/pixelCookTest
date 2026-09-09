@@ -45,6 +45,15 @@ ICE_HI = rgb("dcefff")
 ICE = rgb("a8ccec")
 ICE_LO = rgb("6f9cc4")
 SNOW = rgb("ccd8ea")
+# Under the mere: the cold deep, four values of it. Colder and darker than
+# the crypt, which is a purple-grey - this is blue-green and lightless.
+DEEP_HI = rgb("58899c")
+DEEP_MID = rgb("3d6a7d")
+DEEP = rgb("2e5468")
+DEEP_LO = rgb("1b3543")
+DEEP_DK = rgb("0d1c26")
+CAUSTIC = rgb("9fd8e8")
+
 PALE_HI = rgb("cacee2")
 PALE = rgb("a2a7bd")
 PALE_LO = rgb("6f748c")
@@ -142,5 +151,11 @@ TILE_PALETTE = {
     "2": GOLD_LO,
     "#": INK,
     "%": INK_SOFT,
+    "4": DEEP_MID,
+    "5": DEEP_HI,
+    "6": DEEP,
+    "7": DEEP_LO,
+    "8": DEEP_DK,
+    "9": CAUSTIC,
     "@": WHITE,
 }

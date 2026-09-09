@@ -27,6 +27,17 @@ from spritecook.palette import INK                    # noqa: E402
 RAW = os.path.join(ROOT, "art", "enemies", "raw")
 OUT = os.path.join(ROOT, "art", "enemies")
 
+# Colours guaranteed a slot in a sprite's palette.
+#
+# A median cut splits by population, which is right for a monster made of one
+# material and wrong for one that is forty shades of drowned blue and a single
+# lit lamp: twenty warm pixels in seven hundred lose every split, and the sprite
+# comes back with the thing it is about quantised into the background. Naming
+# the accent here spends one palette slot on it deliberately.
+ACCENTS = {
+    "e_warden": ["ff9a3c"],       # the keeper's lamp, still burning
+}
+
 
 def crop_alpha(img):
     """Cut the render down to what it actually drew."""
@@ -86,13 +97,16 @@ def punch(img, contrast=1.30, saturation=1.28):
     return out
 
 
-def cook_one(path, size, colors):
+def cook_one(path, size, colors, accents=()):
     raw = read_png(path)
     w, h = size
     # Leave a pixel of room all round for the outline to live in.
     small = fit_into(crop_alpha(raw), w - 2, h - 2)
     small = punch(small)
-    palette = build_palette(small, colors)
+    # The palette is RGB triples; alpha comes from the pixel.
+    kept = [tuple(int(a.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+            for a in accents]
+    palette = build_palette(small, max(2, colors - len(kept))) + kept
     flat = quantise(small, palette)
     out = Image(w, h)
     out.blit(flat, 1, 1)
@@ -117,7 +131,8 @@ def main():
         if name not in sizes:
             raise SystemExit("no render for %s" % name)
         path = os.path.join(RAW, name + ".png")
-        img, used = cook_one(path, sizes[name], args.colors)
+        img, used = cook_one(path, sizes[name], args.colors,
+                             ACCENTS.get(name, ()))
         dest = os.path.join(OUT, name + ".png")
         with open(dest, "wb") as fh:
             fh.write(img.to_png())

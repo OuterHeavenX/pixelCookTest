@@ -379,6 +379,57 @@ def m_wight(P):
     return dict(yaw=78, pitch=6)
 
 
+def m_warden(P):
+    """The Drowned Warden: a lamp-keeper who has been under the mere for four
+    hundred years, still cutting the ward with a chisel.
+
+    Built as the opposite of the ogre. The ogre is mass; this is height and
+    hang - a coat heavy with water, one arm doing work rather than swinging,
+    and its lamp set down on the stone beside it, which is the only warm
+    colour anywhere on this floor. An earlier pass had a mallet raised over
+    its head as well: two implements and a lamp is more silhouette than
+    30x44 can hold, and the whole figure went to mush.
+    """
+    coat = mat("warden", "44646f")
+    coat_hi = mat("warden_hi", "6f97a4")
+    coat_lo = mat("warden_lo", "172b32")
+    void = mat("warden_void", "080f13")
+    glow = mat("warden_eye", "cfefff", emit=5.0)
+    flame = mat("warden_flame", "ff9a3c", emit=0.8)
+    weed = mat("warden_weed", "2f4a3a")
+    stone = mat("warden_stone", "b8b8c0")
+
+    cone((0, 0, 1.15), 1.00, 2.30, coat)                          # the coat
+    ball((0, 0, 0.10), (1.08, 1.08, 0.18), coat_lo)               # hem on the floor
+    ball((0, 0, 2.32), (0.66, 0.70, 0.44), coat_hi)               # a lit mantle
+    ball((0, 0, 2.94), (0.50, 0.54, 0.56), coat_lo)               # hood, in shadow
+    ball(surface((0, 0, 2.94), (0.50, 0.54, 0.56), facing(74, 0, -0.1), 0.48),
+         (0.34, 0.34, 0.40), void)                                # nothing in it
+    eyes((0, 0, 2.94), (0.50, 0.54, 0.56), 74, 19, 0.10, glow, out=0.98)
+
+    # One arm, down and forward, caught mid-stroke on the letters.
+    limb((0.05, -0.60, 2.30), (0.44, -0.82, 1.52), 0.19, coat)
+    limb((0.44, -0.82, 1.52), (0.70, -0.88, 1.24), 0.09, P["bone"])
+    limb((0.72, -0.90, 1.20), (0.96, -0.94, 0.80), 0.06, stone)   # the chisel
+    limb((0.02, 0.62, 2.28), (0.20, 0.76, 1.46), 0.19, coat)      # the other, hanging
+
+    # Its lamp, set down on the ward while it works. Hung at the belt it
+    # vanished into the coat, and the one warm thing here has to be seen.
+    case = mat("warden_case", "2a2f38")
+    box((0.78, -1.20, 0.16), (0.24, 0.24, 0.06), case)            # base plate
+    ball((0.78, -1.20, 0.46), (0.20, 0.20, 0.27), flame)          # the flame itself
+    box((0.78, -1.20, 0.76), (0.26, 0.26, 0.06), case)            # the cap
+    for sy in (-1, 1):                                            # two thin posts
+        limb((0.78, -1.20 + 0.20 * sy, 0.18),
+             (0.78, -1.20 + 0.20 * sy, 0.76), 0.035, case)
+    limb((0.78, -1.20, 0.80), (0.78, -1.20, 0.98), 0.03, stone)   # the ring
+
+    for i, sy in enumerate((-1, 1, -1)):                          # weed, trailing
+        limb((-0.38, 0.46 * sy, 2.44 - i * 0.26),
+             (-0.60, 0.66 * sy, 1.56 - i * 0.32), 0.05, weed)
+    return dict(yaw=74, pitch=6)
+
+
 MONSTERS = {
     "e_slime": (m_slime, (24, 20)),
     "e_bat": (m_bat, (28, 20)),
@@ -389,6 +440,7 @@ MONSTERS = {
     "e_bandit": (m_bandit, (24, 32)),
     "e_skeleton": (m_skeleton, (22, 30)),
     "e_wight": (m_wight, (26, 32)),
+    "e_warden": (m_warden, (26, 38)),
 }
 
 

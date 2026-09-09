@@ -381,7 +381,7 @@ def barrow_deep():
         "warps": [
             {"x": 18, "y": 27, "to": "barrow1", "tx": 20, "ty": 11, "dir": "down"},
         ],
-        "boss": {"x": 18, "y": 8},
+        "boss": {"x": 18, "y": 8, "id": "chieftain"},
     }
 
 
@@ -434,6 +434,10 @@ def hollowmere():
     for px, py in ((2, 11), (43 - 2, 11), (3, 31), (40, 30), (16, 31), (28, 32),
                    (2, 18), (41, 18), (8, 32)):
         g.set(px, py, "p")
+    # The keepers' hatch, and the stair cut through the ice above it. Shut, it
+    # is the most ordinary thing on the shore; it is also the only way down.
+    g.set(20, 8, "h")
+    g.set(20, 7, ">")
     g.set(24, 22, "s")                   # the sign on the street
     g.set(38, 9, "c")                    # a chest at the end of the lantern row
     g.set(6, 31, "c")
@@ -448,7 +452,94 @@ def hollowmere():
         "warps": [
             {"x": 21, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
             {"x": 22, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
+            {"x": 20, "y": 7, "to": "mere1", "tx": 20, "ty": 25, "dir": "up"},
         ],
+    }
+
+
+def under_mere():
+    """Under the Mere: the keepers' road, drowned.
+
+    The same masonry as the barrow, laid by the same hands, four hundred miles
+    north and four hundred years under water. Lanterns the whole length of it,
+    all of them still burning, because the keepers have never once let one go
+    out and neither has whatever is down here with them."""
+    g = Grid(40, 30, "@")
+
+    def hall(x, y, w, h):
+        g.rect(x, y, w, h, "&")
+
+    hall(17, 23, 7, 5)                   # the foot of the stair
+    g.set(20, 28, "<")                   # back up into Hollowmere
+    hall(18, 17, 5, 6)                   # down to the road
+    hall(3, 14, 34, 3)                   # the long drowned road, west to east
+    hall(3, 5, 6, 9)                     # the west end turns north
+    hall(3, 5, 12, 4)                    # to a flooded side chamber
+    hall(31, 5, 6, 9)                    # and the east end likewise
+    hall(25, 5, 12, 4)
+    hall(15, 4, 10, 5)                   # the middle chamber, with the stair
+    g.set(20, 5, ">")
+
+    for lx in range(5, 37, 5):           # the lanterns, still lit
+        g.set(lx, 13, "(")
+    for lx, ly in ((5, 9), (13, 9), (27, 9), (35, 9), (19, 22)):
+        g.set(lx, ly, "(")
+    g.set(6, 6, "c")                     # the west chamber
+    g.set(34, 6, "c")                    # the east chamber
+    g.set(20, 26, "s")                   # what the keepers cut over their stair
+    return {
+        "id": "mere1",
+        "name": "Under the Mere",
+        "rows": g.out(),
+        "encounter": 16,
+        "encounters": "mere",
+        "battle_bg": "night",
+        "music": "barrow",
+        "ground": "t_drowned",
+        "spawn": [20, 25],
+        "warps": [
+            {"x": 20, "y": 28, "to": "hollow", "tx": 20, "ty": 9, "dir": "down"},
+            {"x": 20, "y": 5, "to": "mere2", "tx": 18, "ty": 22, "dir": "up"},
+        ],
+    }
+
+
+def cold_below():
+    """The Cold Below: the cutting floor.
+
+    One room, approached down a spine, with the ward in the middle of it and
+    two people who have been standing on either side of those letters for
+    eleven years - one cutting them, one cutting them out again."""
+    g = Grid(36, 26, "@")
+
+    def hall(x, y, w, h):
+        g.rect(x, y, w, h, "&")
+
+    hall(16, 21, 5, 3)                   # arrival
+    g.set(18, 24, "<")
+    hall(17, 12, 3, 9)                   # the spine
+    hall(6, 9, 24, 3)                    # a gallery across the top of it
+    hall(6, 4, 24, 7)                    # the cutting floor itself
+    g.set(18, 7, "$")                    # the ward
+
+    g.set(7, 5, "c")
+    g.set(28, 5, "c")
+    for lx, ly in ((8, 9), (27, 9), (12, 4), (23, 4), (18, 11), (18, 20)):
+        g.set(lx, ly, "(")
+    return {
+        "id": "mere2",
+        "name": "The Cold Below",
+        "rows": g.out(),
+        "encounter": 14,
+        "encounters": "mere",
+        "battle_bg": "night",
+        "music": "barrow",
+        "ground": "t_drowned",
+        "spawn": [18, 22],
+        "warps": [
+            {"x": 18, "y": 24, "to": "mere1", "tx": 20, "ty": 6, "dir": "down"},
+        ],
+        "boss": {"x": 18, "y": 6, "id": "drowned"},
     }
 
 
@@ -533,8 +624,10 @@ def validate(maps):
     import datacook
     problems = []
     solid = _solid_chars()
+    # Every lock counts as open here: a lock is a delay, not a wall, and there
+    # is more than one kind of them now.
     unlocked = solid - {ch for ch, spec in datacook.LEGEND.items()
-                        if len(spec) > 2 and spec[2] == "gate"}
+                        if len(spec) > 2 and spec[2] in datacook.LOCKS}
     for m in sorted(maps):
         mp = maps[m]
         rows = mp["rows"]
@@ -577,7 +670,8 @@ def validate(maps):
 
 def build():
     maps = {m["id"]: m for m in (town(), inn(), wilds(), barrow_upper(),
-                                 barrow_deep(), hollowmere(), mere_road())}
+                                 barrow_deep(), hollowmere(), mere_road(),
+                                 under_mere(), cold_below())}
     for m in maps.values():
         widths = {len(r) for r in m["rows"]}
         assert len(widths) == 1, "%s has ragged rows: %s" % (m["id"], widths)

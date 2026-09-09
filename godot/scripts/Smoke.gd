@@ -138,6 +138,18 @@ func _wait_for_choice(limit := 20) -> bool:
 	return false
 
 
+## Roll the credits the way somebody who has seen them does: leaning on the
+## confirm key. The hold-to-hurry does not register from a synthesised key
+## event, so this takes the credits at their own pace and just gives them
+## enough frames to get there - roughly eleven seconds of them.
+func _roll_credits(limit := 400) -> bool:
+	var pressed := 0
+	while main.ending.phase == "credits" and pressed < limit:
+		await _press("confirm", 2)
+		pressed += 1
+	return main.ending.phase == "hook"
+
+
 func _shot(name: String) -> void:
 	_say("    .. shot " + name)
 	await _settle()
@@ -247,7 +259,7 @@ func _run() -> void:
 	_expect(await _until(func(): return main.mode == "field"), "the shop closes")
 
 	_say("battle")
-	main.start_encounter(["goblin", "goblin", "slime"], false)
+	main.start_encounter(["goblin", "goblin", "slime"])
 	_expect(await _until(func(): return main.mode == "battle"), "an encounter starts")
 	await _shot("battle_intro")
 	# Wait for someone's gauge to fill, then walk the command window.
@@ -326,11 +338,11 @@ func _run() -> void:
 		if not Dat.enemies.has(id):
 			barrow_only = false
 	_expect(barrow_only, "its encounters name real monsters (%s)" % ", ".join(group))
-	main.start_encounter(["skeleton", "wight"], false)
+	main.start_encounter(["skeleton", "wight"])
 	_expect(await _until(func(): return main.mode == "battle"), "the barrow's own monsters fight")
 	await _until(func(): return main.battle.phase == "command")
 	await _shot("barrow_battle")
-	main.finish_battle("win", false)
+	main.finish_battle("win", "")
 	await _until(func(): return main.mode == "field")
 
 	_say("ending")
@@ -352,7 +364,7 @@ func _run() -> void:
 	main.field.msg = {}
 
 	await _settle()
-	main.start_encounter(["ogre"], true)
+	main.start_encounter(["ogre"], "chieftain")
 	_expect(await _until(func(): return main.mode == "battle"), "the chieftain fights")
 	await _until(func(): return main.battle.phase != "intro")
 	for e in main.battle.enemies:
@@ -383,8 +395,7 @@ func _run() -> void:
 	await _press("confirm", 6)
 	_expect(main.ending.phase == "credits", "then the credits roll")
 	await _shot("ending_credits")
-	_expect(await _until(func(): return main.ending.phase == "hook", 3000),
-		"and the credits reach the hook")
+	_expect(await _roll_credits(), "and the credits reach the hook")
 	await _shot("ending_hook")
 
 	_say("aftermath")
@@ -510,6 +521,88 @@ func _run() -> void:
 		"and she answers the question she would not answer")
 	_expect(not bool(Gs.flags.get("seraKeptQuiet", false)),
 		"and the other answer stays unsaid")
+
+	_say("the mere")
+	# The way down, and the two floors under it. Everything from here is the
+	# chapter closing itself, which is the part that used to be hardwired to
+	# exactly one boss and exactly one ending.
+	main.field.enter_map("hollow", 21, 31)
+	await _step(8)
+	await _read_msg()
+	_expect(bool(Gs.flags.get("mereOpened", false)), "she opens the keepers' hatch")
+	_expect(not main.field.solid_at(20, 8), "and it is a way through now, not a wall")
+
+	main.field.enter_map("mere1", 20, 25)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Gs.map_id == "mere1", "the keepers' road loads")
+	_expect(not main.field.msg.is_empty(), "and she counts the lamps on it")
+	await _read_msg()
+	await _shot("mere_road")
+	var deep := []
+	for id in Dat.roll_encounter("mere"):
+		deep.append(str(Dat.enemies[id]["name"]))
+	_expect(not deep.is_empty(), "with monsters of its own (%s)" % ", ".join(deep))
+
+	main.field.enter_map("mere2", 18, 22)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Gs.map_id == "mere2", "the cutting floor loads")
+	await _read_msg()
+	var kestrel := false
+	var warden := false
+	for n in main.field.npcs:
+		if str(n["name"]) == "Kestrel Vail":
+			kestrel = true
+		if str(n["boss"]) == "drowned":
+			warden = true
+	_expect(kestrel, "Kestrel is at the ward")
+	_expect(warden, "and the Warden is standing on it")
+	await _shot("mere_floor")
+
+	Gs.px = 18
+	Gs.py = 7
+	Gs.dir = "up"
+	await _step(2)
+	main.field.on_step_complete()
+	await _step(6)
+	_expect(str(main.field.msg.get("speaker", "")) == "Drowned Warden",
+		"stepping onto the letters stands it up")
+	await _shot("mere_challenge")
+	_expect(await _wait_for_choice(), "and it asks whether you are staying")
+	await _press("confirm")
+	_expect(await _until(func(): return main.mode == "battle"), "the Warden fights")
+	await _until(func(): return main.battle.phase != "intro")
+	await _shot("mere_battle")
+	for e in main.battle.enemies:
+		main.battle.apply_damage(e, 99999, false)
+	_expect(await _until(func(): return main.battle.phase == "result"),
+		"killing it ends the fight")
+	_expect(bool(Gs.flags.get("wardenDown", false)), "and the ward goes quiet")
+	var mere_pages := 0
+	while main.mode == "battle" and main.battle.phase == "result" and mere_pages < 30:
+		await _press("confirm", 3)
+		mere_pages += 1
+	_expect(mere_pages < 30, "the victory window pages through")
+	await _settle()
+	_expect(await _until(func(): return main.mode == "ending"), "the chapter closes")
+	_expect(main.ending.which == "two", "on chapter two's ending, not chapter one's")
+	_expect(Gs.map_id == "hollow", "and leaves you up in Hollowmere")
+	await _shot("end2_beat")
+	for i in 30:
+		if main.ending.phase != "beats":
+			break
+		main.ending.chars = 9999.0
+		await _press("confirm", 3)
+	_expect(main.ending.phase != "beats", "the beats give way to the card")
+	await _shot("end2_card")
+	await _until(func(): return main.ending.t > 0.7)
+	await _press("confirm", 6)
+	_expect(main.ending.phase == "credits", "and chapter two's credits roll")
+	_expect(await _roll_credits(), "all the way to the next hook")
+	_expect(str(main.ending.ending().get("hook", "")).find("dark") >= 0,
+		"which is the road south, gone dark")
+	await _shot("end2_hook")
 
 	_say("save")
 	_expect(Gs.save_game(), "the journal saves")

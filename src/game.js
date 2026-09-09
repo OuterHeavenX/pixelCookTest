@@ -573,8 +573,9 @@ const UNDERLAY = GAMEDATA.underlay;
 const SIGN_TEXT = GAMEDATA.sign_text;
 const CHEST_LOOT = GAMEDATA.chest_loot;
 const SIGN_AFTER = GAMEDATA.sign_after || {};
-const BOSS_VICTORY = GAMEDATA.boss_victory || [];
-const ENDING = GAMEDATA.ending;
+const BOSSES = GAMEDATA.bosses || {};
+const ENDINGS = GAMEDATA.endings || {};
+const LOCKS = GAMEDATA.locks || {};
 const MAP_BEATS = GAMEDATA.map_beats || {};
 const GEAR = GAMEDATA.gear;
 const GEAR_SLOTS = GAMEDATA.gear_slots;
@@ -838,11 +839,12 @@ function enterMap(id, tx, ty, dir) {
     }, n);
   });
   // Any map that declares a boss gets one, so moving him is a map edit.
-  if (!G.flags.bossDown && Field.map.boss) {
+  const bossDef = Field.map.boss && BOSSES[Field.map.boss.id];
+  if (bossDef && !G.flags[bossDef.flag]) {
     Field.npcs.push({
-      boss: true, after: null, tx: Field.map.boss.x, ty: Field.map.boss.y, ox: 0, oy: 0,
-      sprite: 'e_ogre', dir: 'down', name: 'Ogre Chieftain', phase: 0, cool: 99, move: null,
-      lines: ['A shape rises from the bier...']
+      boss: Field.map.boss.id, after: null, tx: Field.map.boss.x, ty: Field.map.boss.y,
+      ox: 0, oy: 0, sprite: bossDef.sprite, dir: 'down', name: bossDef.name,
+      phase: 0, cool: 99, move: null, lines: []
     });
   }
   G.stepsToEncounter = rollEncounterCountdown();
@@ -927,10 +929,11 @@ function solidAt(x, y) {
   if (ch === null) return true;
   const def = LEGEND[ch];
   if (!def) return true;
-  // A barred gate stops being a wall once you are carrying its key.
-  if (def[2] === 'gate') return !G.flags.barrowKey;
-  // The west pass opens when the barrow is done with you.
-  if (def[2] === 'pass') return !G.flags.bossDown;
+  // A lock stops being a wall once whatever opens it is true. Which flag
+  // that is lives in the data, so a new door is a paragraph rather than a
+  // pair of matching edits in two engines.
+  const lock = LOCKS[def[2]];
+  if (lock) return !G.flags[lock.flag];
   if (def[1]) return true;
   return false;
 }
@@ -976,7 +979,7 @@ function onStepComplete() {
   // chance to back away, because this fight cannot be fled.
   const boss = Field.npcs.find(n => n.boss &&
     Math.abs(n.tx - G.px) + Math.abs(n.ty - G.py) <= 1);
-  if (boss) { challengeBoss(); return; }
+  if (boss) { challengeBoss(boss.boss); return; }
   if (Field.map.encounter) {
     G.stepsToEncounter--;
     if (G.stepsToEncounter <= 0) {
@@ -1024,7 +1027,7 @@ function interact() {
   const tx = G.px + dx, ty = G.py + dy;
   const npc = npcAt(tx, ty);
   if (npc) {
-    if (npc.boss) { challengeBoss(); return; }
+    if (npc.boss) { challengeBoss(npc.boss); return; }
     npc.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[G.dir];
     npc.cool = 3;
     if (npc.service === 'inn') { openInn(npc); return; }
@@ -1035,7 +1038,11 @@ function interact() {
     // someone recruitable it is what they say once they have joined, for a
     // townsperson it is what they say once the chieftain is down.
     const joined = !!(npc.recruit && inRoster(npc.recruit));
-    const useAfter = npc.recruit ? joined : G.flags.bossDown;
+    // `after` means two things: for someone recruitable it is what they say
+    // once they have joined, for anyone else it is what they say once the
+    // flag they are waiting on is set - the chieftain, unless they name
+    // another one, because most of them are waiting on the chieftain.
+    const useAfter = npc.recruit ? joined : !!G.flags[npc.after_flag || 'bossDown'];
     const script = useAfter && npc.after ? npc.after : npc.lines;
     Field.msg = makeMessage(script.map(fillTokens), { speaker: npc.name });
     if (npc.recruit && !joined) {
@@ -1066,16 +1073,12 @@ function interact() {
     Field.msg = makeMessage(['A made bed with a wool blanket. Speak to the innkeeper to rest.']);
   } else if (tag === 'lamp') {
     Field.msg = makeMessage(['A lantern burns low against the dark.']);
-  } else if (tag === 'gate') {
-    Field.msg = makeMessage(G.flags.barrowKey
-      ? ['The iron gate stands open. The stair falls away below.']
-      : ['An iron gate, barred and locked.',
-         'The lock is old, and it is not going to give.']);
-  } else if (tag === 'pass') {
-    Field.msg = makeMessage(G.flags.bossDown
-      ? ['The west pass. Someone has been keeping the road clear.']
-      : ['A pass west, choked with thorn and rockfall.',
-         'Nobody has come through here in a long time.']);
+  } else if (LOCKS[tag]) {
+    const lock = LOCKS[tag];
+    Field.msg = makeMessage(G.flags[lock.flag] ? lock.open : lock.shut);
+  } else if (tag === 'ward') {
+    Field.msg = makeMessage(['Forty letters cut into the floor, deep as a finger.',
+      'The edges of them are fresh. Everything else down here is four hundred years old.']);
   } else if (tag === 'stair') {
     Field.msg = makeMessage(['Steps, worn hollow in the middle by feet long gone.']);
   } else if (tag === 'water' || ch === '~') {
@@ -1084,17 +1087,15 @@ function interact() {
   if (Field.msg) Audio_.sfx('confirm');
 }
 
-function challengeBoss() {
+function challengeBoss(id) {
+  const def = BOSSES[id];
   Audio_.sfx('cancel');
-  Field.msg = makeMessage([
-    'The Ogre Chieftain hauls itself off the bier at the barrow\'s bottom.',
-    'There will be no fleeing from this one. Stand and fight?'
-  ], {
-    speaker: 'Ogre Chieftain',
+  Field.msg = makeMessage(def.challenge, {
+    speaker: def.name,
     choice: {
       options: ['Fight', 'Back away'], index: 0,
       onPick: idx => {
-        if (idx === 0) { Audio_.sfx('encounter'); startEncounter(['ogre'], true); }
+        if (idx === 0) { Audio_.sfx('encounter'); startEncounter([def.enemy], id); }
         else {
           // Back away from the thing, not past it: the retreat is two steps
           // opposite the way you are facing, as far as the floor allows.
@@ -1308,8 +1309,8 @@ function drawField() {
         const sy = (n.ty + n.oy) * TILE - camY;
         if (n.boss) {
           drawShadow(sx + 8, sy + 16, 11);
-          const [w, h] = sprSize('e_ogre');
-          spr('e_ogre', sx + 8 - w / 2, sy + 16 - h);
+          const [w, h] = sprSize(n.sprite);
+          spr(n.sprite, sx + 8 - w / 2, sy + 16 - h);
         } else {
           drawShadow(sx + 8, sy + 15, 6);
           sprFoot(n.sprite + '_' + n.dir + walkFrame(n.phase), sx + 8, sy + 16);
@@ -1407,7 +1408,7 @@ function startEncounter(group, isBoss) {
     Battle.phase = 'intro';
     Battle.intro = 0.6;
     Battle.t = 0;
-    Battle.boss = !!isBoss;
+    Battle.boss = isBoss || '';
     // The backdrop follows the place you were standing, so a fight in the
     // barrow is not lit by a sunset that is four floors above you.
     Battle.bg = isBoss ? 'night' : ((Field.map && Field.map.battle_bg) || 'dusk');
@@ -1415,7 +1416,7 @@ function startEncounter(group, isBoss) {
     Battle.popups = []; Battle.fx = []; Battle.shake = 0;
     Battle.actor = null; Battle.acting = null; Battle.pending = [];
     Battle.cmd = 0; Battle.sub = null; Battle.subIndex = 0;
-    Battle.banner = isBoss ? 'The Ogre Chieftain blocks your path!' : 'Monsters appear!';
+    Battle.banner = isBoss ? BOSSES[isBoss].banner : 'Monsters appear!';
     Battle.bannerT = 2.2;
     const counts = {};
     Battle.enemies = group.map((id, i) => {
@@ -1941,10 +1942,11 @@ function beginVictory() {
       up.learned.forEach(s => lines.push(h.name + ' learned ' + SPELLS[s].name + '!'));
     });
   });
-  if (Battle.boss) {
-    G.flags.bossDown = true;
-    G.flags.sealBroken = true;
-    BOSS_VICTORY.forEach(l => lines.push(l));
+  const won = Battle.boss && BOSSES[Battle.boss];
+  if (won) {
+    G.flags[won.flag] = true;
+    (won.sets || []).forEach(f => { G.flags[f] = true; });
+    won.victory.forEach(l => lines.push(l));
   }
   Battle.resultLines = lines;
   Battle.resultPage = 0;
@@ -1981,14 +1983,16 @@ function endBattle(how) {
     }
     G.mode = 'field';
     G.party.forEach(h => { h.defending = false; h.atb = 0; });
-    if (Battle.boss && how === 'win') {
-      // The chapter closes here. The party is put back in Rivenbrook and the
+    const closed = Battle.boss && BOSSES[Battle.boss];
+    if (closed && how === 'win') {
+      // The chapter closes here. The party is put back somewhere safe and the
       // journal written before the credits, so Continue picks up in a town
       // that knows what happened rather than in the room where it happened.
       G.party.forEach(h => { h.hp = h.maxhp; h.mp = h.maxmp; h.alive = true; });
-      enterMap('town', MAPS.town.spawn[0], MAPS.town.spawn[1], 'up');
+      const home = MAPS[closed.returns];
+      enterMap(closed.returns, home.spawn[0], home.spawn[1], 'up');
       saveGame();
-      startEnding();
+      startEnding(closed.ending);
       return;
     }
     // Whatever track the map names. This used to be a chain of equality tests
@@ -3057,16 +3061,18 @@ function drawGameOver() {
    party walked out with, credits, and the hook. The journal is already saved
    by the time this starts, so nothing here can cost the player their game. */
 
-const Ending = { phase: 'beats', beat: 0, chars: 0, t: 0, scroll: 0 };
+const Ending = { phase: 'beats', beat: 0, chars: 0, t: 0, scroll: 0, which: 'one' };
 
-function startEnding() {
+function startEnding(which) {
+  Ending.which = which || 'one';
   G.mode = 'ending';
   Ending.phase = 'beats';
   Ending.beat = 0; Ending.chars = 0; Ending.t = 0; Ending.scroll = 0;
   Audio_.play('barrow');
 }
 
-function endingBeat() { return ENDING.beats[Math.min(Ending.beat, ENDING.beats.length - 1)]; }
+function ending() { return ENDINGS[Ending.which] || ENDINGS.one; }
+function endingBeat() { const e = ending(); return e.beats[Math.min(Ending.beat, e.beats.length - 1)]; }
 
 function updateEnding(dt) {
   Ending.t += dt;
@@ -3082,7 +3088,7 @@ function updateEnding(dt) {
       Ending.beat++;
       Ending.chars = 0;
       Audio_.sfx('cursor');
-      if (Ending.beat >= ENDING.beats.length) { Ending.phase = 'card'; Ending.t = 0; }
+      if (Ending.beat >= ending().beats.length) { Ending.phase = 'card'; Ending.t = 0; }
     }
     return;
   }
@@ -3095,7 +3101,7 @@ function updateEnding(dt) {
   if (Ending.phase === 'credits') {
     Ending.scroll += dt * 16;
     if (Input.held('confirm')) Ending.scroll += dt * 70;
-    if (Ending.scroll > ENDING.credits.length * 14 + 40) { Ending.phase = 'hook'; Ending.t = 0; }
+    if (Ending.scroll > ending().credits.length * 14 + 40) { Ending.phase = 'hook'; Ending.t = 0; }
     return;
   }
   if (Ending.t > 1.0 && (Input.tap('confirm') || Input.tap('cancel'))) {
@@ -3127,6 +3133,40 @@ function drawEnding() {
         ctx.fillRect(Math.round(VW / 2 - w), y, w * 2, 2);
       }
     }
+    // The mere: light coming down through moving water rather than up out of
+    // a floor. Same idea as the rift, upside down and cold.
+    if (beat.scene === 'mere') {
+      // Thin, sparse, and never a solid block: the first pass drew wide bars
+      // close together and it read as a grey pane laid over the sky.
+      for (let y = 10; y < 112; y += 9) {
+        const k = y / 112;
+        const wob = Math.sin(Ending.t * 1.5 + y * 0.11) * 16;
+        const w = 40 + Math.sin(Ending.t * 0.9 + y * 0.07) * 22;
+        ctx.fillStyle = 'rgba(159,216,232,' + (0.16 * (1 - k * 0.7)).toFixed(3) + ')';
+        ctx.fillRect(Math.round(VW / 2 - w + wob), y, Math.round(w * 2), 1);
+      }
+    }
+    // Hollowmere going out. The lamps darken left to right as the beat types
+    // itself, which is the whole event of the chapter happening on screen.
+    if (beat.scene === 'hollow' || beat.scene === 'road') {
+      const total = beat.lines.join('').length;
+      const done = Math.min(1, Ending.chars / Math.max(1, total));
+      const n = beat.scene === 'road' ? 9 : 11;
+      for (let i = 0; i < n; i++) {
+        const x = beat.scene === 'road'
+          ? Math.round(VW / 2 + (i - (n - 1) / 2) * (26 - i * 1.6))
+          : Math.round(18 + i * ((VW - 36) / (n - 1)));
+        const y = beat.scene === 'road' ? 62 + Math.round(i * 1.6) : 66;
+        const lit = beat.scene === 'road' ? i === n - 1 : (i / n) > done;
+        const r = lit ? 3 : 2;
+        ctx.fillStyle = lit ? 'rgba(255,201,106,0.92)' : 'rgba(74,58,58,0.9)';
+        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+        if (lit) {
+          ctx.fillStyle = 'rgba(255,201,106,0.18)';
+          ctx.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+        }
+      }
+    }
     let budget = Ending.chars;
     beat.lines.forEach((line, i) => {
       const show = line.slice(0, Math.max(0, Math.floor(budget)));
@@ -3142,8 +3182,8 @@ function drawEnding() {
   if (Ending.phase === 'card') {
     ctx.fillStyle = 'rgba(8,6,18,0.72)';
     ctx.fillRect(0, 0, VW, VH);
-    drawTextBig(ENDING.title, VW / 2, 20, '#f6e2a8', 2, { align: 'center' });
-    drawText(ENDING.subtitle, VW / 2, 42, '#c8b9e8', { align: 'center' });
+    drawTextBig(ending().title, VW / 2, 20, '#f6e2a8', 2, { align: 'center' });
+    drawText(ending().subtitle, VW / 2, 42, '#c8b9e8', { align: 'center' });
     drawWindow(40, 58, VW - 80, 74, { tone: 'dark' });
     G.party.forEach((h, i) => {
       const y = 66 + i * 14;
@@ -3162,7 +3202,7 @@ function drawEnding() {
   if (Ending.phase === 'credits') {
     ctx.fillStyle = '#0b0a16';
     ctx.fillRect(0, 0, VW, VH);
-    ENDING.credits.forEach((line, i) => {
+    ending().credits.forEach((line, i) => {
       const y = Math.round(VH + 6 + i * 14 - Ending.scroll);
       if (y < -14 || y > VH) return;
       const lead = i < 2;
@@ -3174,7 +3214,7 @@ function drawEnding() {
   ctx.fillStyle = '#0b0a16';
   ctx.fillRect(0, 0, VW, VH);
   drawTextBig('TO BE CONTINUED', VW / 2, 62, '#f2ecd8', 2, { align: 'center' });
-  drawText(ENDING.hook, VW / 2, 96, '#8fd8c8', { align: 'center' });
+  drawText(ending().hook, VW / 2, 96, '#8fd8c8', { align: 'center' });
   if (Ending.t > 1.0 && Math.sin(Ending.t * 3) > 0) {
     drawText('[Z]', VW / 2, 130, '#7a82a8', { align: 'center' });
   }

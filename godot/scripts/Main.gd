@@ -121,7 +121,7 @@ func begin_game(continue_save: bool) -> void:
 	fade_to(start)
 
 
-func start_encounter(group: Array, boss: bool) -> void:
+func start_encounter(group: Array, boss := "") -> void:
 	Snd.sfx("encounter")
 	var begin := func() -> void:
 		battle.start(group, boss)
@@ -129,7 +129,7 @@ func start_encounter(group: Array, boss: bool) -> void:
 	fade_to(begin)
 
 
-func finish_battle(how: String, was_boss: bool) -> void:
+func finish_battle(how: String, was_boss: String) -> void:
 	var wrap_up := func() -> void:
 		if how == "lose":
 			mode = "gameover"
@@ -140,20 +140,22 @@ func finish_battle(how: String, was_boss: bool) -> void:
 		for h in Gs.party:
 			h["defending"] = false
 			h["atb"] = 0.0
-		if was_boss and how == "win":
-			# The chapter closes here. The party is put back in Rivenbrook and
+		if was_boss != "" and how == "win":
+			# The chapter closes here. The party is put back somewhere safe and
 			# the journal written before the credits, so Continue picks up in a
 			# town that knows what happened rather than in the room where it
 			# happened.
+			var closed: Dictionary = Dat.bosses[was_boss]
 			for h in Gs.party:
 				h["hp"] = h["maxhp"]
 				h["mp"] = h["maxmp"]
 				h["alive"] = true
-			var spawn: Array = Dat.maps["town"]["spawn"]
-			field.enter_map("town", int(spawn[0]), int(spawn[1]), "up")
+			var home: String = str(closed["returns"])
+			var spawn: Array = Dat.maps[home]["spawn"]
+			field.enter_map(home, int(spawn[0]), int(spawn[1]), "up")
 			Gs.save_game()
 			mode = "ending"
-			ending.open()
+			ending.open(str(closed["ending"]))
 			return
 		Snd.play(field.map.get("music", "field"))
 	fade_to(wrap_up)

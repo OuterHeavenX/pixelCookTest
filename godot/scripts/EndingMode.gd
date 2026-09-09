@@ -7,6 +7,7 @@ extends RefCounted
 ## cost the player their game.
 
 var main
+var which := "one"
 var phase := "beats"
 var beat := 0
 var chars := 0.0
@@ -18,7 +19,8 @@ func _init(owner) -> void:
 	main = owner
 
 
-func open() -> void:
+func open(chapter := "one") -> void:
+	which = chapter
 	phase = "beats"
 	beat = 0
 	chars = 0.0
@@ -27,8 +29,14 @@ func open() -> void:
 	Snd.play("barrow")
 
 
+## Which chapter is closing. The game has more than one now, so the ending is
+## keyed like everything else rather than being the only one there is.
+func ending() -> Dictionary:
+	return Dat.endings.get(which, Dat.endings.get("one", {}))
+
+
 func beats() -> Array:
-	return Dat.ending.get("beats", [])
+	return ending().get("beats", [])
 
 
 func current() -> Dictionary:
@@ -59,7 +67,7 @@ func update(dt: float) -> void:
 			scroll += dt * 16.0
 			if Inp.held("confirm"):
 				scroll += dt * 70.0
-			if scroll > Dat.ending.get("credits", []).size() * 14.0 + 40.0:
+			if scroll > ending().get("credits", []).size() * 14.0 + 40.0:
 				phase = "hook"
 				t = 0.0
 		_:
@@ -90,7 +98,8 @@ func _update_beats(dt: float) -> void:
 
 func draw(c: CanvasItem) -> void:
 	var beat_now := current()
-	var night: bool = phase != "beats" or str(beat_now.get("scene", "")) != "town"
+	var scene := str(beat_now.get("scene", ""))
+	var night: bool = phase != "beats" or scene != "town"
 	Art.spr(c, "bg_night" if night else "bg_dusk", Vector2.ZERO)
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH),
 		Color(0.03, 0.02, 0.07, 0.55 if night else 0.35))
@@ -121,6 +130,40 @@ func _draw_beats(c: CanvasItem, beat_now: Dictionary) -> void:
 				Color(0.50, 0.91, 0.85, pulse * (1.0 - k) * (1.0 - k)))
 			y -= 2.0
 
+	# The mere: light coming down through moving water rather than up out of a
+	# floor. Thin and sparse - wide bars close together read as a grey pane
+	# laid over the sky rather than as water.
+	if str(beat_now.get("scene", "")) == "mere":
+		var wy := 10.0
+		while wy < 112.0:
+			var wk := wy / 112.0
+			var wob := sin(t * 1.5 + wy * 0.11) * 16.0
+			var ww := 40.0 + sin(t * 0.9 + wy * 0.07) * 22.0
+			c.draw_rect(Rect2(round(Art.VW / 2.0 - ww + wob), wy, round(ww * 2.0), 1.0),
+				Color(0.62, 0.85, 0.91, 0.16 * (1.0 - wk * 0.7)))
+			wy += 9.0
+
+	# Hollowmere going out. The lamps darken left to right as the beat types
+	# itself, so the event of the chapter happens on screen rather than only
+	# in the sentence describing it.
+	var scene_now := str(beat_now.get("scene", ""))
+	if scene_now == "hollow" or scene_now == "road":
+		var road := scene_now == "road"
+		var total := float(_typed_length(beat_now["lines"]))
+		var done: float = minf(1.0, chars / maxf(1.0, total))
+		var n := 9 if road else 11
+		for i in n:
+			var lx: float = (Art.VW / 2.0 + (i - (n - 1) / 2.0) * (26.0 - i * 1.6)) \
+				if road else (18.0 + i * ((Art.VW - 36.0) / (n - 1)))
+			var ly: float = (62.0 + round(i * 1.6)) if road else 66.0
+			var lit: bool = (i == n - 1) if road else (float(i) / n > done)
+			var r: float = 3.0 if lit else 2.0
+			var col := Color(1.0, 0.79, 0.42, 0.92) if lit else Color(0.29, 0.23, 0.23, 0.9)
+			c.draw_rect(Rect2(round(lx - r), ly - r, r * 2.0, r * 2.0), col)
+			if lit:
+				c.draw_rect(Rect2(round(lx - r * 3.0), ly - r * 3.0, r * 6.0, r * 6.0),
+					Color(1.0, 0.79, 0.42, 0.18))
+
 	var budget := chars
 	var lines: Array = beat_now["lines"]
 	for i in lines.size():
@@ -134,9 +177,9 @@ func _draw_beats(c: CanvasItem, beat_now: Dictionary) -> void:
 
 func _draw_card(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color(0.03, 0.02, 0.07, 0.72))
-	Art.draw_text_big(c, str(Dat.ending.get("title", "")), Vector2(Art.VW / 2.0, 20),
+	Art.draw_text_big(c, str(ending().get("title", "")), Vector2(Art.VW / 2.0, 20),
 		Color("#f6e2a8"), 2, "center")
-	Art.draw_text(c, str(Dat.ending.get("subtitle", "")), Vector2(Art.VW / 2.0, 42),
+	Art.draw_text(c, str(ending().get("subtitle", "")), Vector2(Art.VW / 2.0, 42),
 		Color("#c8b9e8"), "center")
 	Art.draw_window(c, Rect2(40, 58, Art.VW - 80, 74), "dark")
 	for i in Gs.party.size():
@@ -155,7 +198,7 @@ func _draw_card(c: CanvasItem) -> void:
 
 func _draw_credits(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color("#0b0a16"))
-	var lines: Array = Dat.ending.get("credits", [])
+	var lines: Array = ending().get("credits", [])
 	for i in lines.size():
 		var y := roundf(Art.VH + 6 + i * 14 - scroll)
 		if y < -14 or y > Art.VH:
@@ -168,7 +211,7 @@ func _draw_hook(c: CanvasItem) -> void:
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color("#0b0a16"))
 	Art.draw_text_big(c, "TO BE CONTINUED", Vector2(Art.VW / 2.0, 62),
 		Color("#f2ecd8"), 2, "center")
-	Art.draw_text(c, str(Dat.ending.get("hook", "")), Vector2(Art.VW / 2.0, 96),
+	Art.draw_text(c, str(ending().get("hook", "")), Vector2(Art.VW / 2.0, 96),
 		Color("#8fd8c8"), "center")
 	if t > 1.0 and sin(t * 3.0) > 0.0:
 		Art.draw_text(c, "[Z]", Vector2(Art.VW / 2.0, 130), Color("#7a82a8"), "center")

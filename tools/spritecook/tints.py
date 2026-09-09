@@ -17,6 +17,10 @@ ICE_VARIANTS = {
     "e_wolf_ice": "e_wolf",
     "e_slime_ice": "e_slime",
     "e_wight_ice": "e_wight",
+    # The depths under the mere: a keeper who did not come back up, and the
+    # cold that got into the lamps.
+    "e_skeleton_ice": "e_skeleton",
+    "e_wisp_ice": "e_wisp",
 }
 
 

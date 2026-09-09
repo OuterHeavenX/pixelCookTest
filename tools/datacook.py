@@ -304,6 +304,53 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
                 'ai': [{'w': 35, 'act': 'attack'},
                        {'w': 40, 'act': 'spell', 'spell': 'ice'},
                        {'w': 25, 'act': 'drain'}]},
+ # Under the mere. A drowned keeper still walking his round, the cold that got
+ # into a lamp, and the thing the ward was cut to hold - which does not fight
+ # you here, because it is not down there any more.
+ 'drownkeep': {'name': 'Drowned Keeper',
+               'height': 30,
+               'sprite': 'e_skeleton_ice',
+               'hp': 148,
+               'atk': 30,
+               'def': 20,
+               'mag': 14,
+               'spd': 14,
+               'exp': 62,
+               'gil': 58,
+               'weak': 'fire',
+               'ai': [{'w': 55, 'act': 'attack'},
+                      {'w': 25, 'act': 'spell', 'spell': 'ice'},
+                      {'w': 20, 'act': 'defend'}]},
+ 'coldwisp': {'name': 'Cold Lamp',
+              'height': 24,
+              'sprite': 'e_wisp_ice',
+              'hp': 116,
+              'atk': 22,
+              'def': 12,
+              'mag': 34,
+              'spd': 22,
+              'exp': 58,
+              'gil': 44,
+              'weak': 'fire',
+              'ai': [{'w': 30, 'act': 'attack'},
+                     {'w': 45, 'act': 'spell', 'spell': 'ice'},
+                     {'w': 25, 'act': 'drain'}]},
+ 'warden': {'name': 'Drowned Warden',
+            'height': 74,
+            'sprite': 'e_warden',
+            'boss': True,
+            'hp': 940,
+            'atk': 44,
+            'def': 24,
+            'mag': 34,
+            'spd': 16,
+            'exp': 620,
+            'gil': 1200,
+            'weak': 'fire',
+            'ai': [{'w': 45, 'act': 'attack'},
+                   {'w': 25, 'act': 'spell', 'spell': 'ice'},
+                   {'w': 18, 'act': 'smash'},
+                   {'w': 12, 'act': 'drain'}]},
  'ogre': {'name': 'Ogre Chieftain',
          'height': 76,   # the boss, and the only thing here bigger than you
           'sprite': 'e_ogre',
@@ -343,6 +390,15 @@ ENCOUNTERS = {
               {'w': 8, 'group': ['mereling', 'mereling']},
               {'w': 7, 'group': ['lampwraith', 'rimewolf']},
               {'w': 5, 'group': ['wight', 'mereling']}],
+    # Under the mere. Everything here has been down here a long time.
+    'mere': [{'w': 24, 'group': ['drownkeep']},
+             {'w': 18, 'group': ['coldwisp']},
+             {'w': 16, 'group': ['mereling', 'mereling']},
+             {'w': 14, 'group': ['drownkeep', 'mereling']},
+             {'w': 12, 'group': ['coldwisp', 'coldwisp']},
+             {'w': 10, 'group': ['drownkeep', 'drownkeep']},
+             {'w': 8, 'group': ['lampwraith', 'coldwisp']},
+             {'w': 6, 'group': ['drownkeep', 'lampwraith', 'mereling']}],
     'barrow': [{'w': 24, 'group': ['skeleton']},
                {'w': 18, 'group': ['bat', 'bat', 'bat']},
                {'w': 16, 'group': ['skeleton', 'skeleton']},
@@ -354,7 +410,25 @@ ENCOUNTERS = {
 }
 
 # Townsfolk, keyed by map id. {name}/{menu}/{cancel} are filled in at runtime.
-NPCS = { 'hollow': [{'x': 21,
+NPCS = { 'mere2': [{'x': 20,
+            'y': 6,
+            'sprite': 'sera',
+            'dir': 'left',
+            'name': 'Kestrel Vail',
+            'wander': False,
+            # Her `after` lines wait on the Warden, not the chieftain: a
+            # townsperson who has something new to say once the barrow is done
+            # is the common case, and she is not that case.
+            'after_flag': 'wardenDown',
+            'lines': ['Do not touch the letters. Whatever else you do down here.',
+                      'Eleven years. Forty letters. Cut them and it holds, and then the water takes the edges off them again, and you start at the first one.',
+                      'You are Sera. You are grown.',
+                      'I know. I know exactly what I did. Say it to me afterwards and I will stand still for it.',
+                      'The thing on the other side of these is cutting too. It has been cutting the whole time.',
+                      'Kill it, and I can stop.'],
+            'after': ['It is quiet. I had forgotten that was a thing rooms did.',
+                      'Take my hand, girl. I have not let go of anything in eleven years and I am out of practice.']}],
+ 'hollow': [{'x': 21,
              'y': 28,
              'sprite': 'bram',
              'dir': 'down',
@@ -566,7 +640,13 @@ LEGEND = {'1': ['t_bedtop', 1, 'bed'],
  's': ['t_sign', 1, 'sign'],
  'o': ['t_well', 1, 'well'],
  'c': ['t_chest', 1, 'chest'],
- 'l': ['t_lamp', 1, 'lamp']}
+ 'l': ['t_lamp', 1, 'lamp'],
+ # Under the mere. The same masonry as the barrow, four hundred years wetter.
+ '&': ['t_drowned', 0],
+ '@': ['t_drownwall', 1],
+ '$': ['t_ward', 0, 'ward'],
+ '(': ['t_lampsunk', 1, 'lamp'],
+ 'h': ['t_hatch', 1, 'hatch']}
 
 # What sits under a prop so it never floats on a void.
 # 'ground' resolves to each map's own ground tile.
@@ -588,13 +668,36 @@ UNDERLAY = {'1': 'ground',
  'l': 't_cobble',
  'o': 't_cobble',
  'B': 't_water0',
- 'U': 'ground'}
+ 'U': 'ground',
+ '(': 't_drowned',
+ '$': 't_drowned',
+ 'h': 't_snow'}
+
+# Doors that are shut until something is true. The gate, the pass and the
+# keepers' hatch were each a hardwired flag test in two builds, in four
+# places, which is three too many: a lock is a tile tag, a flag and two things
+# to say about it, and that is all it has ever been.
+LOCKS = {
+    'gate': {'flag': 'barrowKey',
+             'open': ['The iron gate stands open. The stair falls away below.'],
+             'shut': ['An iron gate, barred and locked.',
+                      'The lock is old, and it is not going to give.']},
+    'pass': {'flag': 'bossDown',
+             'open': ['The west pass. Someone has been keeping the road clear.'],
+             'shut': ['A pass west, choked with thorn and rockfall.',
+                      'Nobody has come through here in a long time.']},
+    'hatch': {'flag': 'mereOpened',
+              'open': ['The keepers\' hatch stands open. Cold comes up out of it.'],
+              'shut': ['Planks and iron, set flush into the shore.',
+                       'There is no handle on this side. It opens for keepers.']},
+}
 
 SIGN_TEXT = {'shore': 'THE MERE ROAD - Do not stop between the lamps.',
  'hollow': 'HOLLOWMERE - Keep the lanterns lit. Keep off the ice.',
  'town': 'RIVENBROOK - The Amber Lantern, rooms and remedies.',
  'wild': 'THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason.',
- 'barrow1': 'Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.'}
+ 'barrow1': 'Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.',
+ 'mere1': 'Cut over the stair, in the keepers\' hand: WE GO DOWN SO IT DOES NOT COME UP.'}
 
 # Signs that read differently once the ward is broken.
 SIGN_AFTER = {
@@ -687,6 +790,11 @@ GEAR = {
                     'desc': 'Someone wanted you to come home.'},
     # Not for sale anywhere. It is given, once, by one person, and it is worth
     # about as much as a shop trinket - the point of it is whose it was.
+    # Off the cutting floor. Nobody sells these; there were only ever a few and
+    # they were all made for the same job.
+    'keeper_coat': {'name': "Keeper's Coat", 'slot': 'armour', 'icon': 'i_armor',
+                    'price': 0, 'users': None, 'stats': {'def': 22, 'mag': 8, 'hp': 40},
+                    'desc': 'Waxed against water that is colder than water.'},
     'lamp_key': {'name': "Sera's Lamp Key", 'slot': 'trinket', 'icon': 'i_ring',
                  'price': 0, 'users': ['aldric'], 'stats': {'def': 4, 'mag': 4, 'hp': 20},
                  'desc': "Her mother's. It still turns the ones on the bridge."},
@@ -722,52 +830,138 @@ GEAR_STOCK = {
 }
 
 # --------------------------------------------------------------------- ending
-# What the chieftain's death actually reveals. The shrine sign has said "the
-# barrow below is sealed, it was sealed for a reason" since the first map was
-# painted; this is the bill for ignoring it. The chieftain was not guarding a
-# tomb, he was the lock on one, and the party has just broken it.
-BOSS_VICTORY = [
-    'The chieftain falls, and the barrow goes very quiet.',
-    'Beneath the bier, something answers. A seam of light opens in the floor.',
-    'The stone had a ward carved into it. It is cracked now.',
-]
+# The bosses. A map names one by id and everything that used to be hardwired
+# to the chieftain lives here instead: what he says when he stands up, the
+# flag his death sets, what that death reveals, which chapter it closes and
+# where it puts you afterwards. Chapter two needed a second one, and wiring a
+# second one into two builds by hand is exactly how the two builds drift.
+BOSSES = {
+    'chieftain': {
+        'enemy': 'ogre',
+        'banner': 'The Ogre Chieftain blocks your path!',
+        'flag': 'bossDown',
+        'sets': ['sealBroken'],
+        'sprite': 'e_ogre',
+        'name': 'Ogre Chieftain',
+        'challenge': [
+            "The Ogre Chieftain hauls itself off the bier at the barrow's bottom.",
+            'There will be no fleeing from this one. Stand and fight?'],
+        # The shrine sign has said "the barrow below is sealed, it was sealed
+        # for a reason" since the first map was painted. This is the bill for
+        # ignoring it: the chieftain was not guarding a tomb, he was the lock
+        # on one, and the party has just broken it.
+        'victory': [
+            'The chieftain falls, and the barrow goes very quiet.',
+            'Beneath the bier, something answers. A seam of light opens in the floor.',
+            'The stone had a ward carved into it. It is cracked now.'],
+        'ending': 'one',
+        'returns': 'town',
+    },
+    'drowned': {
+        'enemy': 'warden',
+        'banner': 'The Drowned Warden rises from the ward!',
+        'flag': 'wardenDown',
+        'sets': ['mereOpen'],
+        'sprite': 'e_warden',
+        'name': 'Drowned Warden',
+        'challenge': [
+            'The water above the ward turns over, and something stands up out of it.',
+            'It has been cutting the other side of these letters for four hundred years.',
+            'There is nowhere to run to down here. Stand and fight?'],
+        'victory': [
+            'The Warden comes apart, and the cutting stops.',
+            'For the first time in eleven years the ward is quiet.',
+            'Above you, very faintly, the lamps of Hollowmere go out one by one.'],
+        'ending': 'two',
+        'returns': 'hollow',
+    },
+}
 
-# The closing sequence, played once. Each beat is a screen of text over a
-# scene; `scene` names what the ending draws behind it.
-ENDING = {
-    'beats': [
-        {'scene': 'barrow', 'lines': [
-            'The Ogre Chieftain was not the barrow\'s tenant.',
-            'He was its warden. Something older set him on that bier',
-            'and told him to sit, and he sat for four hundred years.']},
-        {'scene': 'rift', 'lines': [
-            'Cold comes up through the crack in the ward.',
-            'Not the cold of a cellar. The cold of somewhere with no season.',
-            'Far below, in the dark, something turns over and settles.']},
-        {'scene': 'town', 'lines': [
-            'You walk back into Rivenbrook at dawn.',
-            'The lanterns are still lit. The gate is still standing.',
-            'Elder Halvard meets you at the well and does not ask what you saw.']},
-        {'scene': 'town', 'lines': [
-            'For tonight, the Thornwilds are quiet, and that is enough.',
-            'The seal will hold a while yet.',
-            'A while.']},
-    ],
-    'title': 'CHAPTER ONE',
-    'subtitle': 'THE WARDEN OF THE BARROW',
-    'credits': [
-        'RIVENBROOK',
-        'A Tale of the Thornwilds',
-        '',
-        'Every sprite cooked by spritecook',
-        'Backdrops and monsters modelled in Blender',
-        'Maps painted by mapcook, rules by datacook',
-        'Played in a browser and in Godot 4',
-        '',
-        'Chapter Two: THE COLD BELOW',
-        'coming up out of the floor',
-    ],
-    'hook': 'Your journal is saved. The rift is still open.',
+# The closing sequences, one per chapter, played once. Each beat is a screen
+# of text over a scene; `scene` names what the ending draws behind it.
+ENDINGS = {
+    'one': {
+        'beats': [
+            {'scene': 'barrow', 'lines': [
+                "The Chieftain was not the barrow's tenant.",
+                'He was its warden. Something older set him',
+                'on that bier and told him to sit, and he sat',
+                'for four hundred years.']},
+            {'scene': 'rift', 'lines': [
+                'Cold comes up through the crack in the ward.',
+                'Not the cold of a cellar. The cold of',
+                'somewhere with no season.',
+                'Far below, something turns over and settles.']},
+            {'scene': 'town', 'lines': [
+                'You walk back into Rivenbrook at dawn.',
+                'The lanterns are still lit. The gate is',
+                'still standing. Elder Halvard meets you at',
+                'the well and does not ask what you saw.']},
+            {'scene': 'town', 'lines': [
+                'For tonight the Thornwilds are quiet,',
+                'and that is enough.',
+                'The seal will hold a while yet.',
+                'A while.']},
+        ],
+        'title': 'CHAPTER ONE',
+        'subtitle': 'THE WARDEN OF THE BARROW',
+        'credits': [
+            'RIVENBROOK',
+            'A Tale of the Thornwilds',
+            '',
+            'Every sprite cooked by spritecook',
+            'Backdrops and monsters modelled in Blender',
+            'Maps painted by mapcook, rules by datacook',
+            'Played in a browser and in Godot 4',
+            '',
+            'Chapter Two: THE COLD BELOW',
+            'coming up out of the floor',
+        ],
+        'hook': 'Your journal is saved. The rift is still open.',
+    },
+    'two': {
+        'beats': [
+            {'scene': 'mere', 'lines': [
+                'The ward under the mere is one half',
+                'of a sentence. The other half was cut',
+                'under a barrow four hundred miles south,',
+                'and you broke that one in the spring.']},
+            {'scene': 'mere', 'lines': [
+                'Kestrel Vail climbs the keepers\' stair',
+                'for the first time in eleven years.',
+                'She does not say a great deal. She holds',
+                'her daughter\'s hand the whole way up.']},
+            {'scene': 'hollow', 'lines': [
+                'You come up into Hollowmere at noon,',
+                'and Hollowmere is dark. Every lantern.',
+                'The whole town, out, in daylight, at once,',
+                'and nobody put them out.']},
+            {'scene': 'hollow', 'lines': [
+                'The mere is open water. In midwinter.',
+                'Steaming.',
+                '"They only ever burned to keep it down,"',
+                'Kestrel says. "It is not down."']},
+            {'scene': 'road', 'lines': [
+                'South, the Mere Road runs into the dark.',
+                'Every lamp along it is out, the whole way',
+                'to the bridge. Bram is out there with a',
+                'taper, wondering why.']},
+        ],
+        'title': 'CHAPTER TWO',
+        'subtitle': 'THE COLD BELOW',
+        'credits': [
+            'RIVENBROOK',
+            'A Tale of the Thornwilds',
+            '',
+            'Hollowmere, the Mere Road and the ward below',
+            'Monsters modelled in Blender, tiles cooked in Python',
+            'One set of rules, two engines, no drift',
+            '',
+            'Chapter Three: WHAT THE LAMPS WERE FOR',
+            'and who has been lighting them',
+        ],
+        'hook': 'The road south is dark. Somebody should tell him.',
+    },
 }
 
 # Beats that fire the first time the party walks onto a map, once each. `needs`
@@ -849,6 +1043,33 @@ MAP_BEATS = {
          'lines': ["You never asked me again. Out on the road. What I promised.",
                    "Good. Keep it that way until this is finished.",
                    "Then ask me, and I will still be here, and I will tell you."]},
+
+        # And then she takes you down. This is the beat the whole chapter has
+        # been walking toward, and it is also the lock on the keepers' hatch:
+        # nothing else in the game sets mereOpened.
+        {'flag': 'mereOpened',
+         'needs': ['seraWater'],
+         'party': ['sera'],
+         'speaker': 'Sera',
+         'lines': ["Come down to the shore. Past the lanterns. Right down to the ice.",
+                   "There is a hatch under that snow with a keeper's lock on it. It has never been opened by anybody who was not one of us.",
+                   "My mother went through it eleven years ago to re-cut the ward.",
+                   "The town buried an empty box that winter and told me it was the cold. I was twelve. I believed them for about four years.",
+                   "You have her key. I gave it to you and I knew exactly what I was doing.",
+                   "Open it."]},
+    ],
+    'mere1': [
+        {'flag': 'mereLamps',
+         'speaker': 'Sera',
+         'lines': ["Lanterns. The whole length of it. Every one of them lit.",
+                   "Nobody has been down here in eleven years, {name}.",
+                   "So somebody has been lighting these."]},
+    ],
+    'mere2': [
+        {'flag': 'cuttingFloor',
+         'lines': ["The room at the bottom of the keepers' stair is not a tomb.",
+                   "It is a workshop. Stone chips underfoot. A whetstone worn into a saddle.",
+                   "A tally scratched into the wall in fours, and the fours go on and on and on."]},
     ],
 }
 
@@ -860,6 +1081,11 @@ CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
  'wild:6,12': {'gear': 'copper_ring'},
  'wild:51,5': {'item': 'potion', 'n': 3},
  'wild:13,36': {'gil': 220},
+  # Under the mere.
+ 'mere1:6,6': {'gear': 'lantern_stone'},
+ 'mere1:34,6': {'item': 'hipotion', 'n': 3},
+ 'mere2:7,5': {'gear': 'keeper_coat'},
+ 'mere2:28,5': {'gil': 900},
  # The barrow. The gate key is a flag rather than a bag item: it opens one
  # door and then it has done its job.
  'barrow1:6,6': {'gear': 'guard_charm'},
@@ -869,6 +1095,33 @@ CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
  'barrow2:4,6': {'gear': 'knight_plate'},
  'barrow2:32,22': {'gil': 600},
  'barrow2:19,4': {'gear': 'flame_brand'}}
+
+
+# The ending draws its lines from x=20 in a 320-wide screen, in a 6-pixel
+# monospaced font: 50 characters reach the right edge exactly and 48 leaves a
+# margin. Chapter one shipped with lines of 66 and the ends of seven of them
+# have been off the side of the screen ever since - silently, because nothing
+# anywhere measures this.
+ENDING_LINE_MAX = 48
+
+# And the box below them starts at y=116 in a 180-tall screen, on a 14-pixel
+# line pitch: four lines reach y=178 and a fifth is off the bottom.
+ENDING_BEAT_LINES = 4
+
+
+def _check_endings():
+    bad = []
+    for name, end in ENDINGS.items():
+        for beat in end["beats"]:
+            if len(beat["lines"]) > ENDING_BEAT_LINES:
+                bad.append("ending %s: a beat has %d lines, %r"
+                           % (name, len(beat["lines"]), beat["lines"][0]))
+            for line in beat["lines"]:
+                if len(line) > ENDING_LINE_MAX:
+                    bad.append("ending %s: %d chars, %r" % (name, len(line), line))
+    if bad:
+        raise SystemExit("ending line too long for the screen:\n  "
+                         + "\n  ".join(bad))
 
 
 def _check_chests():
@@ -897,6 +1150,7 @@ def _check_chests():
 
 def build():
     _check_chests()
+    _check_endings()
     payload = {
         "spells": SPELLS,
         "items": ITEMS,
@@ -906,12 +1160,13 @@ def build():
         "npcs": NPCS,
         "shop_stock": SHOP_STOCK,
         "legend": LEGEND,
+        "locks": LOCKS,
         "underlay": UNDERLAY,
         "sign_text": SIGN_TEXT,
         "sign_after": SIGN_AFTER,
         "chest_loot": CHEST_LOOT,
-        "boss_victory": BOSS_VICTORY,
-        "ending": ENDING,
+        "bosses": BOSSES,
+        "endings": ENDINGS,
         "map_beats": MAP_BEATS,
         "gear": GEAR,
         "gear_slots": GEAR_SLOTS,

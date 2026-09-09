@@ -46,7 +46,7 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		var spot := nearest_free(int(n["x"]), int(n["y"]))
 		var npc := {
 			"tx": spot.x, "ty": spot.y, "ox": 0.0, "oy": 0.0, "phase": 0.0,
-			"cool": randf_range(1.0, 4.0), "move": {}, "boss": false,
+			"cool": randf_range(1.0, 4.0), "move": {}, "boss": "",
 			"sprite": n["sprite"], "dir": n["dir"], "name": n["name"],
 			"wander": bool(n.get("wander", false)), "lines": n["lines"],
 			"after": n.get("after", null), "service": n.get("service", ""),
@@ -54,13 +54,15 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		}
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
-	if not bool(Gs.flags.get("bossDown", false)) and map.has("boss"):
+	var boss_def: Dictionary = Dat.bosses.get(str(map.get("boss", {}).get("id", "")), {})
+	if not boss_def.is_empty() and not bool(Gs.flags.get(boss_def["flag"], false)):
 		npcs.append({
 			"tx": int(map["boss"]["x"]), "ty": int(map["boss"]["y"]),
 			"ox": 0.0, "oy": 0.0, "phase": 0.0, "cool": 999.0, "move": {},
-			"boss": true, "after": null, "shelf": "amber", "recruit": null,
-			"sprite": "e_ogre", "dir": "down",
-			"name": "Ogre Chieftain", "wander": false, "lines": [], "service": "",
+			"boss": str(map["boss"]["id"]), "after": null, "shelf": "amber",
+			"recruit": null, "after_flag": "bossDown",
+			"sprite": str(boss_def["sprite"]), "dir": "down",
+			"name": str(boss_def["name"]), "wander": false, "lines": [], "service": "",
 		})
 	Gs.steps_to_encounter = roll_encounter_countdown()
 	Snd.play(map.get("music", "field"))
@@ -85,12 +87,13 @@ func solid_at(x: int, y: int) -> bool:
 	if ch == "" or not Dat.legend.has(ch):
 		return true
 	var entry: Array = Dat.legend[ch]
-	# A barred gate stops being a wall once you are carrying its key.
-	if entry.size() > 2 and str(entry[2]) == "gate":
-		return not bool(Gs.flags.get("barrowKey", false))
-	# The west pass opens when the barrow is done with you.
-	if entry.size() > 2 and str(entry[2]) == "pass":
-		return not bool(Gs.flags.get("bossDown", false))
+	# A lock stops being a wall once whatever opens it is true. Which flag
+	# that is lives in the data, so a new door is a paragraph rather than a
+	# pair of matching edits in two engines.
+	if entry.size() > 2:
+		var lock: Dictionary = Dat.locks.get(str(entry[2]), {})
+		if not lock.is_empty():
+			return not bool(Gs.flags.get(str(lock["flag"]), false))
 	return int(entry[1]) != 0
 
 
@@ -162,14 +165,14 @@ func on_step_complete() -> void:
 		do_warp(w)
 		return
 	for n in npcs:
-		if n["boss"] and abs(n["tx"] - Gs.px) + abs(n["ty"] - Gs.py) <= 1:
-			challenge_boss()
+		if str(n["boss"]) != "" and abs(n["tx"] - Gs.px) + abs(n["ty"] - Gs.py) <= 1:
+			challenge_boss(str(n["boss"]))
 			return
 	if int(map.get("encounter", 0)) > 0:
 		Gs.steps_to_encounter -= 1
 		if Gs.steps_to_encounter <= 0:
 			Gs.steps_to_encounter = roll_encounter_countdown()
-			main.start_encounter(Dat.roll_encounter(str(map.get("encounters", "wild"))), false)
+			main.start_encounter(Dat.roll_encounter(str(map.get("encounters", "wild"))))
 
 
 func do_warp(w: Dictionary) -> void:
@@ -204,8 +207,8 @@ func interact() -> void:
 	var ty := Gs.py + d.y
 	var npc = npc_at(tx, ty)
 	if npc != null:
-		if npc["boss"]:
-			challenge_boss()
+		if str(npc["boss"]) != "":
+			challenge_boss(str(npc["boss"]))
 			return
 		npc["dir"] = OPPOSITE[Gs.dir]
 		npc["cool"] = 3.0
@@ -221,7 +224,7 @@ func interact() -> void:
 		var recruit_id = npc.get("recruit", null)
 		var joined: bool = recruit_id != null and Gs.find_hero(recruit_id) != null
 		var use_after: bool = joined if recruit_id != null \
-			else bool(Gs.flags.get("bossDown", false))
+			else bool(Gs.flags.get(str(npc.get("after_flag", "bossDown")), false))
 		var script: Array = npc["lines"]
 		if use_after and npc.get("after", null) != null:
 			script = npc["after"]
@@ -265,26 +268,23 @@ func interact() -> void:
 			msg = make_message(["A made bed with a wool blanket. Speak to the innkeeper to rest."])
 		"lamp":
 			msg = make_message(["A lantern burns low against the dark."])
-		"gate":
-			if bool(Gs.flags.get("barrowKey", false)):
-				msg = make_message(["The iron gate stands open. The stair falls away below."])
-			else:
-				msg = make_message([
-					"An iron gate, barred and locked.",
-					"The lock is old, and it is not going to give.",
-				])
 		"stair":
 			msg = make_message(["Steps, worn hollow in the middle by feet long gone."])
-		"pass":
-			if bool(Gs.flags.get("bossDown", false)):
-				msg = make_message(["The west pass. Someone has been keeping the road clear."])
-			else:
-				msg = make_message([
-					"A pass west, choked with thorn and rockfall.",
-					"Nobody has come through here in a long time.",
-				])
+		"ward":
+			msg = make_message([
+				"Forty letters cut into the floor, deep as a finger.",
+				"The edges of them are fresh. Everything else down here"
+					+ " is four hundred years old.",
+			])
 		"water":
 			msg = make_message(["Clear water. Too deep to wade."])
+		_:
+			# Every locked thing: which flag opens it, and what it says either
+			# way, all of it in the data rather than in a branch per door.
+			var lock: Dictionary = Dat.locks.get(tag, {})
+			if not lock.is_empty():
+				msg = make_message(lock["open"] if bool(
+					Gs.flags.get(str(lock["flag"]), false)) else lock["shut"])
 	if not msg.is_empty():
 		Snd.sfx("confirm")
 
@@ -394,12 +394,13 @@ func open_chest(tx: int, ty: int) -> void:
 	msg = make_message([line])
 
 
-func challenge_boss() -> void:
+func challenge_boss(id: String) -> void:
+	var def: Dictionary = Dat.bosses[id]
 	Snd.sfx("cancel")
 	var on_pick := func(idx: int) -> void:
 		if idx == 0:
 			Snd.sfx("encounter")
-			main.start_encounter(["ogre"], true)
+			main.start_encounter([str(def["enemy"])], id)
 		else:
 			# Back away from the thing, not past it: two steps opposite the way
 			# you are facing, as far as the floor allows.
@@ -410,10 +411,7 @@ func challenge_boss() -> void:
 					Gs.py -= back.y
 			Gs.dir = OPPOSITE[Gs.dir]
 	var choice := {"options": ["Fight", "Back away"], "index": 0, "on_pick": on_pick}
-	msg = make_message([
-		"The Ogre Chieftain hauls itself off the bier at the barrow bottom.",
-		"There will be no fleeing from this one. Stand and fight?",
-	], "Ogre Chieftain", choice)
+	msg = make_message(def["challenge"], str(def["name"]), choice)
 
 
 func open_inn(npc: Dictionary) -> void:
@@ -663,7 +661,7 @@ func draw(c: CanvasItem) -> void:
 			continue
 		var npos := Vector2((n["tx"] + float(n["ox"])) * TILE - cam.x,
 			(n["ty"] + float(n["oy"])) * TILE - cam.y)
-		if n["boss"]:
+		if str(n["boss"]) != "":
 			Art.draw_shadow(c, npos + Vector2(8, 16), 11.0)
 			var size := Art.frame_size("e_ogre")
 			Art.spr(c, "e_ogre", npos + Vector2(8 - size.x / 2.0, 16 - size.y))

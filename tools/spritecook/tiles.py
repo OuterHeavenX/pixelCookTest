@@ -385,6 +385,116 @@ PINE_SNOW = [
     "                ",
 ]
 
+DROWN_WALL = [
+    "7777777777777777",
+    "7888888788888887",
+    "7888888788888887",
+    "7888888788888887",
+    "7777777777777777",
+    "8887888888878888",
+    "8887888888978888",
+    "8887888888878888",
+    "7777777777777777",
+    "7888888788888887",
+    "7889988788888887",
+    "7888888788888887",
+    "7777777777777777",
+    "8887888888878888",
+    "8887888888878888",
+    "7777777777777777",
+]
+
+# The mere's ward: the same forty letters, cut and re-cut, glowing cold rather
+# than warm. The barrow's seal is the same shape in ember; these two are two
+# halves of one sentence and the tiles say so.
+WARD = [
+    "8888888888888888",
+    "8777777777777778",
+    "8766666666666678",
+    "8767777777777678",
+    "8767999999997678",
+    "8767977777797678",
+    "8767976666797678",
+    "8767976996797678",
+    "8767976996797678",
+    "8767976666797678",
+    "8767977777797678",
+    "8767999999997678",
+    "8767777777777678",
+    "8766666666666678",
+    "8777777777777778",
+    "8888888888888888",
+]
+
+# A keeper's lantern on the drowned road, still burning after four hundred
+# years under water. Nobody has ever let one go out.
+SUNK_LAMP = [
+    "      ##        ",
+    "     #99#       ",
+    "    ##99##      ",
+    "   #9@@@@9#     ",
+    "   #@1EE1@#     ",
+    "   #@1EE1@#     ",
+    "   #9@@@@9#     ",
+    "    ##99##      ",
+    "     #99#       ",
+    "      ##        ",
+    "     9##9       ",
+    "      #7        ",
+    "     #77#       ",
+    "    #7777#      ",
+    "    ######      ",
+    "                ",
+]
+
+
+# The keepers' hatch: planks and iron set into the shore, with the stair down
+# through the ice under it. Shut, it is the most ordinary thing in Hollowmere.
+HATCH = [
+    "                ",
+    "  ############  ",
+    "  #nnnnnnnnnn#  ",
+    "  #nNNnnNNnnN#  ",
+    "  #nnnnnnnnnn#  ",
+    "  ############  ",
+    "  #nnnnnnnnnn#  ",
+    "  #nNnn11nnNn#  ",
+    "  #nnnn11nnnn#  ",
+    "  ############  ",
+    "  #nnnnnnnnnn#  ",
+    "  #nNNnnNNnnN#  ",
+    "  #nnnnnnnnnn#  ",
+    "  ############  ",
+    "                ",
+    "                ",
+]
+
+
+def drowned_floor(seed=61):
+    """The floor under the mere: the same slabs as the barrow, laid by the
+    same hands, with four hundred years of water on them.
+
+    Built off the crypt floor rather than beside it, because they are the same
+    masonry - the point of this whole place is that it matches the barrow."""
+    img = Image(TILE, TILE, PAL["7"])
+    rng = random.Random(seed)
+    for row in range(2):
+        for col in range(2):
+            x, y = col * 8, row * 8
+            shade = PAL["5"] if (row + col) % 2 == 0 else PAL["4"]
+            img.rect(x, y, 7, 7, shade)
+            img.rect(x, y, 7, 1, _tint_px(shade, 0.20))
+            img.rect(x, y + 6, 7, 1, _shade_px(shade, 0.22))
+    for _ in range(7):
+        img.set(rng.randrange(TILE), rng.randrange(TILE), PAL["6"])
+    # Caustics: the light that gets down here comes through moving water.
+    for _ in range(3):
+        x, y = rng.randrange(TILE - 3), rng.randrange(TILE)
+        for k in range(rng.randrange(2, 5)):
+            img.set((x + k) % TILE, y, PAL["9"])
+    return img
+
+
 def crypt_floor(seed=31):
     """Flagstones underfoot: big pale slabs, chipped, with the odd wet patch.
 
@@ -859,5 +969,10 @@ def cook():
         "t_blueroof": _art(BLUE_ROOF),
         "t_lantern": _art(LANTERN),
         "t_pinesnow": _art(PINE_SNOW),
+        "t_drowned": drowned_floor(),
+        "t_drownwall": _art(DROWN_WALL),
+        "t_ward": _art(WARD),
+        "t_lampsunk": _art(SUNK_LAMP),
+        "t_hatch": _art(HATCH),
     }
     return out

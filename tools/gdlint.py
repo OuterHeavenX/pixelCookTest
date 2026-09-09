@@ -216,6 +216,11 @@ def check_flags(srcs, problems):
     for loot in data.get("chest_loot", {}).values():
         if "flag" in loot:
             from_data.add(loot["flag"])
+    for boss in data.get("bosses", {}).values():
+        from_data.add(boss["flag"])
+        from_data |= set(boss.get("sets", []))
+    for lock in data.get("locks", {}).values():
+        from_data.add(lock["flag"])
     gd -= from_data
     js -= from_data
     for name in sorted(js - gd):

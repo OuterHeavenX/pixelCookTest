@@ -34,6 +34,7 @@ USE = (
     "e_wisp",       # concentric shells of glow
     "e_wight",      # a hood that is a hollow
     "e_ogre",       # mass, which is what an ogre is for
+    "e_warden",     # a coat heavy with water, and one lamp in it
 )
 
 
