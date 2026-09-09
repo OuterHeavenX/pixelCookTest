@@ -215,12 +215,19 @@ const Input = {
     this.initTouch();
   },
   initTouch() {
-    const pad = document.getElementById('touch');
-    if (!pad) return;
-    if (!('ontouchstart' in window)) return;
-    pad.style.display = 'block';
-    pad.querySelectorAll('[data-act]').forEach(el => {
-      // A diagonal button carries two actions, e.g. data-act="up right".
+    const root = document.getElementById('touch');
+    if (!root) return;
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+    root.style.display = 'block';
+    // The keyboard legend is only in the way on a phone.
+    const hint = document.getElementById('hint');
+    if (hint) hint.style.display = 'none';
+    this.initButtons(root);
+    this.initStick(root);
+  },
+
+  initButtons(root) {
+    root.querySelectorAll('[data-act]').forEach(el => {
       const acts = el.dataset.act.split(/\s+/);
       const on = e => {
         e.preventDefault();
@@ -236,6 +243,78 @@ const Input = {
       el.addEventListener('touchend', off, { passive: false });
       el.addEventListener('touchcancel', off, { passive: false });
     });
+  },
+
+  /* A floating analogue stick: it has no home. Wherever a thumb lands on the
+     left of the screen becomes the centre, and the whole thing fades out again
+     on release, so nothing sits on top of the game while you are walking. */
+  initStick(root) {
+    const zone = root.querySelector('#stickzone');
+    const stick = root.querySelector('#stick');
+    const knob = root.querySelector('#knob');
+    if (!zone || !stick || !knob) return;
+
+    // Screen y grows downward, so the octants start at east and walk clockwise.
+    const OCTANTS = ['right', 'down right', 'down', 'down left',
+                     'left', 'up left', 'up', 'up right'];
+    const REACH = 46;    // how far the knob travels before it stops
+    const DEAD = 13;     // a thumb resting still should not walk anywhere
+    let touchId = null;
+
+    const setDirs = acts => {
+      for (const a of ['up', 'down', 'left', 'right']) {
+        const on = acts.indexOf(a) >= 0;
+        if (on && !this.down[a]) this.tapped[a] = true;
+        this.down[a] = on;
+      }
+    };
+
+    const track = (x, y, cx, cy) => {
+      let dx = x - cx, dy = y - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > REACH) { dx *= REACH / d; dy *= REACH / d; }
+      knob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      if (d < DEAD) { setDirs([]); return; }
+      const oct = (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8;
+      setDirs(OCTANTS[oct].split(' '));
+    };
+
+    let cx = 0, cy = 0;
+    const mine = e => {
+      for (const t of e.changedTouches) if (t.identifier === touchId) return t;
+      return null;
+    };
+
+    zone.addEventListener('touchstart', e => {
+      if (touchId !== null) return;          // one thumb drives the stick
+      const t = e.changedTouches[0];
+      e.preventDefault();
+      touchId = t.identifier;
+      cx = t.clientX; cy = t.clientY;
+      stick.style.left = cx + 'px';
+      stick.style.top = cy + 'px';
+      knob.style.transform = 'translate(0,0)';
+      stick.classList.add('on');
+    }, { passive: false });
+
+    // Tracked on the window so a thumb that slides past the zone edge - or off
+    // the screen - still steers, and still releases.
+    window.addEventListener('touchmove', e => {
+      if (touchId === null) return;
+      const t = mine(e);
+      if (!t) return;
+      e.preventDefault();
+      track(t.clientX, t.clientY, cx, cy);
+    }, { passive: false });
+
+    const release = e => {
+      if (touchId === null || !mine(e)) return;
+      touchId = null;
+      setDirs([]);
+      stick.classList.remove('on');
+    };
+    window.addEventListener('touchend', release);
+    window.addEventListener('touchcancel', release);
   },
   tap(a) { return !!this.tapped[a]; },
   held(a) { return !!this.down[a]; },

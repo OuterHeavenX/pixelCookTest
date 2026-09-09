@@ -14,6 +14,8 @@
     color: #cdd3f0;
     font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     overflow: hidden;
+    /* No pinch-zoom, double-tap zoom or pull-to-refresh stealing a thumb. */
+    touch-action: none;
     -webkit-tap-highlight-color: transparent;
   }
   #stage {
@@ -34,20 +36,32 @@
     position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     font-size: 13px; letter-spacing: .2em; color: #8f97c0; background: #0a0812;
   }
-  #touch { display: none; position: fixed; inset: auto 0 0 0; padding: 12px; user-select: none; }
-  #touch .pad {
-    position: absolute; left: 14px; bottom: 18px;
-    display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px);
+  /* Touch controls. The whole layer is inert; only the stick zone and the
+     buttons take input, so nothing here steals a tap meant for the game. */
+  #touch { display: none; position: fixed; inset: 0; user-select: none; pointer-events: none; }
+  #stickzone { position: absolute; inset: 0 45% 0 0; pointer-events: auto; touch-action: none; }
+  #stick {
+    position: absolute; width: 116px; height: 116px; margin: -58px 0 0 -58px;
+    border-radius: 50%; border: 2px solid rgba(150,160,235,.45);
+    background: radial-gradient(circle, rgba(48,50,96,.42) 0%, rgba(28,30,62,.30) 70%,
+                                rgba(28,30,62,.12) 100%);
+    opacity: 0; transition: opacity .12s ease-out; will-change: transform, opacity;
   }
-  #touch .btns { position: absolute; right: 14px; bottom: 30px; display: flex; gap: 12px; }
+  /* The stick only exists while a thumb is on it. */
+  #stick.on { opacity: 1; }
+  #knob {
+    position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px;
+    border-radius: 50%; border: 2px solid rgba(170,180,250,.75);
+    background: radial-gradient(circle at 38% 34%, rgba(130,145,240,.85), rgba(58,62,120,.85));
+    box-shadow: 0 2px 10px rgba(0,0,0,.45);
+  }
+  #touch .btns { position: absolute; right: 14px; bottom: 30px; display: flex; gap: 12px;
+    pointer-events: auto; touch-action: none; }
   #touch button {
-    width: 44px; height: 44px; border-radius: 8px;
+    width: 52px; height: 52px; border-radius: 50%;
     border: 2px solid #4a4a80; background: rgba(40,42,80,.72); color: #e8ecff;
     font: 600 13px/1 ui-monospace, monospace;
   }
-  #touch .btns button { width: 52px; height: 52px; border-radius: 50%; }
-  #touch .pad .gap { visibility: hidden; }
-  #touch .pad button { font-size: 11px; }
   #touch button.on { background: rgba(120,140,240,.8); }
 
 </style>
@@ -62,17 +76,8 @@
 </div>
 <div id="loading">LOADING&hellip;</div>
 <div id="touch">
-  <div class="pad">
-    <button data-act="up left">&#8598;</button>
-    <button data-act="up">&#9650;</button>
-    <button data-act="up right">&#8599;</button>
-    <button data-act="left">&#9664;</button>
-    <button class="gap" disabled></button>
-    <button data-act="right">&#9654;</button>
-    <button data-act="down left">&#8601;</button>
-    <button data-act="down">&#9660;</button>
-    <button data-act="down right">&#8600;</button>
-  </div>
+  <div id="stickzone"></div>
+  <div id="stick"><div id="knob"></div></div>
   <div class="btns">
     <button data-act="cancel">B</button>
     <button data-act="confirm">A</button>
@@ -405,12 +410,19 @@ const Input = {
     this.initTouch();
   },
   initTouch() {
-    const pad = document.getElementById('touch');
-    if (!pad) return;
-    if (!('ontouchstart' in window)) return;
-    pad.style.display = 'block';
-    pad.querySelectorAll('[data-act]').forEach(el => {
-      // A diagonal button carries two actions, e.g. data-act="up right".
+    const root = document.getElementById('touch');
+    if (!root) return;
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+    root.style.display = 'block';
+    // The keyboard legend is only in the way on a phone.
+    const hint = document.getElementById('hint');
+    if (hint) hint.style.display = 'none';
+    this.initButtons(root);
+    this.initStick(root);
+  },
+
+  initButtons(root) {
+    root.querySelectorAll('[data-act]').forEach(el => {
       const acts = el.dataset.act.split(/\s+/);
       const on = e => {
         e.preventDefault();
@@ -426,6 +438,78 @@ const Input = {
       el.addEventListener('touchend', off, { passive: false });
       el.addEventListener('touchcancel', off, { passive: false });
     });
+  },
+
+  /* A floating analogue stick: it has no home. Wherever a thumb lands on the
+     left of the screen becomes the centre, and the whole thing fades out again
+     on release, so nothing sits on top of the game while you are walking. */
+  initStick(root) {
+    const zone = root.querySelector('#stickzone');
+    const stick = root.querySelector('#stick');
+    const knob = root.querySelector('#knob');
+    if (!zone || !stick || !knob) return;
+
+    // Screen y grows downward, so the octants start at east and walk clockwise.
+    const OCTANTS = ['right', 'down right', 'down', 'down left',
+                     'left', 'up left', 'up', 'up right'];
+    const REACH = 46;    // how far the knob travels before it stops
+    const DEAD = 13;     // a thumb resting still should not walk anywhere
+    let touchId = null;
+
+    const setDirs = acts => {
+      for (const a of ['up', 'down', 'left', 'right']) {
+        const on = acts.indexOf(a) >= 0;
+        if (on && !this.down[a]) this.tapped[a] = true;
+        this.down[a] = on;
+      }
+    };
+
+    const track = (x, y, cx, cy) => {
+      let dx = x - cx, dy = y - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > REACH) { dx *= REACH / d; dy *= REACH / d; }
+      knob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      if (d < DEAD) { setDirs([]); return; }
+      const oct = (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8;
+      setDirs(OCTANTS[oct].split(' '));
+    };
+
+    let cx = 0, cy = 0;
+    const mine = e => {
+      for (const t of e.changedTouches) if (t.identifier === touchId) return t;
+      return null;
+    };
+
+    zone.addEventListener('touchstart', e => {
+      if (touchId !== null) return;          // one thumb drives the stick
+      const t = e.changedTouches[0];
+      e.preventDefault();
+      touchId = t.identifier;
+      cx = t.clientX; cy = t.clientY;
+      stick.style.left = cx + 'px';
+      stick.style.top = cy + 'px';
+      knob.style.transform = 'translate(0,0)';
+      stick.classList.add('on');
+    }, { passive: false });
+
+    // Tracked on the window so a thumb that slides past the zone edge - or off
+    // the screen - still steers, and still releases.
+    window.addEventListener('touchmove', e => {
+      if (touchId === null) return;
+      const t = mine(e);
+      if (!t) return;
+      e.preventDefault();
+      track(t.clientX, t.clientY, cx, cy);
+    }, { passive: false });
+
+    const release = e => {
+      if (touchId === null || !mine(e)) return;
+      touchId = null;
+      setDirs([]);
+      stick.classList.remove('on');
+    };
+    window.addEventListener('touchend', release);
+    window.addEventListener('touchcancel', release);
   },
   tap(a) { return !!this.tapped[a]; },
   held(a) { return !!this.down[a]; },

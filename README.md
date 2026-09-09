@@ -40,7 +40,12 @@ play. Same game, same art, same numbers.
 | C / Esc / Shift | Open the menu |
 | M | Mute |
 
-Touch controls appear automatically on touch devices.
+Touch controls appear automatically on touch devices. Movement is a floating
+stick: it has no fixed home, so a thumb landing anywhere on the left of the
+screen becomes its centre, and it fades out again on release rather than
+sitting on top of the game. It reads all eight directions, with a small dead
+zone so a resting thumb does not walk. A, B and the menu button stay put on
+the right, and work at the same time as the stick.
 
 ## Two builds, one source of truth
 
