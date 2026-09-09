@@ -513,7 +513,13 @@ const Audio_ = {
     battle: { bpm: 480, lead: [659,0,659,622,659,0,784,0, 587,0,587,523,587,0,698,0, 659,0,659,622,659,784,880,784, 659,587,523,494,440,494,523,587],
               bass: [165,165,0,165,165,0,165,0, 147,147,0,147,147,0,147,0, 165,165,0,165,165,0,165,0, 110,110,110,110,147,147,165,165] },
     inn: { bpm: 260, lead: [659,0,784,0,880,0,784,0, 659,0,587,0,523,0,587,0],
-           bass: [131,0,131,0,175,0,175,0, 196,0,196,0,131,0,131,0] }
+           bass: [131,0,131,0,175,0,175,0, 196,0,196,0,131,0,131,0] },
+    // Slow, minor, and low: the barrow should feel like somewhere you are
+    // trespassing rather than somewhere you are adventuring.
+    barrow: { bpm: 210, lead: [392,0,0,0,466,0,0,0, 440,0,0,0,349,0,0,0,
+                               392,0,0,0,523,0,466,0, 440,0,392,0,330,0,0,0],
+              bass: [98,0,0,0,98,0,0,0, 117,0,0,0,117,0,0,0,
+                     110,0,0,0,110,0,0,0, 87,0,0,0,87,0,87,0] }
   },
   play(name) {
     if (this.track === name) return;
@@ -758,11 +764,12 @@ function enterMap(id, tx, ty, dir) {
       tx: spot[0], ty: spot[1], ox: 0, oy: 0, phase: 0, cool: rnd(1, 4), move: null
     }, n);
   });
-  if (id === 'wild' && !G.flags.bossDown && Field.map.boss) {
+  // Any map that declares a boss gets one, so moving him is a map edit.
+  if (!G.flags.bossDown && Field.map.boss) {
     Field.npcs.push({
       boss: true, tx: Field.map.boss.x, ty: Field.map.boss.y, ox: 0, oy: 0,
       sprite: 'e_ogre', dir: 'down', name: 'Ogre Chieftain', phase: 0, cool: 99, move: null,
-      lines: ['A shape rises from the shrine stones...']
+      lines: ['A shape rises from the bier...']
     });
   }
   G.stepsToEncounter = rollEncounterCountdown();
@@ -800,6 +807,8 @@ function solidAt(x, y) {
   if (ch === null) return true;
   const def = LEGEND[ch];
   if (!def) return true;
+  // A barred gate stops being a wall once you are carrying its key.
+  if (def[2] === 'gate') return !G.flags.barrowKey;
   if (def[1]) return true;
   return false;
 }
@@ -869,9 +878,12 @@ function doWarp(w) {
 }
 
 function pickEncounter() {
-  const total = ENCOUNTERS.reduce((a, e) => a + e.w, 0);
+  // Each map names the table it draws from, so the barrow can be a harder
+  // place without touching what lives in the wilds.
+  const table = ENCOUNTERS[(Field.map && Field.map.encounters) || 'wild'] || [];
+  const total = table.reduce((a, e) => a + e.w, 0);
   let r = Math.random() * total;
-  for (const e of ENCOUNTERS) { r -= e.w; if (r <= 0) return e.group.slice(); }
+  for (const e of table) { r -= e.w; if (r <= 0) return e.group.slice(); }
   return ['slime'];
 }
 
@@ -912,6 +924,13 @@ function interact() {
     Field.msg = makeMessage(['A made bed with a wool blanket. Speak to the innkeeper to rest.']);
   } else if (tag === 'lamp') {
     Field.msg = makeMessage(['A lantern burns low against the dark.']);
+  } else if (tag === 'gate') {
+    Field.msg = makeMessage(G.flags.barrowKey
+      ? ['The iron gate stands open. The stair falls away below.']
+      : ['An iron gate, barred and locked.',
+         'The lock is old, and it is not going to give.']);
+  } else if (tag === 'stair') {
+    Field.msg = makeMessage(['Steps, worn hollow in the middle by feet long gone.']);
   } else if (tag === 'water' || ch === '~') {
     Field.msg = makeMessage(['Clear water. Too deep to wade.']);
   }
@@ -921,7 +940,7 @@ function interact() {
 function challengeBoss() {
   Audio_.sfx('cancel');
   Field.msg = makeMessage([
-    'The Ogre Chieftain hauls itself off the shrine stones.',
+    'The Ogre Chieftain hauls itself off the bier at the barrow\'s bottom.',
     'There will be no fleeing from this one. Stand and fight?'
   ], {
     speaker: 'Ogre Chieftain',
@@ -929,7 +948,15 @@ function challengeBoss() {
       options: ['Fight', 'Back away'], index: 0,
       onPick: idx => {
         if (idx === 0) { Audio_.sfx('encounter'); startEncounter(['ogre'], true); }
-        else { G.py = clamp(G.py - 2, 0, Field.map.h - 1); G.dir = 'up'; }
+        else {
+          // Back away from the thing, not past it: the retreat is two steps
+          // opposite the way you are facing, as far as the floor allows.
+          const [bx, by] = DIRV[G.dir];
+          for (let i = 0; i < 2; i++) {
+            if (!solidAt(G.px - bx, G.py - by)) { G.px -= bx; G.py -= by; }
+          }
+          G.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[G.dir];
+        }
       }
     }
   });
@@ -953,6 +980,7 @@ function openChest(tx, ty) {
   let line;
   if (loot.gil) { G.gil += loot.gil; line = 'Found ' + loot.gil + ' gil!'; }
   else if (loot.gear) { takeGear(loot.gear); line = 'Found the ' + GEAR[loot.gear].name + '!'; }
+  else if (loot.flag) { G.flags[loot.flag] = true; line = loot.text || 'Found something.'; }
   else {
     G.bag[loot.item] = (G.bag[loot.item] || 0) + loot.n;
     line = 'Found ' + ITEMS[loot.item].name + ' x' + loot.n + '!';
@@ -1208,7 +1236,7 @@ const Battle = {
   actor: null, pending: [], acting: null,
   cmd: 0, sub: null, subIndex: 0, subScroll: 0, targetSide: 'enemy', target: 0,
   banner: '', bannerT: 0, popups: [], fx: [], shake: 0,
-  rewards: null, resultLines: [], resultPage: 0, flash: 0
+  rewards: null, resultLines: [], resultPage: 0, flash: 0, bg: 'dusk'
 };
 
 function startEncounter(group, isBoss) {
@@ -1220,6 +1248,9 @@ function startEncounter(group, isBoss) {
     Battle.intro = 0.6;
     Battle.t = 0;
     Battle.boss = !!isBoss;
+    // The backdrop follows the place you were standing, so a fight in the
+    // barrow is not lit by a sunset that is four floors above you.
+    Battle.bg = isBoss ? 'night' : ((Field.map && Field.map.battle_bg) || 'dusk');
     Battle.escapable = !isBoss;
     Battle.popups = []; Battle.fx = []; Battle.shake = 0;
     Battle.actor = null; Battle.acting = null; Battle.pending = [];
@@ -1774,7 +1805,7 @@ function endBattle(how) {
 function drawBattleBackdrop() {
   // Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
   // palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
-  spr(Battle.boss ? 'bg_night' : 'bg_dusk', 0, 0);
+  spr('bg_' + (Battle.bg || 'dusk'), 0, 0);
 }
 
 function drawBattle() {

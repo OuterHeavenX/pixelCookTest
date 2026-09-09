@@ -9,7 +9,7 @@ var spells := {}
 var items := {}
 var classes := {}
 var enemies := {}
-var encounters := []
+var encounters := {}
 var npcs := {}
 var shop_stock := []
 var legend := {}
@@ -30,7 +30,7 @@ func _ready() -> void:
 	items = data.get("items", {})
 	classes = data.get("classes", {})
 	enemies = data.get("enemies", {})
-	encounters = data.get("encounters", [])
+	encounters = data.get("encounters", {})
 	npcs = data.get("npcs", {})
 	shop_stock = data.get("shop_stock", [])
 	legend = data.get("legend", {})
@@ -57,12 +57,15 @@ func _read_json(path: String) -> Dictionary:
 
 
 ## Weighted pick from the Thornwilds encounter table.
-func roll_encounter() -> Array:
+## Each map names the table it draws from, so the barrow can be a harder place
+## without touching what lives in the wilds.
+func roll_encounter(table_name := "wild") -> Array:
+	var table: Array = encounters.get(table_name, [])
 	var total := 0.0
-	for e in encounters:
+	for e in table:
 		total += float(e["w"])
 	var r := randf() * total
-	for e in encounters:
+	for e in table:
 		r -= float(e["w"])
 		if r <= 0.0:
 			return (e["group"] as Array).duplicate()

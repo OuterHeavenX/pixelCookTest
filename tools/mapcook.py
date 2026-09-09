@@ -11,6 +11,9 @@ atlas sprites and collision flags by the game at load time.
 import json
 import os
 import random
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -259,6 +262,7 @@ def wilds():
     g.set(49, 33, "l")
     g.set(43, 39, "c")
     g.set(50, 36, "s")
+    g.set(46, 37, ">")          # the way into the barrow
 
     # Three caches worth leaving the road for. The best gear is found, not
     # bought, so each one sits in a corner the main path does not pass.
@@ -273,22 +277,202 @@ def wilds():
         "ground": "t_grass",
         "rows": g.out(),
         "encounter": 22,
+        "encounters": "wild",
         "music": "field",
         "spawn": [28, 4],
         "warps": [
             {"x": 28, "y": 2, "to": "town", "tx": 20, "ty": 27, "dir": "up"},
+            {"x": 46, "y": 37, "to": "barrow1", "tx": 20, "ty": 28, "dir": "up"},
         ],
-        "boss": {"x": 46, "y": 36},
     }
 
 
+def barrow_upper():
+    """The Barrow, upper halls: a corridor up from the entrance into a long
+    gallery, with a chamber at each end and the vault sealed in the middle.
+    The stair down is behind the gate, and the gate wants the key, which is in
+    the chamber at the far end - so the floor has to be walked, not crossed."""
+    g = Grid(40, 30, "#")
+
+    def hall(x, y, w, h):
+        g.rect(x, y, w, h, "_")
+
+    hall(17, 24, 7, 5)                   # entrance chamber
+    g.set(20, 29, "<")                   # back up to the shrine
+    hall(17, 18, 7, 6)                   # corridor to the gallery
+    hall(4, 14, 32, 4)                   # the long west-east gallery
+    hall(4, 4, 8, 10)                    # west chamber
+    hall(28, 4, 8, 10)                   # east chamber
+    hall(12, 4, 16, 4)                   # north gallery joining the two
+
+    # The vault. Sealed on every side; the only way in is the gate on its
+    # south wall, and the only thing in it is the way down.
+    hall(17, 9, 7, 4)
+    g.rect(17, 13, 7, 1, "#")
+    g.set(20, 13, "g")
+    g.set(20, 10, ">")
+
+    g.set(6, 6, "c")                     # the guard charm, west chamber
+    g.set(33, 6, "c")                    # the gate key, east chamber
+    g.set(30, 16, "c")                   # potions, off the gallery
+    for bx, by in ((5, 13), (10, 4), (29, 4), (34, 13), (16, 14), (24, 14),
+                   (18, 23), (22, 23)):
+        g.set(bx, by, "i")               # braziers, so the halls are lit
+    for jx, jy in ((7, 9), (31, 10), (13, 16), (26, 17), (19, 21), (8, 12)):
+        g.set(jx, jy, "j")
+    g.set(20, 23, "s")                   # the lintel inscription
+    return {
+        "id": "barrow1",
+        "name": "The Barrow",
+        "rows": g.out(),
+        "encounter": 18,
+        "encounters": "barrow",
+        "battle_bg": "night",
+        "music": "barrow",
+        "ground": "t_crypt",
+        "spawn": [20, 27],
+        "warps": [
+            {"x": 20, "y": 29, "to": "wild", "tx": 46, "ty": 37, "dir": "down"},
+            {"x": 20, "y": 10, "to": "barrow2", "tx": 18, "ty": 25, "dir": "up"},
+        ],
+    }
+
+
+def barrow_deep():
+    """The deep barrow: one long descent to the chieftain's floor, with two
+    dead ends that are worth the walk."""
+    g = Grid(38, 28, "#")
+
+    def hall(x, y, w, h):
+        g.rect(x, y, w, h, "_")
+
+    hall(15, 24, 7, 3)                   # arrival
+    g.set(18, 27, "<")                   # back up
+    hall(17, 12, 4, 12)                  # the spine
+    hall(3, 18, 15, 3)                   # west arm
+    hall(3, 4, 4, 15)                    # west arm turns north
+    hall(3, 4, 8, 3)                     # to a dead end with the plate
+    hall(20, 20, 14, 3)                  # east arm
+    hall(30, 8, 4, 13)                   # east arm turns north
+    hall(24, 8, 10, 3)                   # and back west
+    hall(12, 4, 14, 9)                   # the chieftain's floor
+    hall(24, 8, 4, 3)                    # joined to the east arm
+
+    g.set(4, 6, "c")                     # knight plate
+    g.set(32, 22, "c")                   # a purse
+    g.set(18, 4, "c")                    # flame brand, behind the boss
+    for bx, by in ((13, 5), (24, 5), (13, 11), (24, 11), (4, 17), (33, 19), (16, 23)):
+        g.set(bx, by, "i")
+    for jx, jy in ((19, 6), (15, 9), (22, 10), (5, 12), (31, 15), (26, 21), (8, 19)):
+        g.set(jx, jy, "j")
+    return {
+        "id": "barrow2",
+        "name": "The Barrow, Deep",
+        "rows": g.out(),
+        "encounter": 15,
+        "encounters": "barrow",
+        "battle_bg": "night",
+        "music": "barrow",
+        "ground": "t_crypt",
+        "spawn": [18, 25],
+        "warps": [
+            {"x": 18, "y": 27, "to": "barrow1", "tx": 20, "ty": 11, "dir": "down"},
+        ],
+        "boss": {"x": 18, "y": 8},
+    }
+
+
+def _solid_chars():
+    """The legend lives in datacook; collision comes from there, not a second
+    copy here that could drift."""
+    import datacook
+    return {ch for ch, spec in datacook.LEGEND.items() if len(spec) > 1 and spec[1]}
+
+
+def _reachable(m, solid):
+    """Flood fill from the spawn over everything you can stand on."""
+    rows = m["rows"]
+    w, h = len(rows[0]), len(rows)
+    start = tuple(m["spawn"])
+    seen = {start}
+    stack = [start]
+    while stack:
+        x, y = stack.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if not (0 <= nx < w and 0 <= ny < h) or (nx, ny) in seen:
+                continue
+            if rows[ny][nx] in solid:
+                continue
+            seen.add((nx, ny))
+            stack.append((nx, ny))
+    return seen
+
+
+def validate(maps):
+    """A map you cannot walk is worse than no map, and the mistake is silent:
+    the game boots, the room is just never seen.
+
+    Everything has to be reachable once the locked gates are open, and the key
+    that opens a gate has to be reachable while they are still shut - a key
+    behind the door it unlocks makes the dungeon unwinnable, and no amount of
+    playing the happy path finds that."""
+    import datacook
+    problems = []
+    solid = _solid_chars()
+    unlocked = solid - {ch for ch, spec in datacook.LEGEND.items()
+                        if len(spec) > 2 and spec[2] == "gate"}
+    for m in sorted(maps):
+        mp = maps[m]
+        rows = mp["rows"]
+        if rows[mp["spawn"][1]][mp["spawn"][0]] in solid:
+            problems.append("%s: spawn %s is inside a wall" % (m, mp["spawn"]))
+            continue
+        # Gates count as open here: a lock is a delay, not a wall.
+        seen = _reachable(mp, unlocked)
+        locked = _reachable(mp, solid)
+
+        def standable(where, x, y, what, note=""):
+            if (x, y) in where:
+                return True
+            # Props are solid; you use them from the tile next to them.
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if (x + dx, y + dy) in where:
+                    return True
+            problems.append("%s: %s at %d,%d cannot be reached%s"
+                            % (m, what, x, y, note))
+            return False
+
+        for w in mp.get("warps", []):
+            if (w["x"], w["y"]) not in seen:
+                problems.append("%s: the warp to %s at %d,%d cannot be reached"
+                                % (m, w["to"], w["x"], w["y"]))
+        if mp.get("boss"):
+            standable(seen, mp["boss"]["x"], mp["boss"]["y"], "the boss")
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch == "c":
+                    standable(seen, x, y, "a chest")
+                    loot = datacook.CHEST_LOOT.get("%s:%d,%d" % (m, x, y), {})
+                    if loot.get("flag"):
+                        standable(locked, x, y, "the %s key" % loot["flag"],
+                                  " with the gates still locked")
+                elif ch == "s":
+                    standable(seen, x, y, "a sign")
+    return problems
+
+
 def build():
-    maps = {m["id"]: m for m in (town(), inn(), wilds())}
+    maps = {m["id"]: m for m in (town(), inn(), wilds(), barrow_upper(), barrow_deep())}
     for m in maps.values():
         widths = {len(r) for r in m["rows"]}
         assert len(widths) == 1, "%s has ragged rows: %s" % (m["id"], widths)
         m["w"] = widths.pop()
         m["h"] = len(m["rows"])
+    problems = validate(maps)
+    if problems:
+        raise SystemExit("unwalkable map:\n  " + "\n  ".join(problems))
+
     path = os.path.join(ROOT, "assets", "maps.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as fh:

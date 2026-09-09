@@ -185,6 +185,64 @@ func _run() -> void:
 		"the attack resolves")
 	await _shot("battle_action")
 
+	print("barrow")
+	main.field.enter_map("barrow1", 20, 27)
+	Gs.steps_to_encounter = 9999
+	await _step(10)
+	_expect(Gs.map_id == "barrow1", "the barrow loads")
+	_expect(str(main.field.map.get("encounters", "")) == "barrow",
+		"it draws from the barrow's own encounter table")
+	_expect(Dat.encounters.has("barrow") and not Dat.encounters["barrow"].is_empty(),
+		"that table has entries (%d)" % Dat.encounters.get("barrow", []).size())
+	_expect(str(main.field.map.get("music", "")) == "barrow", "the barrow has its own theme")
+	await _shot("barrow_upper")
+
+	# The gate is a wall until the key turns up.
+	Gs.flags["barrowKey"] = false
+	_expect(main.field.solid_at(20, 13), "the gate is shut without the key")
+	Gs.px = 20
+	Gs.py = 14
+	Gs.dir = "up"
+	await _step(4)
+	main.field.interact()
+	await _step(4)
+	_expect(not main.field.msg.is_empty(), "the gate says something when you try it")
+	await _shot("barrow_gate")
+	main.field.msg = {}
+
+	# Take the key, and it opens.
+	main.field.open_chest(33, 6)
+	await _step(4)
+	_expect(bool(Gs.flags.get("barrowKey", false)), "the east chamber holds the key")
+	_expect(not main.field.solid_at(20, 13), "the gate opens once you have it")
+	main.field.msg = {}
+
+	# The floor below, and the chieftain on it.
+	main.field.enter_map("barrow2", 18, 25)
+	Gs.steps_to_encounter = 9999
+	await _step(10)
+	_expect(Gs.map_id == "barrow2", "the lower floor loads")
+	var boss_here := false
+	for n in main.field.npcs:
+		if n["boss"]:
+			boss_here = int(n["tx"]) == 18 and int(n["ty"]) == 8
+	_expect(boss_here, "the chieftain waits at the bottom, not in a field")
+	await _shot("barrow_deep")
+
+	# A barrow encounter draws barrow monsters.
+	var group := Dat.roll_encounter("barrow")
+	var barrow_only := true
+	for id in group:
+		if not Dat.enemies.has(id):
+			barrow_only = false
+	_expect(barrow_only, "its encounters name real monsters (%s)" % ", ".join(group))
+	main.start_encounter(["skeleton", "wight"], false)
+	_expect(await _until(func(): return main.mode == "battle"), "the barrow's own monsters fight")
+	await _until(func(): return main.battle.phase == "command")
+	await _shot("barrow_battle")
+	main.finish_battle("win", false)
+	await _until(func(): return main.mode == "field")
+
 	print("save")
 	_expect(Gs.save_game(), "the journal saves")
 	var gear_before := (Gs.party[1]["gear"] as Dictionary).duplicate()

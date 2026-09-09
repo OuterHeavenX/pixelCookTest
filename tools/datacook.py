@@ -212,6 +212,32 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
             'exp': 30,
             'gil': 45,
             'ai': [{'w': 70, 'act': 'attack'}, {'w': 30, 'act': 'steal'}]},
+ 'skeleton': {'name': 'Barrow Guard',
+              'scale': 2,
+              'sprite': 'e_skeleton',
+              'hp': 78,
+              'atk': 22,
+              'def': 16,
+              'mag': 4,
+              'spd': 10,
+              'exp': 26,
+              'gil': 22,
+              'weak': 'quake',
+              'ai': [{'w': 75, 'act': 'attack'}, {'w': 25, 'act': 'rally'}]},
+ 'wight': {'name': 'Barrow Wight',
+           'scale': 2,
+           'sprite': 'e_wight',
+           'hp': 96,
+           'atk': 20,
+           'def': 13,
+           'mag': 19,
+           'spd': 13,
+           'exp': 34,
+           'gil': 30,
+           'weak': 'fire',
+           'ai': [{'w': 40, 'act': 'attack'},
+                  {'w': 35, 'act': 'spell', 'spell': 'ice'},
+                  {'w': 25, 'act': 'drain'}]},
  'ogre': {'name': 'Ogre Chieftain',
          'scale': 2,
           'sprite': 'e_ogre',
@@ -229,16 +255,28 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
                  {'w': 20, 'act': 'spell', 'spell': 'quake'}]}}
 
 # Weighted encounter table for the Thornwilds.
-ENCOUNTERS = [{'w': 26, 'group': ['slime']},
- {'w': 20, 'group': ['bat', 'bat']},
- {'w': 18, 'group': ['goblin']},
- {'w': 14, 'group': ['slime', 'slime', 'bat']},
- {'w': 12, 'group': ['wolf']},
- {'w': 10, 'group': ['goblin', 'goblin']},
- {'w': 8, 'group': ['wisp']},
- {'w': 7, 'group': ['wolf', 'goblin']},
- {'w': 5, 'group': ['bandit']},
- {'w': 4, 'group': ['wisp', 'bat', 'bat']}]
+# Encounter tables, keyed by region. A map names the table it draws from, so
+# the barrow can be a harder place without touching the wilds.
+ENCOUNTERS = {
+    'wild': [{'w': 26, 'group': ['slime']},
+             {'w': 20, 'group': ['bat', 'bat']},
+             {'w': 18, 'group': ['goblin']},
+             {'w': 14, 'group': ['slime', 'slime', 'bat']},
+             {'w': 12, 'group': ['wolf']},
+             {'w': 10, 'group': ['goblin', 'goblin']},
+             {'w': 8, 'group': ['wisp']},
+             {'w': 7, 'group': ['wolf', 'goblin']},
+             {'w': 5, 'group': ['bandit']},
+             {'w': 4, 'group': ['wisp', 'bat', 'bat']}],
+    'barrow': [{'w': 24, 'group': ['skeleton']},
+               {'w': 18, 'group': ['bat', 'bat', 'bat']},
+               {'w': 16, 'group': ['skeleton', 'skeleton']},
+               {'w': 12, 'group': ['wight']},
+               {'w': 10, 'group': ['skeleton', 'wolf']},
+               {'w': 8, 'group': ['wisp', 'wisp']},
+               {'w': 7, 'group': ['wight', 'skeleton']},
+               {'w': 5, 'group': ['bandit', 'skeleton']}],
+}
 
 # Townsfolk, keyed by map id. {name}/{menu}/{cancel} are filled in at runtime.
 NPCS = {'town': [{'x': 20,
@@ -326,6 +364,13 @@ SHOP_STOCK = ['potion', 'hipotion', 'ether', 'phoenix', 'bomb']
 
 # Tile legend: map character -> [sprite, solid, tag].
 LEGEND = {'1': ['t_bedtop', 1, 'bed'],
+ '#': ['t_cryptwall', 1],
+ '_': ['t_crypt', 0],
+ '<': ['t_stairup', 0, 'stair'],
+ '>': ['t_stairdown', 0, 'stair'],
+ 'g': ['t_gate', 1, 'gate'],
+ 'i': ['t_brazier', 1],
+ 'j': ['t_bones', 0],
  '2': ['t_bedbot', 1, 'bed'],
  '.': ['t_grass', 0],
  'F': ['t_plank', 0],
@@ -359,6 +404,9 @@ LEGEND = {'1': ['t_bedtop', 1, 'bed'],
 # What sits under a prop so it never floats on a void.
 # 'ground' resolves to each map's own ground tile.
 UNDERLAY = {'1': 'ground',
+ 'i': 't_crypt',
+ 'j': 't_crypt',
+ 'g': 't_crypt',
  '2': 'ground',
  'T': 'ground',
  'b': 'ground',
@@ -373,7 +421,8 @@ UNDERLAY = {'1': 'ground',
  'U': 'ground'}
 
 SIGN_TEXT = {'town': 'RIVENBROOK - The Amber Lantern, rooms and remedies.',
- 'wild': 'THORNWILDS SHRINE - Turn back. The chieftain does not sleep.'}
+ 'wild': 'THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason.',
+ 'barrow1': 'Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.'}
 
 # --------------------------------------------------------------------- gear
 # Three slots per character. `users` is None when anyone can wear it, and the
@@ -453,9 +502,18 @@ CHEST_LOOT = {'town:4,5': {'item': 'potion', 'n': 2},
  'town:35,24': {'item': 'ether', 'n': 1},
  'inn:11,2': {'gil': 120},
  'wild:43,39': {'item': 'hipotion', 'n': 2},
- 'wild:6,12': {'gear': 'guard_charm'},
- 'wild:51,5': {'gear': 'knight_plate'},
- 'wild:13,36': {'gear': 'flame_brand'}}
+ 'wild:6,12': {'gear': 'copper_ring'},
+ 'wild:51,5': {'item': 'potion', 'n': 3},
+ 'wild:13,36': {'gil': 220},
+ # The barrow. The gate key is a flag rather than a bag item: it opens one
+ # door and then it has done its job.
+ 'barrow1:6,6': {'gear': 'guard_charm'},
+ 'barrow1:30,16': {'item': 'hipotion', 'n': 2},
+ 'barrow1:33,6': {'flag': 'barrowKey',
+                  'text': 'A heavy iron key, green with age.'},
+ 'barrow2:4,6': {'gear': 'knight_plate'},
+ 'barrow2:32,22': {'gil': 600},
+ 'barrow2:18,4': {'gear': 'flame_brand'}}
 
 
 def _check_chests():

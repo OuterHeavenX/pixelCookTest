@@ -13,6 +13,17 @@ from .palette import TILE_PALETTE as PAL
 TILE = 16
 
 
+def _tint_px(c, amount):
+    return (min(255, int(c[0] + (255 - c[0]) * amount)),
+            min(255, int(c[1] + (255 - c[1]) * amount)),
+            min(255, int(c[2] + (255 - c[2]) * amount)), c[3])
+
+
+def _shade_px(c, amount):
+    return (int(c[0] * (1 - amount)), int(c[1] * (1 - amount)),
+            int(c[2] * (1 - amount)), c[3])
+
+
 def _noise(seed, base, speckles):
     """A flat tile dusted with speckles: (colour, count) pairs."""
     rng = random.Random(seed)
@@ -97,6 +108,148 @@ def water(frame=0):
         for dx in range(4):
             img.set((x + dx) % TILE, y, PAL["w"])
         img.set((x + 4) % TILE, y + 1, PAL["w"])
+    return img
+
+
+# --------------------------------------------------------------- the barrow
+# Dark stone, so the dungeon reads as a different place the moment you step in
+# rather than the same grass with a roof on it.
+
+CRYPT_WALL = [
+    "XXXXXXXXXXXXXXXX",
+    "XcVVVVVXVVVVVVVX",
+    "XVVVVVVXVVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+    "XVVVXVVVVVVVXVVV",
+    "XVVVXVVVVVVVXVVV",
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVVXVVVVVVX",
+    "XVVVVVZVXVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+    "XVVVXVVVVVVVXVVV",
+    "XVVVXVVVVZVVXVVV",
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVXVVVVVVVX",
+    "XVVVVVVXVVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+]
+
+STAIR_DOWN = [
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVVVVVVVVVX",
+    "XVCCCCCCCCCCCCVX",
+    "XVcccccccccccc VX".replace(" ", ""),
+    "XVXXXXXXXXXXXXVX",
+    "XVVCCCCCCCCCCVVX",
+    "XVVcccccccccc VX".replace(" ", "V"),
+    "XVVXXXXXXXXXXVVX",
+    "XVVVCCCCCCCCVVVX",
+    "XVVVccccccccVVVX",
+    "XVVVXXXXXXXXVVVX",
+    "XVVVVCCCCCCVVVVX",
+    "XVVVVccccccVVVVX",
+    "XVVVVXXXXXXVVVVX",
+    "XVVVVVXXXXVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+]
+
+STAIR_UP = [
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVXXXXVVVVVX",
+    "XVVVVCCCCCCVVVVX",
+    "XVVVVccccccVVVVX",
+    "XVVVXXXXXXXXVVVX",
+    "XVVVCCCCCCCCVVVX",
+    "XVVVccccccccVVVX",
+    "XVVXXXXXXXXXXVVX",
+    "XVVCCCCCCCCCCVVX",
+    "XVVccccccccccVVX",
+    "XVXXXXXXXXXXXXVX",
+    "XVCCCCCCCCCCCCVX",
+    "XVccccccccccccVX",
+    "XVVVVVVVVVVVVVVX",
+    "XVVVVVVVVVVVVVVX",
+    "XXXXXXXXXXXXXXXX",
+]
+
+BARRED_GATE = [
+    "XXXXXXXXXXXXXXXX",
+    "XVVVVVVVVVVVVVVX",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XVVVVVVVVVVVVVVX",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XVVVVVVVVVVVVVVX",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XVVVVVVVVVVVVVVX",
+    "XV0OO0V0OO0V0O0X",
+    "XV0OO0V0OO0V0O0X",
+    "XXXXXXXXXXXXXXXX",
+]
+
+BRAZIER = [
+    "                ",
+    "       E        ",
+    "      E3E       ",
+    "     EE3EE      ",
+    "     E333E      ",
+    "      333       ",
+    "       3        ",
+    "     XcccX      ",
+    "     XcCcX      ",
+    "     XcccX      ",
+    "      XcX       ",
+    "      XcX       ",
+    "     XcccX      ",
+    "    XcCCCcX     ",
+    "    XXXXXXX     ",
+    "                ",
+]
+
+BONES = [
+    "                ",
+    "                ",
+    "     0OO0       ",
+    "    0O00O0      ",
+    "    0O00O0      ",
+    "     0OO0       ",
+    "      00        ",
+    "   O0      0O   ",
+    "  0OOO000OOO0   ",
+    "   O0      0O   ",
+    "                ",
+    "        0OO     ",
+    "       0O0      ",
+    "      0O0       ",
+    "                ",
+    "                ",
+]
+
+
+def crypt_floor(seed=31):
+    """Flagstones underfoot: big pale slabs, chipped, with the odd wet patch.
+
+    These have to sit clearly *above* the walls in value. The first version was
+    within a shade of the brickwork and the whole floor read as one texture -
+    you could not see the room you were standing in."""
+    img = Image(TILE, TILE, PAL["V"])
+    rng = random.Random(seed)
+    for row in range(2):
+        for col in range(2):
+            x, y = col * 8, row * 8
+            shade = PAL["C"] if (row + col) % 2 == 0 else PAL["c"]
+            img.rect(x, y, 7, 7, shade)
+            img.rect(x, y, 7, 1, _tint_px(shade, 0.22))
+            img.rect(x, y + 6, 7, 1, _shade_px(shade, 0.18))
+    for _ in range(8):
+        img.set(rng.randrange(TILE), rng.randrange(TILE), PAL["V"])
+    for _ in range(2):
+        x, y = rng.randrange(TILE - 1), rng.randrange(TILE - 1)
+        img.set(x, y, PAL["Z"])
     return img
 
 
@@ -535,5 +688,12 @@ def cook():
         "t_shelf": shelf(),
         "t_bedtop": bed(True),
         "t_bedbot": bed(False),
+        "t_crypt": crypt_floor(),
+        "t_cryptwall": _art(CRYPT_WALL),
+        "t_stairdown": _art(STAIR_DOWN),
+        "t_stairup": _art(STAIR_UP),
+        "t_gate": _art(BARRED_GATE),
+        "t_brazier": _art(BRAZIER),
+        "t_bones": _art(BONES),
     }
     return out

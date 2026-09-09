@@ -11,6 +11,7 @@ var t := 0.0
 var intro := 0.0
 var enemies := []
 var is_boss := false
+var backdrop := "dusk"
 var escapable := true
 
 var actor = null
@@ -45,6 +46,9 @@ func start(group: Array, boss: bool) -> void:
 	intro = 0.6
 	t = 0.0
 	is_boss = boss
+	# The backdrop follows the place you were standing, so a fight in the
+	# barrow is not lit by a sunset that is four floors above you.
+	backdrop = "night" if boss else str(main.field.map.get("battle_bg", "dusk"))
 	escapable = not boss
 	popups = []
 	fx = []
@@ -771,7 +775,7 @@ func class_icon(h: Dictionary) -> String:
 func draw_backdrop(c: CanvasItem) -> void:
 	# Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
 	# palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
-	Art.spr(c, "bg_night" if is_boss else "bg_dusk", Vector2.ZERO)
+	Art.spr(c, "bg_" + backdrop, Vector2.ZERO)
 
 
 func draw(c: CanvasItem) -> void:

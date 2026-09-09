@@ -1,5 +1,25 @@
 {
  "chest_loot": {
+  "barrow1:30,16": {
+   "item": "hipotion",
+   "n": 2
+  },
+  "barrow1:33,6": {
+   "flag": "barrowKey",
+   "text": "A heavy iron key, green with age."
+  },
+  "barrow1:6,6": {
+   "gear": "guard_charm"
+  },
+  "barrow2:18,4": {
+   "gear": "flame_brand"
+  },
+  "barrow2:32,22": {
+   "gil": 600
+  },
+  "barrow2:4,6": {
+   "gear": "knight_plate"
+  },
   "inn:11,2": {
    "gil": 120
   },
@@ -12,17 +32,18 @@
    "n": 2
   },
   "wild:13,36": {
-   "gear": "flame_brand"
+   "gil": 220
   },
   "wild:43,39": {
    "item": "hipotion",
    "n": 2
   },
   "wild:51,5": {
-   "gear": "knight_plate"
+   "item": "potion",
+   "n": 3
   },
   "wild:6,12": {
-   "gear": "guard_charm"
+   "gear": "copper_ring"
   }
  },
  "classes": {
@@ -136,75 +157,134 @@
    "title": "White Mage"
   }
  },
- "encounters": [
-  {
-   "group": [
-    "slime"
-   ],
-   "w": 26
-  },
-  {
-   "group": [
-    "bat",
-    "bat"
-   ],
-   "w": 20
-  },
-  {
-   "group": [
-    "goblin"
-   ],
-   "w": 18
-  },
-  {
-   "group": [
-    "slime",
-    "slime",
-    "bat"
-   ],
-   "w": 14
-  },
-  {
-   "group": [
-    "wolf"
-   ],
-   "w": 12
-  },
-  {
-   "group": [
-    "goblin",
-    "goblin"
-   ],
-   "w": 10
-  },
-  {
-   "group": [
-    "wisp"
-   ],
-   "w": 8
-  },
-  {
-   "group": [
-    "wolf",
-    "goblin"
-   ],
-   "w": 7
-  },
-  {
-   "group": [
-    "bandit"
-   ],
-   "w": 5
-  },
-  {
-   "group": [
-    "wisp",
-    "bat",
-    "bat"
-   ],
-   "w": 4
-  }
- ],
+ "encounters": {
+  "barrow": [
+   {
+    "group": [
+     "skeleton"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "bat",
+     "bat",
+     "bat"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "skeleton",
+     "skeleton"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "wight"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "skeleton",
+     "wolf"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "wisp",
+     "wisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "wight",
+     "skeleton"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "bandit",
+     "skeleton"
+    ],
+    "w": 5
+   }
+  ],
+  "wild": [
+   {
+    "group": [
+     "slime"
+    ],
+    "w": 26
+   },
+   {
+    "group": [
+     "bat",
+     "bat"
+    ],
+    "w": 20
+   },
+   {
+    "group": [
+     "goblin"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "slime",
+     "slime",
+     "bat"
+    ],
+    "w": 14
+   },
+   {
+    "group": [
+     "wolf"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "goblin",
+     "goblin"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "wisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "wolf",
+     "goblin"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "bandit"
+    ],
+    "w": 5
+   },
+   {
+    "group": [
+     "wisp",
+     "bat",
+     "bat"
+    ],
+    "w": 4
+   }
+  ]
+ },
  "enemies": {
   "bandit": {
    "ai": [
@@ -302,6 +382,29 @@
    "sprite": "e_ogre",
    "weak": "ice"
   },
+  "skeleton": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 75
+    },
+    {
+     "act": "rally",
+     "w": 25
+    }
+   ],
+   "atk": 22,
+   "def": 16,
+   "exp": 26,
+   "gil": 22,
+   "hp": 78,
+   "mag": 4,
+   "name": "Barrow Guard",
+   "scale": 2,
+   "spd": 10,
+   "sprite": "e_skeleton",
+   "weak": "quake"
+  },
   "slime": {
    "ai": [
     {
@@ -320,6 +423,34 @@
    "spd": 5,
    "sprite": "e_slime",
    "weak": "bolt"
+  },
+  "wight": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 40
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 35
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 20,
+   "def": 13,
+   "exp": 34,
+   "gil": 30,
+   "hp": 96,
+   "mag": 19,
+   "name": "Barrow Wight",
+   "scale": 2,
+   "spd": 13,
+   "sprite": "e_wight",
+   "weak": "fire"
   },
   "wisp": {
    "ai": [
@@ -629,6 +760,10 @@
    "t_tallgrass",
    0
   ],
+  "#": [
+   "t_cryptwall",
+   1
+  ],
   "*": [
    "t_flowers",
    0
@@ -655,9 +790,19 @@
    1,
    "bed"
   ],
+  "<": [
+   "t_stairup",
+   0,
+   "stair"
+  ],
   "=": [
    "t_cobble",
    0
+  ],
+  ">": [
+   "t_stairdown",
+   0,
+   "stair"
   ],
   "A": [
    "t_barrel",
@@ -712,6 +857,10 @@
    "t_rooftop",
    1
   ],
+  "_": [
+   "t_crypt",
+   0
+  ],
   "b": [
    "t_bush",
    1
@@ -724,6 +873,19 @@
   "f": [
    "t_fence",
    1
+  ],
+  "g": [
+   "t_gate",
+   1,
+   "gate"
+  ],
+  "i": [
+   "t_brazier",
+   1
+  ],
+  "j": [
+   "t_bones",
+   0
   ],
   "l": [
    "t_lamp",
@@ -889,8 +1051,9 @@
   "bomb"
  ],
  "sign_text": {
+  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
   "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
-  "wild": "THORNWILDS SHRINE - Turn back. The chieftain does not sleep."
+  "wild": "THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason."
  },
  "spells": {
   "bolt": {
@@ -1007,6 +1170,9 @@
   "b": "ground",
   "c": "ground",
   "f": "ground",
+  "g": "t_crypt",
+  "i": "t_crypt",
+  "j": "t_crypt",
   "l": "t_cobble",
   "o": "t_cobble",
   "r": "ground",

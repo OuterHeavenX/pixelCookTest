@@ -26,7 +26,12 @@ folder, and press play. Same game, same art, same numbers.
   level-ups, and spells learned on level.
 - **A three-hero party** — Aldric the Knight, Lyra the Black Mage, Mira the White
   Mage — each with their own growth curve and spell list.
-- **An ogre chieftain** waiting on the shrine flagstones in the south-east.
+- **The Barrow** — two floors of dark stone under the shrine in the south-east:
+  a gallery ringed with chambers, an iron gate that wants a key, and a stair
+  down to the chieftain's floor. Its own monsters (Barrow Guards and Wights),
+  its own encounter table, its own theme, and its own night sky over every
+  fight. The three best pieces of gear are down there.
+- **An ogre chieftain** on the bier at the bottom of the barrow.
 - **A stylised menu** (items, magic, status, save), a title screen, a game over
   screen, `localStorage` saves, and a small chiptune soundtrack.
 
@@ -62,7 +67,12 @@ Flame Brand is worth the walk if the thing in front of you hates fire. The
 three best pieces are not for sale; they are in chests off the main path.
 
 `datacook` refuses to build if a chest_loot entry names a tile with no chest
-painted on it - loot nobody can reach is worse than no loot.
+painted on it - loot nobody can reach is worse than no loot. `mapcook` goes
+further and walks every map: from the spawn tile, every warp, chest, sign and
+boss has to be reachable on foot once the locked gates are open, and the key
+that opens a gate has to be reachable while they are still shut. A key behind
+the door it unlocks makes a dungeon unwinnable, and playing the happy path
+never finds that.
 
 Menus are tapped, not walked to. The battle commands, the spell and item
 lists, the combatants during targeting, and the field menu's column all
@@ -133,7 +143,7 @@ builds.
 | `tools/spritecook/backdrops.py` | carries the rendered backdrops onto the atlas |
 | `tools/blender/backdrop.py` | builds and renders the battle backdrops in Blender |
 | `tools/pixelate.py` | quantises a render into a small palette with crisp edges |
-| `tools/mapcook.py` | the three maps, painted with drawing ops and validated |
+| `tools/mapcook.py` | the five maps, painted with drawing ops and walked for reachability |
 | `tools/datacook.py` | the rules: spells, items, growth, monsters, loot |
 | `tools/godotcook.py` | stages the cooked assets and the font under `godot/` |
 | `tools/build.py` | runs every cook, inlines the atlas into `index.html` |

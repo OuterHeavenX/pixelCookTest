@@ -32,6 +32,15 @@ STONE_DK = rgb("3d3d47")
 WATER_HI = rgb("6fd2e8")
 WATER = rgb("3c9ad4")
 WATER_LO = rgb("2360a8")
+CRYPT_HI = rgb("6a6478")
+CRYPT = rgb("4b465a")
+CRYPT_LO = rgb("332f42")
+CRYPT_DK = rgb("221f2e")
+MOSS = rgb("46714a")
+BONE = rgb("d8d2b8")
+BONE_LO = rgb("9a9478")
+EMBER = rgb("ff9a3c")
+EMBER_LO = rgb("c04a20")
 MTN_HI = rgb("9a8f88")
 MTN = rgb("6f665f")
 MTN_LO = rgb("4a423d")
@@ -105,6 +114,15 @@ TILE_PALETTE = {
     "m": MTN_HI,
     "M": MTN,
     "x": MTN_LO,
+    "C": CRYPT_HI,
+    "c": CRYPT,
+    "V": CRYPT_LO,
+    "X": CRYPT_DK,
+    "Z": MOSS,
+    "O": BONE,
+    "0": BONE_LO,
+    "E": EMBER,
+    "3": EMBER_LO,
     "1": GOLD,
     "2": GOLD_LO,
     "#": INK,

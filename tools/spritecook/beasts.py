@@ -177,6 +177,68 @@ def ogre():
     return img
 
 
+def skeleton():
+    """A barrow guard, still holding the sword it was buried with. Read as a
+    silhouette of gaps: the ribcage and the eye sockets do the work."""
+    img = Image(22, 30)
+    bone, bone_lo, bone_hi = rgb("ded8bc"), rgb("9a9478"), rgb("f2eedc")
+    dark = rgb("241f2e")
+    img.ellipse(9, 7, 6, 6, bone)              # skull
+    img.ellipse(9, 5, 5, 4, bone_hi)
+    img.rect(5, 9, 3, 3, dark)                 # sockets
+    img.rect(10, 9, 3, 3, dark)
+    img.rect(6, 10, 1, 1, rgb("ff6a4a"))       # a light still on in there
+    img.rect(11, 10, 1, 1, rgb("ff6a4a"))
+    img.rect(7, 13, 5, 1, bone_lo)             # jaw
+    img.rect(7, 14, 1, 1, dark)
+    img.rect(9, 14, 1, 1, dark)
+    img.rect(11, 14, 1, 1, dark)
+    img.rect(8, 16, 3, 2, bone_lo)             # neck
+    img.rect(4, 18, 11, 2, bone)               # collarbone
+    for i in range(4):                          # ribs, with gaps between
+        y = 21 + i * 2
+        img.rect(5, y, 9, 1, bone if i % 2 == 0 else bone_lo)
+    img.rect(9, 20, 1, 9, bone_lo)             # spine
+    img.rect(2, 19, 2, 9, bone_lo)             # arms
+    img.rect(15, 19, 2, 8, bone_lo)
+    img.rect(4, 27, 3, 3, bone_lo)             # hips and legs
+    img.rect(11, 27, 3, 3, bone_lo)
+    img.rect(17, 6, 2, 20, rgb("b8b8c0"))      # sword, point down
+    img.rect(17, 6, 1, 20, rgb("e0e0e8"))
+    img.rect(15, 24, 6, 2, rgb("6b4423"))      # crossguard
+    _speckle(img, 44, bone_lo, 22, (3, 4, 18, 28))
+    img.outline(INK)
+    return img
+
+
+def wight():
+    """The barrow wight: a hooded absence with two lights in it. Nearly all
+    silhouette, because a shape you cannot read is the point."""
+    img = Image(26, 32)
+    robe, robe_hi, robe_lo = rgb("3b3450"), rgb("574d72"), rgb("241f33")
+    glow = rgb("7fe8d8")
+    img.ellipse(13, 26, 12, 6, robe_lo)        # the hem, pooling
+    img.rect(4, 12, 18, 16, robe)              # body
+    img.ellipse(13, 12, 9, 10, robe)           # hood
+    img.ellipse(13, 10, 8, 8, robe_hi)
+    img.ellipse(13, 13, 6, 7, rgb("120f1c"))   # the dark under the hood
+    img.rect(9, 12, 3, 2, glow)                # eyes
+    img.rect(15, 12, 3, 2, glow)
+    img.rect(9, 12, 3, 1, _tint(glow, 0.5))
+    img.rect(15, 12, 3, 1, _tint(glow, 0.5))
+    for i in range(5):                          # ragged hem
+        img.rect(3 + i * 4, 27 + (i % 2), 3, 4, robe_lo)
+    img.rect(2, 16, 3, 9, robe_hi)             # sleeves
+    img.rect(21, 16, 3, 9, robe_hi)
+    img.rect(1, 24, 4, 3, rgb("c8c2a8"))       # a bone hand out of one sleeve
+    img.rect(1, 24, 4, 1, rgb("ece6cc"))
+    for i in range(4):                          # cold coming off it
+        img.rect(6 + i * 5, 4 - (i % 2) * 2, 1, 3, _shade(glow, 0.45))
+    _speckle(img, 51, robe_lo, 26, (5, 13, 21, 27))
+    img.outline(INK)
+    return img
+
+
 GOBLIN_STYLE = style(
     skin=rgb("8ab84f"), skin_sh=rgb("5f8534"),
     hair=rgb("3a2a1e"), hair_dk=rgb("241a12"),
@@ -212,6 +274,8 @@ def cook():
         "e_bat": bat(),
         "e_wisp": wisp(),
         "e_ogre": ogre(),
+        "e_skeleton": skeleton(),
+        "e_wight": wight(),
     }
     goblin = chars.char_side(GOBLIN_STYLE, 0)
     out["e_goblin"] = _goblin_ears(goblin)
