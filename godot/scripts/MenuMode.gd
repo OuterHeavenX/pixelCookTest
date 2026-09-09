@@ -285,14 +285,13 @@ func class_icon(h: Dictionary) -> String:
 func draw(c: CanvasItem, anim: float) -> void:
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color(0.03, 0.02, 0.07, 0.72))
 
+	# Command column: buttons, so an entry can be hit rather than walked to.
 	Art.draw_window(c, Rect2(6, 6, 84, 108))
 	for i in ROOT_ENTRIES.size():
-		var y := 14 + i * 16
+		var by := 11 + i * 16
 		var dim := state != "root" and i != root
-		Art.draw_text(c, ROOT_ENTRIES[i]["label"], Vector2(26, y),
-			Color("#8a92b8") if dim else Color("#f2f4ff"))
-		if i == root:
-			Art.draw_cursor(c, Vector2(14, y - 1), anim)
+		Art.draw_button(c, Rect2(10, by, 76, 14), ROOT_ENTRIES[i]["label"],
+			i == root, false, dim)
 
 	Art.draw_window(c, Rect2(6, 118, 84, 56))
 	Art.spr(c, "i_gil", Vector2(14, 124))

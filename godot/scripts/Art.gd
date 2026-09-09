@@ -168,6 +168,46 @@ func wrap_text(s: String, max_chars: int) -> Array:
 
 ## Beveled navy panel with a bright inner rule: the 16-bit menu look. The
 ## gradient is painted as one-pixel bands because draw_rect takes a flat colour.
+## A command button, in the same slab-and-bevel language as the windows.
+## Big enough for a thumb in the browser build, and the same shape here so the
+## two runtimes stay the same game.
+func draw_button(c: CanvasItem, rect: Rect2, label: String,
+		selected := false, pressed := false, dim := false, align := "center") -> void:
+	var x := round(rect.position.x)
+	var y := round(rect.position.y)
+	var w := round(rect.size.x)
+	var h := round(rect.size.y)
+	var lit := selected or pressed
+	var top := Color("#26356e")
+	var bottom := Color("#141c44")
+	if pressed:
+		top = Color("#6784ec")
+		bottom = Color("#3450b8")
+	elif selected:
+		top = Color("#3a58bc")
+		bottom = Color("#1a2666")
+	c.draw_rect(Rect2(x, y, w, h), Color("#0b0a16"))
+	for i in int(h) - 2:
+		var k := float(i) / max(1.0, h - 3.0)
+		c.draw_rect(Rect2(x + 1, y + 1 + i, w - 2, 1), top.lerp(bottom, k))
+	var edge := Color("#ffe9a0") if lit else Color("#6f83bc")
+	c.draw_rect(Rect2(x + 1, y, w - 2, 1), edge)
+	c.draw_rect(Rect2(x + 1, y + h - 1, w - 2, 1), edge)
+	c.draw_rect(Rect2(x, y + 1, 1, h - 2), edge)
+	c.draw_rect(Rect2(x + w - 1, y + 1, 1, h - 2), edge)
+	c.draw_rect(Rect2(x + 2, y + 2, w - 4, 1), Color(1, 1, 1, 0.10))
+	var color := Color("#f2f4ff")
+	if dim:
+		color = Color("#8a8fb0")
+	elif lit:
+		color = Color("#fff6d8")
+	var ty := y + (h - GLYPH_H) / 2.0 + 1
+	if align == "left":
+		draw_text(c, label, Vector2(x + 5, ty), color)
+	else:
+		draw_text(c, label, Vector2(x + w / 2.0, ty), color, "center")
+
+
 func draw_window(c: CanvasItem, rect: Rect2, tone := "blue") -> void:
 	var x := round(rect.position.x)
 	var y := round(rect.position.y)

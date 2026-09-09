@@ -898,7 +898,7 @@ func draw_ui(c: CanvasItem) -> void:
 		var name_color := Color("#9a8090")
 		if bool(h["alive"]):
 			name_color = Color("#ffe9a0") if active else Color("#f2f4ff")
-		Art.draw_text(c, h["name"], Vector2(134, y), name_color)
+		Art.draw_text(c, h["name"], Vector2(132, y), name_color)
 		if bool(h["defending"]) and bool(h["alive"]):
 			Art.spr(c, "i_shield", Vector2(124, y - 1))
 		elif bool(h["alive"]) and float(h["hp"]) / float(h["maxhp"]) < 0.25:
@@ -906,13 +906,15 @@ func draw_ui(c: CanvasItem) -> void:
 		var hp_text := "K.O."
 		if bool(h["alive"]):
 			hp_text = "%d/%d" % [int(h["hp"]), int(h["maxhp"])]
-		Art.draw_text(c, hp_text, Vector2(218, y), hp_color(h), "right")
+		# Columns sized for four digits each: a late-game 394/394 and 118/118
+		# ran into each other at the old spacing.
+		Art.draw_text(c, hp_text, Vector2(214, y), hp_color(h), "right")
 		var mp_text := "-"
 		if int(h["maxmp"]) > 0:
 			mp_text = "%d/%d" % [int(h["mp"]), int(h["maxmp"])]
-		Art.draw_text(c, mp_text, Vector2(254, y), Color("#9fd0ff"), "right")
+		Art.draw_text(c, mp_text, Vector2(260, y), Color("#9fd0ff"), "right")
 		var full := float(h["atb"]) >= 100.0
-		Art.draw_bar(c, Vector2(260, y + 1), Vector2(50, 5),
+		Art.draw_bar(c, Vector2(264, y + 1), Vector2(46, 5),
 			float(h["atb"]) / 100.0 if bool(h["alive"]) else 0.0,
 			Color("#fff0a8") if full else Color("#8fd8ff"),
 			Color("#e0a83c") if full else Color("#3a72c8"))
@@ -923,9 +925,9 @@ func draw_ui(c: CanvasItem) -> void:
 	if phase == "command" and actor != null:
 		draw_command_panel(c, panel_y)
 	elif phase == "target":
-		Art.draw_text(c, "Choose a", Vector2(14, panel_y + 10), Color("#f6e2a8"))
-		Art.draw_text(c, "target", Vector2(14, panel_y + 22), Color("#f6e2a8"))
-		Art.draw_text(c, "[X] back", Vector2(14, panel_y + 40), Color("#9aa4c8"))
+		Art.draw_text(c, "Choose a", Vector2(14, panel_y + 8), Color("#f6e2a8"))
+		Art.draw_text(c, "target", Vector2(14, panel_y + 20), Color("#f6e2a8"))
+		Art.draw_button(c, Rect2(8, panel_y + 38, 104, 15), "Back")
 	elif phase == "result":
 		var line: String = result_lines[mini(result_page, result_lines.size() - 1)]
 		var wrapped := Art.wrap_text(line, 17)
@@ -951,11 +953,9 @@ func draw_command_panel(c: CanvasItem, panel_y: int) -> void:
 	if sub == "":
 		var cmds := commands_for(h)
 		for i in cmds.size():
-			var cx := 18 + (i % 2) * 50
-			var cy := panel_y + 9 + (i / 2) * 15
-			Art.draw_text(c, cmds[i]["label"], Vector2(cx, cy), Color("#f2f4ff"))
-			if i == cmd:
-				Art.draw_cursor(c, Vector2(cx - 10, cy - 1), t)
+			var bx := 8 + (i % 2) * 53
+			var by := panel_y + 5 + (i / 2) * 17
+			Art.draw_button(c, Rect2(bx, by, 51, 15), cmds[i]["label"], i == cmd)
 		return
 
 	var entries := sub_entries(h)
@@ -963,8 +963,10 @@ func draw_command_panel(c: CanvasItem, panel_y: int) -> void:
 		Art.draw_text(c, "(nothing)", Vector2(20, panel_y + 8), Color("#9aa4c8"))
 		return
 	var start: int = clampi(sub_index - 3, 0, maxi(0, entries.size() - 4))
+	var wide := entries.size() > 4
+	var bw := 100 if wide else 104
 	for i in range(start, mini(entries.size(), start + 4)):
-		var cy := panel_y + 8 + (i - start) * 13
+		var by := panel_y + 4 + (i - start) * 13
 		var label := ""
 		var cost := ""
 		var dim := false
@@ -976,12 +978,16 @@ func draw_command_panel(c: CanvasItem, panel_y: int) -> void:
 		else:
 			label = Dat.items[entries[i]["id"]]["name"]
 			cost = str(int(entries[i]["n"]))
-		Art.draw_text(c, label, Vector2(18, cy),
-			Color("#8a8fb0") if dim else Color("#f2f4ff"))
-		Art.draw_text(c, cost, Vector2(110, cy),
+		Art.draw_button(c, Rect2(8, by, bw, 12), label, i == sub_index, false, dim, "left")
+		Art.draw_text(c, cost, Vector2(3 + bw, by + 3),
 			Color("#8a8fb0") if dim else Color("#9fd0ff"), "right")
-		if i == sub_index:
-			Art.draw_cursor(c, Vector2(8, cy - 1), t)
+	# A scrollbar, so a list longer than the window says so.
+	if wide:
+		var track := 50
+		var thumb: int = maxi(6, roundi(track * 4.0 / entries.size()))
+		var ty: int = panel_y + 4 + roundi((track - thumb) * float(start) / (entries.size() - 4))
+		c.draw_rect(Rect2(110, panel_y + 4, 2, track), Color("#1a2148"))
+		c.draw_rect(Rect2(110, ty, 2, thumb), Color("#7c88b8"))
 
 
 func draw_target_cursor(c: CanvasItem) -> void:

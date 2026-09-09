@@ -47,6 +47,13 @@ sitting on top of the game. It reads all eight directions, with a small dead
 zone so a resting thumb does not walk. A, B and the menu button stay put on
 the right, and work at the same time as the stick.
 
+Menus are tapped, not walked to. The battle commands, the spell and item
+lists, the combatants during targeting, and the field menu's column all
+register themselves as screen rectangles while they draw, and a tap is matched
+against them on the next frame - so hitting Magic means putting a thumb on
+Magic, not steering a cursor to it. Keys and taps go through the same
+functions, so neither can drift away from the other.
+
 ## Two builds, one source of truth
 
 The rules live in `tools/datacook.py` and are cooked to `assets/gamedata.json`:
