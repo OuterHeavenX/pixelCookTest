@@ -4,8 +4,6 @@ extends RefCounted
 ## gauges fill in real time and freeze while a command window is open.
 
 const ATB_RATE := 5.2
-const HORIZON := 76
-
 var main
 
 var phase := "intro"
@@ -99,8 +97,10 @@ func living_enemies() -> Array:
 	return enemies.filter(func(e): return e["alive"])
 
 
+## The backdrop's meadow starts about 6px below the geometric horizon, so the
+## front of the line stands on grass rather than in the treeline.
 func hero_slot(i: int) -> Vector2:
-	return Vector2(266 - i * 18, 46 + i * 15)
+	return Vector2(266 - i * 18, 52 + i * 13)
 
 
 ## Humanoid monsters are drawn at hero scale; beasts and the boss stay chunky.
@@ -760,48 +760,9 @@ func class_icon(h: Dictionary) -> String:
 
 
 func draw_backdrop(c: CanvasItem) -> void:
-	var sky_top := Color("#1d1024") if is_boss else Color("#1b2b4a")
-	var sky_bottom := Color("#63385a") if is_boss else Color("#5d84a4")
-	for y in HORIZON:
-		c.draw_rect(Rect2(0, y, Art.VW, 1), sky_top.lerp(sky_bottom, float(y) / HORIZON))
-
-	var far := Color("#3a2440") if is_boss else Color("#3c5f7c")
-	var near := Color("#2a1a30") if is_boss else Color("#2c4a64")
-	_ridge(c, far, HORIZON, 22, 46, 0)
-	_ridge(c, near, HORIZON + 2, 12, 34, 1)
-	c.draw_rect(Rect2(0, HORIZON - 3, Art.VW, 4),
-		Color(1.0, 0.86, 1.0, 0.10) if is_boss else Color(0.86, 0.94, 1.0, 0.12))
-
-	var bands := [[Color("#463c56"), 84], [Color("#524668"), 94],
-		[Color("#635278"), 104], [Color("#6a5e86"), 116]]
-	if not is_boss:
-		bands = [[Color("#3a6136"), 84], [Color("#45733e"), 94],
-			[Color("#52894a"), 104], [Color("#5f9c54"), 116]]
-	var prev := HORIZON
-	for band in bands:
-		var y := int(band[1])
-		c.draw_rect(Rect2(0, prev, Art.VW, y - prev + 1), band[0])
-		prev = y
-	for i in 26:
-		c.draw_rect(Rect2((i * 53 + (i % 3) * 11) % Art.VW, 80 + (i % 5) * 7,
-			9 + (i % 3) * 3, 1), Color(0, 0, 0, 0.13))
-	for i in 14:
-		c.draw_rect(Rect2((i * 71) % Art.VW, 86 + (i % 4) * 8, 6, 1), Color(1, 1, 1, 0.06))
-
-
-## Saw-toothed ridgeline drawn as vertical slices so it stays pixel-crisp.
-func _ridge(c: CanvasItem, color: Color, base: int, amp: int, step: int, phase: int) -> void:
-	var x := -10
-	while x < Art.VW + 10:
-		var peak := base - amp - ((x / step + phase) % 3) * 7
-		for dx in step:
-			var px := x + dx
-			if px < 0 or px >= Art.VW:
-				continue
-			var k := 1.0 - abs(float(dx) - step / 2.0) / (step / 2.0)
-			var top := base - (base - peak) * k
-			c.draw_rect(Rect2(px, top, 1, base - top + 20), color)
-		x += step
+	# Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
+	# palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
+	Art.spr(c, "bg_night" if is_boss else "bg_dusk", Vector2.ZERO)
 
 
 func draw(c: CanvasItem) -> void:

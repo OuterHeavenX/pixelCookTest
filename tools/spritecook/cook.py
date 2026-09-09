@@ -4,9 +4,10 @@ import json
 import os
 
 from .imaging import Packer
-from . import beasts, chars, imported, tiles
+from . import backdrops, beasts, chars, imported, tiles
 
-ATLAS_WIDTH = 256
+# Wide enough for a full-width battle backdrop to sit on the page.
+ATLAS_WIDTH = 320
 
 
 def cook_all():
@@ -15,6 +16,7 @@ def cook_all():
     sprites.update(chars.cook())
     sprites.update(beasts.cook())
     sprites.update(beasts.cook_icons())
+    sprites.update(backdrops.cook())
     # Externally generated art wins over the procedural sprite of the same
     # name, so the cast can be upgraded one character at a time.
     sprites.update(imported.cook())

@@ -77,6 +77,23 @@ no runtime drawing of game art — `assets/atlas.png` is the only texture.
 `spritecook` needs nothing but the Python standard library — the PNG encoder is
 built on `zlib` in `tools/spritecook/imaging.py`.
 
+The two battle backdrops are the one exception to "drawn a pixel at a time":
+they are modelled and rendered in **Blender**, because receding mountain
+ranges are about silhouette and overlap, which a real camera solves and hand
+plotting does not. Every material is a flat emission shader, so the render
+comes back as graphic colour rather than photographic shading, and
+`tools/pixelate.py` then median-cuts it down to 28 colours with hard edges.
+The finished PNGs land on the same atlas as everything else, so the game just
+draws a sprite named `bg_dusk` or `bg_night`.
+
+    pip install bpy==4.5.13                     # Blender as a Python module
+    python3 tools/blender/backdrop.py           # art/blender/backdrop_*.png
+    python3 tools/pixelate.py                   # art/backdrops/backdrop_*.png
+    python3 tools/build.py                      # onto the atlas, into the game
+
+Both intermediate renders are checked in, so a clone without Blender still
+builds.
+
 | Piece | What it does |
 | --- | --- |
 | `tools/spritecook/imaging.py` | RGBA raster, PNG encoder, shelf packer |
@@ -84,6 +101,9 @@ built on `zlib` in `tools/spritecook/imaging.py`.
 | `tools/spritecook/tiles.py` | terrain, buildings, props, furniture |
 | `tools/spritecook/chars.py` | one parametric humanoid → party, townsfolk, walk cycles |
 | `tools/spritecook/beasts.py` | monsters and item icons |
+| `tools/spritecook/backdrops.py` | carries the rendered backdrops onto the atlas |
+| `tools/blender/backdrop.py` | builds and renders the battle backdrops in Blender |
+| `tools/pixelate.py` | quantises a render into a small palette with crisp edges |
 | `tools/mapcook.py` | the three maps, painted with drawing ops and validated |
 | `tools/datacook.py` | the rules: spells, items, growth, monsters, loot |
 | `tools/godotcook.py` | stages the cooked assets and the font under `godot/` |
@@ -102,7 +122,10 @@ built on `zlib` in `tools/spritecook/imaging.py`.
       scripts/          Art, Dat, Gs, Snd, Inp autoloads + the five game modes
       assets/           staged copies of the cooked atlas, maps, rules, font
     assets/             cooked atlas.png, atlas.json, maps.json, gamedata.json
+    art/blender/        raw Blender renders of the battle backdrops
+    art/backdrops/      the same renders quantised to the game palette
     tools/              spritecook, mapcook, datacook, godotcook, build, gdlint
+    tools/blender/      the Blender scene for the battle backdrops
 
 Edit anything under `src/`, `godot/scripts/` or `tools/`, then re-run
 `python3 tools/build.py`.

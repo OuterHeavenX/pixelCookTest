@@ -975,7 +975,9 @@ function livingHeroes() { return G.party.filter(h => h.alive); }
 
 /* The party stands in a receding diagonal, the way the 16-bit games framed
    it: each member a little nearer and a little lower than the last. */
-function heroSlot(i) { return { x: 266 - i * 18, y: 46 + i * 15 }; }
+/* The backdrop's meadow starts about 6px below the geometric horizon, so the
+   front of the line stands on grass rather than in the treeline. */
+function heroSlot(i) { return { x: 266 - i * 18, y: 52 + i * 13 }; }
 /* Enemies are baseline-anchored so tall and short monsters share a ground
    line and none of them dips behind the HUD. */
 function enemyScale(e) { return e.scale || 2; }
@@ -1457,44 +1459,10 @@ function endBattle(how) {
 
 /* ---------------------------------------------------------- battle draw -- */
 
-const HORIZON = 76;
-
 function drawBattleBackdrop() {
-  const sky = ctx.createLinearGradient(0, 0, 0, HORIZON);
-  if (Battle.boss) { sky.addColorStop(0, '#1d1024'); sky.addColorStop(1, '#63385a'); }
-  else { sky.addColorStop(0, '#1b2b4a'); sky.addColorStop(1, '#5d84a4'); }
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, VW, HORIZON);
-
-  // Two ridgelines for depth.
-  const far = Battle.boss ? '#3a2440' : '#3c5f7c';
-  const near = Battle.boss ? '#2a1a30' : '#2c4a64';
-  const ridge = (color, base, amp, step, phase) => {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(-10, base);
-    for (let x = -10; x <= VW + 10; x += step) {
-      ctx.lineTo(x + step / 2, base - amp - ((x / step + phase) % 3) * 7);
-      ctx.lineTo(x + step, base);
-    }
-    ctx.lineTo(VW + 10, base + 20); ctx.lineTo(-10, base + 20);
-    ctx.closePath(); ctx.fill();
-  };
-  ridge(far, HORIZON, 22, 46, 0);
-  ridge(near, HORIZON + 2, 12, 34, 1);
-  ctx.fillStyle = Battle.boss ? 'rgba(255,220,255,0.10)' : 'rgba(220,240,255,0.12)';
-  ctx.fillRect(0, HORIZON - 3, VW, 4);
-
-  // Ground plane: banded so the perspective reads without a tile grid.
-  const bands = Battle.boss
-    ? [['#463c56', 84], ['#524668', 94], ['#5e5278', 104], ['#6a5e86', 116]]
-    : [['#3a6136', 84], ['#45733e', 94], ['#52894a', 104], ['#5f9c54', 116]];
-  let prev = HORIZON;
-  bands.forEach(([c, y]) => { ctx.fillStyle = c; ctx.fillRect(0, prev, VW, y - prev + 1); prev = y; });
-  ctx.fillStyle = 'rgba(0,0,0,0.13)';
-  for (let i = 0; i < 26; i++) ctx.fillRect((i * 53 + (i % 3) * 11) % VW, 80 + (i % 5) * 7, 9 + (i % 3) * 3, 1);
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  for (let i = 0; i < 14; i++) ctx.fillRect((i * 71) % VW, 86 + (i % 4) * 8, 6, 1);
+  // Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
+  // palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
+  spr(Battle.boss ? 'bg_night' : 'bg_dusk', 0, 0);
 }
 
 function drawBattle() {
