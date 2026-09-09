@@ -215,6 +215,7 @@
    "hp": 92,
    "mag": 6,
    "name": "Road Bandit",
+   "scale": 1,
    "spd": 12,
    "sprite": "e_bandit"
   },
@@ -236,6 +237,7 @@
    "hp": 26,
    "mag": 5,
    "name": "Cave Bat",
+   "scale": 2,
    "spd": 15,
    "sprite": "e_bat",
    "weak": "fire"
@@ -258,6 +260,7 @@
    "hp": 52,
    "mag": 4,
    "name": "Goblin",
+   "scale": 1,
    "spd": 9,
    "sprite": "e_goblin"
   },
@@ -285,6 +288,7 @@
    "hp": 520,
    "mag": 12,
    "name": "Ogre Chieftain",
+   "scale": 2,
    "spd": 10,
    "sprite": "e_ogre",
    "weak": "ice"
@@ -303,6 +307,7 @@
    "hp": 34,
    "mag": 4,
    "name": "Bog Slime",
+   "scale": 2,
    "spd": 5,
    "sprite": "e_slime",
    "weak": "bolt"
@@ -326,6 +331,7 @@
    "hp": 58,
    "mag": 18,
    "name": "Marsh Wisp",
+   "scale": 2,
    "spd": 12,
    "sprite": "e_wisp",
    "weak": "holy"
@@ -348,6 +354,7 @@
    "hp": 68,
    "mag": 4,
    "name": "Direwolf",
+   "scale": 2,
    "spd": 14,
    "sprite": "e_wolf",
    "weak": "fire"

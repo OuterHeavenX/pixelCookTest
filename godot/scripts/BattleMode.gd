@@ -103,16 +103,22 @@ func hero_slot(i: int) -> Vector2:
 	return Vector2(266 - i * 18, 46 + i * 15)
 
 
+## Humanoid monsters are drawn at hero scale; beasts and the boss stay chunky.
+func enemy_scale(e: Dictionary) -> float:
+	return float(e.get("scale", 2))
+
+
 ## Enemies are baseline-anchored so tall and short monsters share a ground line
 ## and none of them dips behind the HUD.
 func enemy_slot(e: Dictionary, i: int, n: int) -> Dictionary:
 	var size := Art.frame_size(e["sprite"])
+	var z := enemy_scale(e)
 	var cols := mini(3, n)
 	var col := i % cols
 	var row := i / cols
 	var base_y := 92 + col * 8 - row * 20
-	return {"x": 24 + col * 48 + row * 20, "y": base_y - size.y * 2,
-		"w": size.x * 2, "h": size.y * 2, "base_y": base_y}
+	return {"x": 24 + col * 48 + row * 20, "y": base_y - size.y * z,
+		"w": size.x * z, "h": size.y * z, "base_y": base_y}
 
 
 func enemy_center(e: Dictionary) -> Vector2:
@@ -816,7 +822,7 @@ func draw(c: CanvasItem) -> void:
 			alpha *= 0.65
 		Art.draw_shadow(c, Vector2(pos.x + float(s["w"]) / 2.0,
 			float(s["base_y"]) - 2.0), float(s["w"]) * 0.4)
-		Art.spr(c, e["sprite"], pos, 2.0, Color(1, 1, 1, alpha))
+		Art.spr(c, e["sprite"], pos, enemy_scale(e), Color(1, 1, 1, alpha))
 
 	for i in Gs.party.size():
 		var h: Dictionary = Gs.party[i]

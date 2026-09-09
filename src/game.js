@@ -978,8 +978,12 @@ function livingHeroes() { return G.party.filter(h => h.alive); }
 function heroSlot(i) { return { x: 266 - i * 18, y: 46 + i * 15 }; }
 /* Enemies are baseline-anchored so tall and short monsters share a ground
    line and none of them dips behind the HUD. */
+function enemyScale(e) { return e.scale || 2; }
+
 function enemySlot(e, i, n) {
-  const [w, h] = sprSize(e.sprite);
+  const [w0, h0] = sprSize(e.sprite);
+  const z = enemyScale(e);
+  const w = w0 * z / 2, h = h0 * z / 2;
   const cols = Math.min(3, n);
   const col = i % cols, row = Math.floor(i / cols);
   const baseY = 92 + col * 8 - row * 20;
@@ -1507,11 +1511,11 @@ function drawBattle() {
     const x = s.x + e.offset, y = s.y;
     ctx.save();
     if (e.dying > 0) ctx.globalAlpha = e.dying / 0.6;
-    drawShadow(x + w, y + h * 2 - 2, w * 0.8);
+    drawShadow(x + w * enemyScale(e) / 2, y + h * enemyScale(e) - 2, w * enemyScale(e) * 0.4);
     if (e.hurt > 0 && Math.floor(e.hurt * 30) % 2 === 0) {
       ctx.globalAlpha *= 0.65;
     }
-    spr(e.sprite, x, y, { scale: 2 });
+    spr(e.sprite, x, y, { scale: enemyScale(e) });
     ctx.restore();
   });
 
