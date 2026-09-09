@@ -178,6 +178,56 @@ def check_inferred_variants(srcs, problems):
                     % (path, i, m.group(1), m.group(2), VARIANT_UTILS[m.group(2)]))
 
 
+# World flags live in three places at once: the cooked data names them, the
+# browser build reads them off `G.flags`, and the Godot build reads them off
+# `Gs.flags`. Nothing connects the three, so the Godot build spelled the
+# boss flag `boss_down` while the data that gated a whole chapter-two scene
+# said `bossDown`, and the scene simply never fired. Neither build errored.
+GD_FLAG_RE = re.compile(r"flags(?:\[|\.get\()\s*\"([A-Za-z_]\w*)\"")
+JS_FLAG_RE = re.compile(r"G\.flags(?:\.([A-Za-z_]\w*)|\[[\'\"]([A-Za-z_]\w*))")
+
+
+def flag_names(srcs):
+    gd = set()
+    for src in srcs.values():
+        gd |= set(GD_FLAG_RE.findall(src))
+    js = set()
+    path = os.path.join(ROOT, "src", "game.js")
+    if os.path.exists(path):
+        for a, b in JS_FLAG_RE.findall(open(path, encoding="utf-8").read()):
+            js.add(a or b)
+    return gd, js
+
+
+def check_flags(srcs, problems):
+    """The two builds must know the same world flags by the same names."""
+    gd, js = flag_names(srcs)
+    if not js:
+        return
+    for name in sorted(js - gd):
+        problems.append("flag '%s' is set in the browser build but never in Godot"
+                        % name)
+    for name in sorted(gd - js):
+        problems.append("flag '%s' is set in the Godot build but never in the browser"
+                        % name)
+    # And every flag the data gates a scene behind has to be one somebody sets.
+    data = json.load(open(os.path.join(GODOT, "assets", "gamedata.json")))
+    produced = set(gd)
+    for beats in data.get("map_beats", {}).values():
+        for beat in beats:
+            produced.add(beat["flag"])
+    for loot in data.get("chest_loot", {}).values():
+        if "flag" in loot:
+            produced.add(loot["flag"])
+    for beats in data.get("map_beats", {}).values():
+        for beat in beats:
+            for name in beat.get("needs", []) + beat.get("absent", []):
+                if name not in produced:
+                    problems.append(
+                        "map beat '%s' waits on flag '%s', which nothing sets"
+                        % (beat["flag"], name))
+
+
 def main():
     srcs = scripts()
     problems = []
@@ -187,6 +237,7 @@ def main():
     check_sprites(srcs, problems)
     check_generated_sprites(problems)
     check_data_keys(srcs, problems)
+    check_flags(srcs, problems)
 
     declared = set()
     for src in srcs.values():
@@ -201,7 +252,7 @@ def main():
             print("  " + p)
         return 1
     print("gdlint: %d scripts clean (references, redeclarations, inferred types,"
-          " sprites, data keys)"
+          " sprites, data keys, flags)"
           % len(srcs))
     return 0
 

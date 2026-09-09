@@ -54,7 +54,7 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		}
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
-	if not bool(Gs.flags.get("boss_down", false)) and map.has("boss"):
+	if not bool(Gs.flags.get("bossDown", false)) and map.has("boss"):
 		npcs.append({
 			"tx": int(map["boss"]["x"]), "ty": int(map["boss"]["y"]),
 			"ox": 0.0, "oy": 0.0, "phase": 0.0, "cool": 999.0, "move": {},
@@ -90,7 +90,7 @@ func solid_at(x: int, y: int) -> bool:
 		return not bool(Gs.flags.get("barrowKey", false))
 	# The west pass opens when the barrow is done with you.
 	if entry.size() > 2 and str(entry[2]) == "pass":
-		return not bool(Gs.flags.get("boss_down", false))
+		return not bool(Gs.flags.get("bossDown", false))
 	return int(entry[1]) != 0
 
 
@@ -179,8 +179,8 @@ func do_warp(w: Dictionary) -> void:
 	var facing: String = w.get("dir", Gs.dir)
 	var arrive := func() -> void:
 		enter_map(to, tx, ty, facing)
-		if to == "wild" and not bool(Gs.flags.get("visited_wild", false)):
-			Gs.flags["visited_wild"] = true
+		if to == "wild" and not bool(Gs.flags.get("visitedWild", false)):
+			Gs.flags["visitedWild"] = true
 			msg = make_message(["THE THORNWILDS",
 				"Monsters roam the grass. Press [C] for your journal."])
 	main.fade_to(arrive)
@@ -221,7 +221,7 @@ func interact() -> void:
 		var recruit_id = npc.get("recruit", null)
 		var joined: bool = recruit_id != null and Gs.find_hero(recruit_id) != null
 		var use_after: bool = joined if recruit_id != null \
-			else bool(Gs.flags.get("boss_down", false))
+			else bool(Gs.flags.get("bossDown", false))
 		var script: Array = npc["lines"]
 		if use_after and npc.get("after", null) != null:
 			script = npc["after"]
@@ -242,11 +242,11 @@ func interact() -> void:
 	match tag:
 		"sign":
 			var text: String = Dat.sign_text.get(Gs.map_id, "The paint has weathered away.")
-			if bool(Gs.flags.get("boss_down", false)) and Dat.sign_after.has(Gs.map_id):
+			if bool(Gs.flags.get("bossDown", false)) and Dat.sign_after.has(Gs.map_id):
 				text = Dat.sign_after[Gs.map_id]
 			msg = make_message([text])
 		"seal":
-			if bool(Gs.flags.get("seal_broken", false)):
+			if bool(Gs.flags.get("sealBroken", false)):
 				msg = make_message([
 					"The ward is split end to end.",
 					"Cold comes up out of it, and the dark below does not end.",
@@ -276,7 +276,7 @@ func interact() -> void:
 		"stair":
 			msg = make_message(["Steps, worn hollow in the middle by feet long gone."])
 		"pass":
-			if bool(Gs.flags.get("boss_down", false)):
+			if bool(Gs.flags.get("bossDown", false)):
 				msg = make_message(["The west pass. Someone has been keeping the road clear."])
 			else:
 				msg = make_message([
@@ -537,7 +537,13 @@ func update_message(dt: float) -> void:
 		msg["page"] = int(msg["page"]) + 1
 		msg["chars"] = 0.0
 		if int(msg["page"]) >= msg["lines"].size():
+			# Whatever the conversation was for happens when it ends: someone
+			# joins, someone stays behind. The callback usually opens a message
+			# of its own, so this one is cleared first and gets out of its way.
+			var after = msg.get("on_close", null)
 			msg = {}
+			if after != null:
+				after.call()
 		else:
 			Snd.sfx("cursor")
 
@@ -603,7 +609,7 @@ func draw(c: CanvasItem) -> void:
 			var name: String = entry[0]
 			# The ward under the bier cracks open once its warden is dead.
 			if entry.size() > 2 and str(entry[2]) == "seal" \
-					and bool(Gs.flags.get("seal_broken", false)):
+					and bool(Gs.flags.get("sealBroken", false)):
 				name = "t_rift"
 			if name == "t_water0":
 				name = "t_water%d" % water_frame

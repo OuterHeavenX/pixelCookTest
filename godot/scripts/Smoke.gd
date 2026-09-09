@@ -75,6 +75,50 @@ func _press(action: String, frames := STEP_FRAMES) -> void:
 	await _step(frames)
 
 
+## Press through whatever is on screen, the way a player reads it. Returns how
+## many presses it took; the cap is the assertion that it ended.
+func _read_msg(limit := 30) -> int:
+	var pressed := 0
+	while not main.field.msg.is_empty() and pressed < limit:
+		await _press("confirm", 3)
+		pressed += 1
+	return pressed
+
+
+## Talk to somebody: stand next to them, face them, press through what they
+## say. Calling recruit() directly is not the same test - it passed for a
+## while against a build where the conversation ended without ever running
+## what it was for, so nobody actually joined.
+func _talk_to(who: String) -> bool:
+	for n in main.field.npcs:
+		if n["name"] != who:
+			continue
+		# Hold them still for a moment. They wander, and a wanderer who takes
+		# a step between being found and being spoken to is not there any more.
+		n["cool"] = 999.0
+		for step in [[0, 1, "up"], [0, -1, "down"], [1, 0, "left"], [-1, 0, "right"]]:
+			var x: int = int(n["tx"]) + int(step[0])
+			var y: int = int(n["ty"]) + int(step[1])
+			if main.field.solid_at(x, y):
+				continue
+			Gs.px = x
+			Gs.py = y
+			Gs.dir = str(step[2])
+			await _step(2)
+			main.field.interact()
+			await _step(2)
+			# Standing next to somebody is not the same as reaching them: if
+			# nothing opened, that side was no good and the next one gets a go.
+			if main.field.msg.is_empty():
+				continue
+			await _read_msg()
+			return true
+		_say("    .. could not reach " + who)
+		return false
+	_say("    .. nobody called " + who + " is here")
+	return false
+
+
 func _shot(name: String) -> void:
 	_say("    .. shot " + name)
 	await _settle()
@@ -274,8 +318,8 @@ func _run() -> void:
 	# fade_to() is a no-op while a fade is already running, so an encounter
 	# started mid-transition never begins. Wait for the screen to settle first.
 	await _settle()
-	Gs.flags["boss_down"] = false
-	Gs.flags["seal_broken"] = false
+	Gs.flags["bossDown"] = false
+	Gs.flags["sealBroken"] = false
 	main.field.enter_map("barrow2", 18, 12)
 	Gs.steps_to_encounter = 9999
 	await _step(6)
@@ -296,7 +340,7 @@ func _run() -> void:
 		main.battle.apply_damage(e, 99999, false)
 	_expect(await _until(func(): return main.battle.phase == "result"),
 		"killing him ends the fight")
-	_expect(bool(Gs.flags.get("seal_broken", false)), "his death breaks the ward")
+	_expect(bool(Gs.flags.get("sealBroken", false)), "his death breaks the ward")
 	var pages := 0
 	while main.mode == "battle" and main.battle.phase == "result" and pages < 30:
 		await _press("confirm", 3)
@@ -325,6 +369,13 @@ func _run() -> void:
 	await _shot("ending_hook")
 
 	_say("aftermath")
+	# The credits leave the game sitting in the ending, and the player comes
+	# back through Continue. Skipping that and poking the field directly is
+	# not the same thing: another mode still owns the screen and the input,
+	# so the field never updates and nothing a player does actually happens.
+	main.begin_game(true)
+	await _until(func(): return main.mode == "field")
+	_expect(main.mode == "field", "Continue picks the game back up in the field")
 	main.field.enter_map("town", 20, 24)
 	await _step(8)
 	var reacted := false
@@ -336,7 +387,8 @@ func _run() -> void:
 
 	_say("chapter two")
 	await _settle()
-	Gs.flags["boss_down"] = true
+	_expect(main.mode == "field", "and the field is the one taking input")
+	Gs.flags["bossDown"] = true
 	main.field.enter_map("shore", 3, 14)
 	Gs.steps_to_encounter = 9999
 	await _step(8)
@@ -361,13 +413,12 @@ func _run() -> void:
 	_expect(found["Bram"] and found["Sera"], "Bram and Sera are waiting in it")
 	await _shot("ch2_hollow")
 
-	main.field.recruit("bram")
-	main.field.msg = {}
-	main.field.recruit("sera")
-	main.field.msg = {}
+	var spoke_to_bram := await _talk_to("Bram")
+	var spoke_to_sera := await _talk_to("Sera")
+	_expect(spoke_to_bram and spoke_to_sera, "you can walk up to both of them")
 	await _step(4)
 	_expect(Gs.find_hero("bram") != null and Gs.find_hero("sera") != null,
-		"both of them join")
+		"and asking is what makes them join")
 	_expect(Gs.bench.size() == 1, "the fifth waits on the bench")
 	var still_there := false
 	for n in main.field.npcs:
@@ -381,7 +432,7 @@ func _run() -> void:
 	_expect(main.mode == "shop", "the armourer opens")
 	main.shop.set_tab(1)
 	await _step(4)
-	var shelf := main.shop.shop_stock()
+	var shelf: Array = main.shop.shop_stock()
 	_expect(shelf.size() == Dat.gear_stock["hollow"].size(),
 		"stocking cold-country work (%d pieces)" % shelf.size())
 	await _shot("ch2_shop")
@@ -395,10 +446,7 @@ func _run() -> void:
 	await _step(8)
 	_expect(not main.field.msg.is_empty(), "the road has something to say about it")
 	await _shot("ch2_bram")
-	var beats_read := 0
-	while not main.field.msg.is_empty() and beats_read < 30:
-		await _press("confirm", 3)
-		beats_read += 1
+	var beats_read := await _read_msg()
 	_expect(beats_read < 30, "the scene reads to the end")
 	_expect(Gs.find_hero("bram") == null, "Bram stays behind")
 	_expect(Gs.gear.size() > pack_before, "and leaves his kit with you")
@@ -412,8 +460,14 @@ func _run() -> void:
 	_expect(Gs.save_game(), "the journal saves")
 	var gear_before := (Gs.party[1]["gear"] as Dictionary).duplicate()
 	Gs.party = []
+	Gs.bench = []
 	_expect(Gs.load_game(), "the journal loads")
 	_expect(Gs.party.size() == 3, "the party comes back")
+	# The bench is the half of the roster a save could quietly drop: nothing
+	# on screen would look wrong until you opened the menu and found her gone.
+	_expect(Gs.bench.size() == 1, "and so does the bench")
+	_expect(Gs.find_hero("sera") != null, "with Sera still on it")
+	_expect(Gs.find_hero("bram") == null, "and Bram still up on the road")
 	_expect((Gs.party[1]["gear"] as Dictionary) == gear_before, "equipment survives the round trip")
 
 	if failures.is_empty():

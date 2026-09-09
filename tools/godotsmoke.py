@@ -31,6 +31,15 @@ PROJECT = os.path.join(ROOT, "godot")
 SECTIONS = ("title", "field", "equipment", "menu", "shop", "battle", "barrow",
             "ending", "aftermath", "chapter two", "save")
 
+# --check-only loads a script on its own, with no autoloads registered, so
+# every reference to a singleton reads as an unknown identifier. That is an
+# artefact of checking one file in isolation, not a fault in the script;
+# gdlint already resolves these names for real. Parse errors, which are what
+# this pass exists to catch, come before compilation and survive the filter.
+AUTOLOADS = ("Art", "Dat", "Gs", "Snd", "Inp")
+STANDALONE = re.compile(
+    r"Identifier not found: (?:%s)\b|Compilation failed" % "|".join(AUTOLOADS))
+
 IGNORED = (
     re.compile(r"ALSA|libpulse|audio driver|Condition \"status < 0\"|init_output_device"),
     re.compile(r"V-Sync"),
@@ -92,6 +101,22 @@ def run(argv, env, timeout, stream=False):
     return proc.returncode or 0, "".join(lines)
 
 
+def engine_log_tail(limit=15):
+    """The last lines of Godot's own log file.
+
+    Godot buffers the stdout it hands to a pipe but writes this file as it
+    goes, so when a run stalls this is the only record of what the engine was
+    doing. It cost two wrong diagnoses to find that out.
+    """
+    log = os.path.expanduser(
+        "~/.local/share/godot/app_userdata/Rivenbrook/logs/godot.log")
+    if not os.path.exists(log):
+        return []
+    with open(log, errors="replace") as fh:
+        lines = [ln.rstrip() for ln in fh if ln.strip()]
+    return ["engine log:"] + lines[-limit:] if lines else []
+
+
 def engine_errors(output):
     out = []
     for line in output.splitlines():
@@ -132,6 +157,26 @@ def main():
         return 1
     print("import : clean")
 
+    # Parse every script with the engine's own parser before booting anything.
+    # A script that fails to parse is not a runtime error you can watch for:
+    # the scene simply never loads, nothing calls quit(), and the run hangs
+    # until the timeout with no output at all. `--check-only` reports the same
+    # parse errors in a second, before the display is even opened.
+    bad = []
+    for name in sorted(os.listdir(os.path.join(PROJECT, "scripts"))):
+        if not name.endswith(".gd"):
+            continue
+        _, out = run([godot, "--headless", "--path", PROJECT, "--check-only",
+                      "--script", "res://scripts/" + name], env, 120)
+        bad += ["%s: %s" % (name, e) for e in engine_errors(out)
+                if not STANDALONE.search(e)]
+    if bad:
+        print("parse failed:")
+        for e in bad[:25]:
+            print("  " + e)
+        return 1
+    print("parse  : clean")
+
     progress = os.path.join(args.shots, "progress.log")
     if os.path.exists(progress):
         os.remove(progress)
@@ -152,6 +197,9 @@ def main():
             print("last progress recorded:")
             for ln in written[-12:]:
                 print("  " + ln)
+    if not any(ln.startswith("SMOKE") for ln in out.splitlines()):
+        for line in engine_log_tail():
+            print("  " + line)
     errs = engine_errors(out)
     if errs:
         print("engine errors:")

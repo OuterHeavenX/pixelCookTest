@@ -963,7 +963,6 @@ function onStepComplete() {
     G.stepsToEncounter--;
     if (G.stepsToEncounter <= 0) {
       G.stepsToEncounter = rollEncounterCountdown();
-  mapBeat(id);
       startEncounter(pickEncounter());
     }
   }

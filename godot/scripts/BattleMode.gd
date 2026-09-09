@@ -757,8 +757,8 @@ func begin_victory() -> void:
 			for sp in up["learned"]:
 				lines.append("%s learned %s!" % [h["name"], Dat.spells[sp]["name"]])
 	if is_boss:
-		Gs.flags["boss_down"] = true
-		Gs.flags["seal_broken"] = true
+		Gs.flags["bossDown"] = true
+		Gs.flags["sealBroken"] = true
 		for line in Dat.boss_victory:
 			lines.append(line)
 	result_lines = lines

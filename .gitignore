@@ -5,3 +5,7 @@ __pycache__/
 # generated too, but Godot wants them committed - they are the stable identity
 # of each resource.
 godot/.godot/
+
+# What the smoke test wrote as it ran. Useful for the ten seconds after a run
+# hangs, worthless afterwards.
+art/godot/progress.log

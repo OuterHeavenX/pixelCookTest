@@ -17,7 +17,7 @@ var dir := "down"
 var steps := 0
 var steps_to_encounter := 999
 var playtime := 0.0
-var flags := {"chests": {}, "boss_down": false, "visited_wild": false}
+var flags := {"chests": {}, "bossDown": false, "visitedWild": false}
 
 
 func exp_to_next(level: int) -> int:
@@ -249,7 +249,7 @@ func new_game() -> void:
 	gil = 200
 	bag = {"potion": 5, "ether": 1, "phoenix": 1}
 	gear = {"leather_vest": 2}   # two spare vests: the mages start bare
-	flags = {"chests": {}, "boss_down": false, "visited_wild": false}
+	flags = {"chests": {}, "bossDown": false, "visitedWild": false}
 	steps = 0
 	playtime = 0.0
 
@@ -328,7 +328,7 @@ func load_game() -> bool:
 	gil = int(d.get("gil", 200))
 	bag = d.get("bag", {})
 	gear = d.get("gear", {})
-	flags = d.get("flags", {"chests": {}, "boss_down": false, "visited_wild": false})
+	flags = d.get("flags", {"chests": {}, "bossDown": false, "visitedWild": false})
 	playtime = float(d.get("playtime", 0.0))
 	map_id = d.get("map_id", "town")
 	px = int(d.get("px", 0))
