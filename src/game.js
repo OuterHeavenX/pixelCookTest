@@ -2060,10 +2060,12 @@ function beginVictory() {
   const gil = Battle.enemies.reduce((s, e) => s + e.gil, 0);
   G.gil += gil;
   const lines = ['Victory!', 'Gained ' + exp + ' EXP and ' + gil + ' gil.'];
+  // Everyone standing at the end gets the whole amount on the card, the way
+  // the classics do it. It used to be split three ways, so the card said 17
+  // and each hero's "next in" moved by 6, which reads as a bug at the grind.
   const alive = livingHeroes();
-  const share = Math.max(1, Math.round(exp / Math.max(1, alive.length)));
   alive.forEach(h => {
-    grantExp(h, share).forEach(up => {
+    grantExp(h, exp).forEach(up => {
       lines.push(h.name + ' reached level ' + up.lv + '!');
       up.learned.forEach(s => lines.push(h.name + ' learned ' + SPELLS[s].name + '!'));
     });

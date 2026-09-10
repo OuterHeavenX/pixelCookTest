@@ -763,10 +763,12 @@ func begin_victory() -> void:
 		gil_total += int(e["gil"])
 	Gs.gil += gil_total
 	var lines := ["Victory!", "Gained %d EXP and %d gil." % [exp_total, gil_total]]
+	# Everyone standing at the end gets the whole amount on the card, the way
+	# the classics do it. Split three ways, the card said 17 and each hero's
+	# "next in" moved by 6, which reads as a bug at the grind.
 	var alive := Gs.living_heroes()
-	var share := maxi(1, int(round(float(exp_total) / max(1, alive.size()))))
 	for h in alive:
-		for up in Gs.grant_exp(h, share):
+		for up in Gs.grant_exp(h, exp_total):
 			lines.append("%s reached level %d!" % [h["name"], int(up["lv"])])
 			for sp in up["learned"]:
 				lines.append("%s learned %s!" % [h["name"], Dat.spells[sp]["name"]])

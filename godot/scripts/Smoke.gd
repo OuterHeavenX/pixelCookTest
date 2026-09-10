@@ -371,10 +371,24 @@ func _run() -> void:
 	main.start_encounter(["ogre"], "chieftain")
 	_expect(await _until(func(): return main.mode == "battle"), "the chieftain fights")
 	await _until(func(): return main.battle.phase != "intro")
+	var exp_total := 0
+	for e in main.battle.enemies:
+		exp_total += int(e["exp"])
+	var before := []
+	for h in Gs.party:
+		before.append([int(h["exp"]), int(h["lv"]), bool(h["alive"])])
 	for e in main.battle.enemies:
 		main.battle.apply_damage(e, 99999, false)
 	_expect(await _until(func(): return main.battle.phase == "result"),
 		"killing him ends the fight")
+	var banked := true
+	for i in Gs.party.size():
+		var h: Dictionary = Gs.party[i]
+		if not before[i][2]:
+			continue
+		if int(h["lv"]) <= before[i][1] and int(h["exp"]) != before[i][0] + exp_total:
+			banked = false
+	_expect(banked, "every survivor banks the EXP the card shows")
 	_expect(bool(Gs.flags.get("sealBroken", false)), "his death breaks the ward")
 	var pages := 0
 	while main.mode == "battle" and main.battle.phase == "result" and pages < 30:

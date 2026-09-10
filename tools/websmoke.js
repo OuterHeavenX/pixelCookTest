@@ -294,8 +294,17 @@ async function launch() {
     return [before, e.hp];
   });
   expect(hp[1] < hp[0], 'an attack takes hit points off', hp[0] + ' -> ' + hp[1]);
+  const xpBefore = await ev(() => ({
+    total: Battle.enemies.reduce((t, e) => t + e.exp, 0),
+    heroes: G.party.map(h => [h.exp, h.lv, h.alive]),
+  }));
   await winFight();
   expect(await mode() === 'field', 'and the fight ends');
+  const after = await ev(() => G.party.map(h => [h.exp, h.lv]));
+  expect(after.every((a, i) => !xpBefore.heroes[i][2] || a[1] > xpBefore.heroes[i][1]
+    || a[0] === xpBefore.heroes[i][0] + xpBefore.total),
+    'every survivor banks the EXP the card shows',
+    JSON.stringify({ total: xpBefore.total, before: xpBefore.heroes, after }));
 
   // --- the barrow ---------------------------------------------------------
   section('barrow');
