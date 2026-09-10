@@ -510,7 +510,7 @@ def light(style):
 
     sun_data = bpy.data.lights.new("sun", type="SUN")
     sun_data.energy = style.get("energy", 5.2 if style["haze"] > 0 else 4.6)
-    sun_data.color = hex_rgb((255, 240, 208))[:3]
+    sun_data.color = hex_rgb(style.get("sun_rgb", (255, 240, 208)))[:3]
     sun_data.angle = math.radians(style["soft"])
     sun = bpy.data.objects.new("sun", sun_data)
     bpy.context.collection.objects.link(sun)

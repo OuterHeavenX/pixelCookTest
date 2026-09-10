@@ -373,12 +373,13 @@ def fence(tx, ty):
 
 
 _INTERIOR = [False]   # set per map by build_hd; an interior's lamps light the room
+_LAMPS_LIT = [False]  # set per map by build_hd; a dusk map's lamps light the street
 
 
 def lamp(tx, ty, lit=True, indoors=False):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
-    if lit and (indoors or _INTERIOR[0]):
+    if lit and (indoors or _INTERIOR[0] or _LAMPS_LIT[0]):
         glow(x, y - 3.6, 21.8, (255, 200, 120), 1800.0)
     iron = material("flat", rgb=(52, 52, 60), rough=0.55, metallic=0.4)
     glass = material("flat", rgb=(255, 196, 104), emit=2.0) if lit \
@@ -896,6 +897,7 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
     # a house to put a roof on.
     interior = ground_name in ("t_plank", "t_crypt", "t_drowned")
     _INTERIOR[0] = interior
+    _LAMPS_LIT[0] = bool(MAP_LIGHT.get(map_id, {}).get("lamps", False))
     houses, taken = find_houses(m, legend, rx, ry, rw, rh) if not interior else ([], set())
     for x0, y0, x1, y1, names in houses:
         for ty in range(y0, y1 + 1):
@@ -980,14 +982,18 @@ MAP_LIGHT = {
     "mere1":   dict(energy=1.4, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
     "mere2":   dict(energy=1.2, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
     "inn":     dict(energy=2.2, fill=0.7,  sky=(220, 190, 150), haze=0.0, grade=False),
-    "hollow":  dict(sky=(190, 204, 224), fill=0.9),
+    # Hollowmere is where they light the lamps at noon: the sun low and
+    # orange behind the ridge, a violet sky, every lantern lit, and none of
+    # the reference grade, which would wash the dusk back to noon.
+    "hollow":  dict(sun=16.0, sun_xy=(-0.7, -0.35), energy=2.2, sun_rgb=(255, 176, 110),
+                    sky=(112, 96, 150), fill=1.1, haze=0.0035, grade=False, lamps=True),
     "shore":   dict(sky=(190, 204, 224), fill=0.9),
 }
 
 
 def styles_for(map_id):
     """The base and overlay style names for a map, registered on demand."""
-    tweak = MAP_LIGHT.get(map_id, {})
+    tweak = {k: v for k, v in MAP_LIGHT.get(map_id, {}).items() if k != "lamps"}
     base = "oblique@" + map_id
     over = "oblique_over@" + map_id
     water = "oblique_water@" + map_id
