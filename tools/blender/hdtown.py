@@ -443,6 +443,19 @@ def sign(tx, ty):
     put("cube", x, y - 0.6, 10.0, 12.0, 1.4, 6.0, wood)
 
 
+def mountain(tx, ty):
+    """A cliff block: grey rock, not brickwork, with a few boulders on top."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    r = _rng(tx, ty, 6)
+    rock_m = material("dirt", a=(132, 130, 140), b=(84, 84, 96), scale=0.05)
+    put("cube", x, y, 11.0, PPT, PPT, 22.0 + r.uniform(-2, 3), rock_m)
+    for i in range(2):
+        put("sphere", x + r.uniform(-4, 4), y + r.uniform(-4, 4), 22.0 + r.uniform(1, 3),
+            r.uniform(6, 9), r.uniform(6, 9), r.uniform(4, 6), rock_m,
+            rot=(r.uniform(0, 30), r.uniform(0, 30), r.uniform(0, 90)))
+
+
 def wall_block(tx, ty, name):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
@@ -597,10 +610,12 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
             elif name == "t_pinesnow":
                 ground(base, tx, ty)
                 tree(tx, ty, snow=True)
+            elif name == "t_mountain":
+                mountain(tx, ty)
             elif name in ("t_wall", "t_palewall", "t_cryptwall", "t_drownwall",
-                          "t_window", "t_palewindow", "t_door", "t_mountain"):
+                          "t_window", "t_palewindow", "t_door"):
                 ground(base, tx, ty)
-                wall_block(tx, ty, name if name != "t_mountain" else "t_wall")
+                wall_block(tx, ty, name)
             else:
                 ground(name, tx, ty)
 
@@ -616,10 +631,31 @@ def main():
     ap.add_argument("--colours", type=int, default=40,
                     help="palette size for the game-resolution frame; 0 leaves it full colour")
     ap.add_argument("--samples", type=int, default=96)
+    ap.add_argument("--full", action="store_true",
+                    help="the whole map, modelled, written to art/prerender/<map>.png at "
+                         "game size for the browser build to draw under its sprites")
     ap.add_argument("--out", default=os.path.join(ROOT, "art", "blender"))
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
+    if args.full:
+        # Same contract as town.py --full: straight down, one game pixel per
+        # pixel, every tile where the tilemap has it, no grade, so the game can
+        # keep drawing sprites and collision from the map it already has.
+        maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
+        m = maps[args.map]
+        raw = os.path.join(args.out, "full_hd_%s.png" % args.map)
+        town.render(args.map, 0, 0, m["w"], m["h"], "flat", raw, args.samples, builder=build_hd)
+        game, small = town.finish(raw, town.STYLES["flat"], colours=args.colours)
+        dest = os.path.join(ROOT, "art", "prerender", "%s.png" % args.map)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
+            "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
+                                                   m["w"] * PPT, m["h"] * PPT)
+        with open(dest, "wb") as fh:
+            fh.write(small.to_png())
+        print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
+        return
     names = ["flat", "reference"] if args.style == "both" else [args.style]
     for name in names:
         raw = os.path.join(args.out, "hd_%s.png" % name)
