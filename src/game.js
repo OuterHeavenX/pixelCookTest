@@ -61,6 +61,21 @@ window.addEventListener('orientationchange', fitCanvas);
 
 /* ---------------------------------------------------------------- atlas -- */
 const atlas = new Image();
+
+/* Pre-rendered maps: the whole map lit and shadowed in Blender at exactly its
+   own size (tools/blender/town.py --full). Where one exists the field draws
+   it under the sprites instead of the tiles; the tiles still decide where you
+   can walk. A map without one draws from tiles, the way every map used to. */
+const Prerender = { images: {} };
+for (const id in (typeof PRERENDER_PNG !== 'undefined' ? PRERENDER_PNG : {})) {
+  const img = new Image();
+  img.src = PRERENDER_PNG[id];
+  Prerender.images[id] = img;
+}
+function prerenderFor(mapId) {
+  const img = Prerender.images[mapId];
+  return img && img.complete && img.naturalWidth ? img : null;
+}
 const FRAMES = ATLAS_META.frames;
 
 function spr(name, dx, dy, opts) {
@@ -1329,9 +1344,21 @@ function drawField() {
   ctx.fillStyle = '#12101c';
   ctx.fillRect(0, 0, VW, VH);
 
+  const pre = prerenderFor(G.mapId);
   const x0 = Math.floor(camX / TILE), y0 = Math.floor(camY / TILE);
   const x1 = Math.ceil((camX + VW) / TILE), y1 = Math.ceil((camY + VH) / TILE);
-  for (let y = y0; y <= y1; y++) {
+  if (pre) {
+    // The picture, clipped to the camera. Anything the tile pass would have
+    // changed at runtime - the ward cracking, water moving - is baked in here
+    // and stays still; that is the trade for light and shadow on everything.
+    // A map smaller than the view is centred, so the camera can sit at a
+    // negative offset; drawImage wants a source rectangle inside the picture.
+    const dx = Math.max(0, -camX), dy = Math.max(0, -camY);
+    const sx = Math.max(0, camX), sy = Math.max(0, camY);
+    const sw = Math.min(pre.width - sx, VW - dx), sh = Math.min(pre.height - sy, VH - dy);
+    if (sw > 0 && sh > 0) ctx.drawImage(pre, sx, sy, sw, sh, dx, dy, sw, sh);
+  }
+  for (let y = y0; y <= y1 && !pre; y++) {
     for (let x = x0; x <= x1; x++) {
       const ch = tileAt(x, y);
       if (ch === null) continue;

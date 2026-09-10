@@ -418,7 +418,7 @@ def build_house(x0, y0, x1, y1, names, colours):
         mat(roof_name + "_ridge", colours.get(roof_name, (160, 66, 63)), rough=0.8))
 
 
-def build(map_id, rx, ry, rw, rh):
+def build(map_id, rx, ry, rw, rh, houses_too=True):
     global _ATLAS_IMAGE
     # A factory reset takes the loaded atlas with it, and a cached handle to a
     # deleted datablock is a crash on the second render rather than an error on
@@ -435,7 +435,7 @@ def build(map_id, rx, ry, rw, rh):
     PAD = 3
     rx, ry, rw, rh = rx - PAD, ry - PAD, rw + PAD * 2, rh + PAD * 2
     rx, ry = max(0, rx), max(0, ry)
-    houses, taken = find_houses(m, legend, rx, ry, rw, rh)
+    houses, taken = find_houses(m, legend, rx, ry, rw, rh) if houses_too else ([], set())
     for x0, y0, x1, y1, names in houses:
         for ty in range(y0, y1 + 1):
             for tx in range(x0, x1 + 1):
@@ -549,7 +549,7 @@ def haze(rx, ry, rw, rh, density):
 
 def render(map_id, rx, ry, rw, rh, style_name, out_path, samples):
     style = STYLES[style_name]
-    build(map_id, rx, ry, rw, rh)
+    build(map_id, rx, ry, rw, rh, houses_too=style["pitch"] < 89.0)
     light(style)
     haze(rx, ry, rw, rh, style["haze"])
     scene = bpy.context.scene
@@ -665,12 +665,34 @@ def main():
     ap.add_argument("--w", type=int, default=18)
     ap.add_argument("--h", type=int, default=14)
     ap.add_argument("--style", default="all",
-                    help="flat, quarter, diorama, or all three")
+                    help="flat, quarter, diorama, reference, or all")
+    ap.add_argument("--full", action="store_true",
+                    help="the whole map, written to art/prerender/<map>.png at game "
+                         "resolution for the game to draw under its sprites")
     ap.add_argument("--samples", type=int, default=64)
     ap.add_argument("--out", default=os.path.join(ROOT, "art", "blender"))
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
+    if args.full:
+        # The camera has to keep every tile where the tilemap already has it
+        # for the game to draw sprites over the picture, so this is the flat
+        # style only: straight down, one game pixel per pixel, no grade.
+        maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
+        m = maps[args.map]
+        style = "flat" if args.style == "all" else args.style
+        raw = os.path.join(args.out, "full_%s.png" % args.map)
+        render(args.map, 0, 0, m["w"], m["h"], style, raw, args.samples)
+        game, small = finish(raw, STYLES[style])
+        dest = os.path.join(ROOT, "art", "prerender", "%s.png" % args.map)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "wb") as fh:
+            fh.write(small.to_png())
+        assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
+            "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
+                                                   m["w"] * PPT, m["h"] * PPT)
+        print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
+        return
     names = list(STYLES) if args.style == "all" else [args.style]
     for name in names:
         path = os.path.join(args.out, "town_%s.png" % name)
