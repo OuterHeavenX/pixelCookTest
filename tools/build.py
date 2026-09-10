@@ -11,6 +11,7 @@ filesystem with no server.
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -45,27 +46,32 @@ def main():
     # <map>_over.png, when it exists, is the same picture's overhangs - roofs,
     # treetops - on a clear film, drawn after the sprites so a sprite behind a
     # house is behind it.
+    # <map>_water<k>.png are the water surfaces alone, one per frame of the
+    # loop, drawn over the base picture in turn so the water moves.
     pre_dir = os.path.join(ROOT, "art", "prerender")
-    prerender, overlay = {}, {}
+    prerender, overlay, water = {}, {}, {}
     if os.path.isdir(pre_dir):
         for name in sorted(os.listdir(pre_dir)):
             if not name.endswith(".png"):
                 continue
             stem = name[:-4]
-            if stem.endswith("_over") and stem[:-5] in maps:
-                target, stem = overlay, stem[:-5]
+            uri = "data:image/png;base64," + base64.b64encode(
+                open(os.path.join(pre_dir, name), "rb").read()).decode("ascii")
+            frame = re.match(r"^(.*)_water(\d+)$", stem)
+            if frame and frame.group(1) in maps:
+                water.setdefault(frame.group(1), []).append((int(frame.group(2)), uri))
+            elif stem.endswith("_over") and stem[:-5] in maps:
+                overlay[stem[:-5]] = uri
             elif stem in maps:
-                target = prerender
-            else:
-                continue
-            blob = open(os.path.join(pre_dir, name), "rb").read()
-            target[stem] = "data:image/png;base64," + base64.b64encode(blob).decode("ascii")
+                prerender[stem] = uri
+    water = {k: [u for _, u in sorted(v)] for k, v in water.items()}
 
     assets = "\n".join([
         "/* Cooked by tools/spritecook.py and tools/mapcook.py - do not edit by hand. */",
         "const ATLAS_PNG = %s;" % json.dumps(data_uri),
         "const PRERENDER_PNG = %s;" % json.dumps(prerender),
         "const PRERENDER_OVER = %s;" % json.dumps(overlay),
+        "const PRERENDER_WATER = %s;" % json.dumps(water),
         "const ATLAS_META = %s;" % json.dumps(meta, separators=(",", ":")),
         "const MAPS = %s;" % json.dumps(maps, separators=(",", ":")),
         "const GAMEDATA = %s;" % json.dumps(gamedata, separators=(",", ":")),

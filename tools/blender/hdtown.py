@@ -106,6 +106,7 @@ def _template(kind):
 
 
 _OVER = [False]   # while True, put() marks objects for the overlay layer (roofs, treetops)
+_WATER_PHASE = [0.0]   # the wave phase of this render's water, set per frame
 
 
 def put(kind, x, y, z, sx, sy, sz, material, rot=None):
@@ -256,15 +257,33 @@ def m_leaf(a=(92, 150, 70), b=(52, 104, 46), scale=0.3):
     return m
 
 
-def m_water(rgb=(64, 132, 178)):
+WATER_FRAMES = 4      # a full wave period, a quarter turn of phase per frame
+
+
+def m_water(rgb=(64, 132, 178), phase=0.0):
+    """Water whose ripples are a periodic wave, so advancing `phase` by a
+    quarter turn four times comes back to the start: the frames loop. The
+    wave's distortion noise is fed from the unshifted position, so only the
+    wave moves and the wobble stays put."""
     m, nt, bsdf, pos = _nodes("water")
     v = _scaled(nt, pos, 0.15)
     bsdf.inputs["Base Color"].default_value = hex_rgb(rgb)
     bsdf.inputs["Roughness"].default_value = 0.08
-    ripple = nt.nodes.new("ShaderNodeTexNoise")
-    ripple.inputs["Scale"].default_value = 3.0
-    nt.links.new(v, ripple.inputs["Vector"])
-    _bump(nt, bsdf, ripple.outputs["Fac"], 0.3, 0.2)
+    wave = nt.nodes.new("ShaderNodeTexWave")
+    wave.wave_type = 'BANDS'
+    wave.bands_direction = 'DIAGONAL'
+    wave.wave_profile = 'SIN'
+    wave.inputs["Scale"].default_value = 0.4      # about ten game pixels crest to crest
+    wave.inputs["Distortion"].default_value = 1.6
+    wave.inputs["Detail"].default_value = 0.0
+    wave.inputs["Detail Scale"].default_value = 1.0
+    wave.inputs["Phase Offset"].default_value = phase
+    nt.links.new(v, wave.inputs["Vector"])
+    highlight = _ramp(nt, tuple(min(255, int(c * 0.8)) for c in rgb),
+                      tuple(min(255, int(c * 1.25 + 28)) for c in rgb))
+    nt.links.new(wave.outputs["Fac"], highlight.inputs["Fac"])
+    nt.links.new(highlight.outputs["Color"], bsdf.inputs["Base Color"])
+    _bump(nt, bsdf, wave.outputs["Fac"], 0.35, 0.25)
     return m
 
 
@@ -284,7 +303,8 @@ def ground(name, tx, ty):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
     if name in ("t_water0", "t_water1"):
-        put("cube", x, y, -2.5, PPT, PPT, 1.0, material("water"))
+        o = put("cube", x, y, -2.5, PPT, PPT, 1.0, material("water", phase=_WATER_PHASE[0]))
+        o["water"] = 1
         return
     if name == "t_ice":
         # Frozen water: bluer than the snow around it, glossy, with the
@@ -970,9 +990,34 @@ def styles_for(map_id):
     tweak = MAP_LIGHT.get(map_id, {})
     base = "oblique@" + map_id
     over = "oblique_over@" + map_id
+    water = "oblique_water@" + map_id
+    clear = {k: v for k, v in tweak.items() if k != "haze"}
     town.STYLES[base] = dict(town.STYLES["oblique"], **tweak)
-    town.STYLES[over] = dict(town.STYLES["oblique_over"], **{k: v for k, v in tweak.items() if k != "haze"})
-    return base, over
+    town.STYLES[over] = dict(town.STYLES["oblique_over"], **clear)
+    town.STYLES[water] = dict(town.STYLES["oblique_over"], **clear)
+    return base, over, water
+
+
+def has_water(m, legend):
+    return any(legend.get(ch, [None])[0] in ("t_water0", "t_water1")
+               for row in m["rows"] for ch in row)
+
+
+def render_water(map_id, rx, ry, rw, rh, raw, samples):
+    """The water surfaces alone, on a clear film, once per frame of the
+    loop. The game draws the current frame over the base picture, so the
+    water in the base is never seen and the frames only have to agree with
+    each other."""
+    _, _, style = styles_for(map_id)
+    frames = []
+    for k in range(WATER_FRAMES):
+        _WATER_PHASE[0] = 2.0 * math.pi * k / WATER_FRAMES
+        frame_raw = raw.replace(".png", "_water%d.png" % k)
+        town.render(map_id, rx, ry, rw, rh, style, frame_raw, samples, builder=builder_for(style))
+        _, img = town.finish(frame_raw, town.STYLES[style])
+        frames.append(img)
+    _WATER_PHASE[0] = 0.0
+    return frames
 
 
 def shear_scene(k):
@@ -1004,13 +1049,20 @@ def build_oblique(map_id, rx, ry, rw, rh, facades, layer="all"):
     for o in bpy.context.scene.objects:
         if o.type != 'MESH':
             continue
-        over = bool(o.get("over", 0))
-        o.visible_camera = over if layer == "over" else not over
+        over, water = bool(o.get("over", 0)), bool(o.get("water", 0))
+        if layer == "over":
+            o.visible_camera = over
+        elif layer == "water":
+            o.visible_camera = water
+        else:
+            o.visible_camera = not over
 
 
 def builder_for(style_name):
     if style_name.startswith("oblique_over"):
         return lambda *a: build_oblique(*a, layer="over")
+    if style_name.startswith("oblique_water"):
+        return lambda *a: build_oblique(*a, layer="water")
     if style_name.startswith("oblique"):
         return lambda *a: build_oblique(*a, layer="base")
     return build_hd
@@ -1021,7 +1073,7 @@ def render_oblique(map_id, rx, ry, rw, rh, raw, samples, colours=0):
     overlay goes beside it with _over in the name. Returns the two
     game-resolution images."""
     over_raw = raw.replace(".png", "_over.png")
-    base_style, over_style = styles_for(map_id)
+    base_style, over_style, _ = styles_for(map_id)
     town.render(map_id, rx, ry, rw, rh, base_style, raw, samples, builder=builder_for(base_style))
     _, base = town.finish(raw, town.STYLES[base_style], colours=colours)
     town.render(map_id, rx, ry, rw, rh, over_style, over_raw, samples,
@@ -1044,6 +1096,8 @@ def main():
     ap.add_argument("--colours", type=int, default=40,
                     help="palette size for the game-resolution frame; 0 leaves it full colour")
     ap.add_argument("--samples", type=int, default=96)
+    ap.add_argument("--water-only", action="store_true",
+                    help="with --full: render just the water frames, leaving the pictures as they are")
     ap.add_argument("--full", action="store_true",
                     help="the whole map, modelled, written to art/prerender/<map>.png at "
                          "game size for the browser build to draw under its sprites")
@@ -1088,9 +1142,24 @@ def full(args, maps, map_id):
         over = None
         if os.path.exists(over_dest):
             os.remove(over_dest)   # a flat picture has nothing that overhangs
+    elif args.water_only:
+        small = over = None
     else:
         small, over = render_oblique(args.map, 0, 0, m["w"], m["h"], raw, args.samples,
                                      colours=args.colours)
+    legend = json.load(open(os.path.join(ROOT, "assets", "gamedata.json")))["legend"]
+    for k in range(WATER_FRAMES):           # stale frames from an earlier run
+        old = dest.replace(".png", "_water%d.png" % k)
+        if os.path.exists(old) and (args.style == "flat" or not has_water(m, legend)):
+            os.remove(old)
+    if args.style != "flat" and has_water(m, legend):
+        for k, img in enumerate(render_water(args.map, 0, 0, m["w"], m["h"], raw, args.samples)):
+            with open(dest.replace(".png", "_water%d.png" % k), "wb") as fh:
+                fh.write(img.to_png())
+        print("water    -> %s  %d frames" % (os.path.relpath(dest.replace(".png", "_water*.png"), ROOT),
+                                             WATER_FRAMES))
+    if small is None:
+        return
     assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
         "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
                                                m["w"] * PPT, m["h"] * PPT)

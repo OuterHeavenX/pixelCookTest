@@ -66,7 +66,7 @@ const atlas = new Image();
    own size (tools/blender/town.py --full). Where one exists the field draws
    it under the sprites instead of the tiles; the tiles still decide where you
    can walk. A map without one draws from tiles, the way every map used to. */
-const Prerender = { images: {}, over: {} };
+const Prerender = { images: {}, over: {}, water: {} };
 for (const id in (typeof PRERENDER_PNG !== 'undefined' ? PRERENDER_PNG : {})) {
   const img = new Image();
   img.src = PRERENDER_PNG[id];
@@ -79,11 +79,21 @@ for (const id in (typeof PRERENDER_OVER !== 'undefined' ? PRERENDER_OVER : {})) 
   img.src = PRERENDER_OVER[id];
   Prerender.over[id] = img;
 }
+// Water frames: the water surfaces alone, one per frame of a short loop,
+// drawn over the base picture in turn so the water moves as the tiles did.
+for (const id in (typeof PRERENDER_WATER !== 'undefined' ? PRERENDER_WATER : {})) {
+  Prerender.water[id] = PRERENDER_WATER[id].map(src => { const img = new Image(); img.src = src; return img; });
+}
 function readyImage(img) {
   return img && img.complete && img.naturalWidth ? img : null;
 }
 function prerenderFor(mapId) { return readyImage(Prerender.images[mapId]); }
 function prerenderOverFor(mapId) { return readyImage(Prerender.over[mapId]); }
+function prerenderWaterFor(mapId, t) {
+  const frames = Prerender.water[mapId];
+  if (!frames || !frames.length) return null;
+  return readyImage(frames[Math.floor(t * 3) % frames.length]);
+}
 // A picture at map scale, clipped to the camera. A map smaller than the view
 // is centred, so the camera can sit at a negative offset; drawImage wants a
 // source rectangle inside the picture.
@@ -1369,6 +1379,8 @@ function drawField() {
     // changed at runtime - the ward cracking, water moving - is baked in here
     // and stays still; that is the trade for light and shadow on everything.
     drawPicture(pre, camX, camY);
+    const water = prerenderWaterFor(G.mapId, Field.anim);
+    if (water) drawPicture(water, camX, camY);
   }
   for (let y = y0; y <= y1 && !pre; y++) {
     for (let x = x0; x <= x1; x++) {
