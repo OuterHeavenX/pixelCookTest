@@ -505,11 +505,11 @@ def light(style):
     bg = world.node_tree.nodes["Background"]
     # A cool grey-green sky rather than a blue one: it is what fills every
     # shadow in the frame, and the reference's shadows are sage, not navy.
-    bg.inputs["Color"].default_value = hex_rgb((168, 186, 178))
+    bg.inputs["Color"].default_value = hex_rgb(style.get("sky", (168, 186, 178)))
     bg.inputs["Strength"].default_value = style["fill"]
 
     sun_data = bpy.data.lights.new("sun", type="SUN")
-    sun_data.energy = 5.2 if style["haze"] > 0 else 4.6
+    sun_data.energy = style.get("energy", 5.2 if style["haze"] > 0 else 4.6)
     sun_data.color = hex_rgb((255, 240, 208))[:3]
     sun_data.angle = math.radians(style["soft"])
     sun = bpy.data.objects.new("sun", sun_data)

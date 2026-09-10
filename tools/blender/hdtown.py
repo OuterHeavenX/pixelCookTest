@@ -288,8 +288,8 @@ def ground(name, tx, ty):
         return
     kind = {
         "t_cobble": material("stone"),
-        "t_crypt": material("stone", a=(118, 112, 132), b=(84, 78, 98), grout=(48, 44, 58), scale=0.19),
-        "t_drowned": material("stone", a=(80, 130, 148), b=(52, 92, 108), grout=(28, 48, 60), scale=0.19),
+        "t_crypt": material("stone", a=(124, 116, 140), b=(86, 80, 102), grout=(44, 40, 56), scale=0.03),
+        "t_drowned": material("stone", a=(84, 136, 154), b=(54, 96, 114), grout=(24, 46, 60), scale=0.03),
         "t_path": material("dirt"),
         "t_sand": material("dirt", a=(222, 206, 158), b=(196, 176, 126)),
         "t_snow": material("plaster", a=(226, 232, 242), b=(200, 210, 226)),
@@ -456,11 +456,15 @@ def mountain(tx, ty):
     y = -ty * PPT - PPT / 2.0
     r = _rng(tx, ty, 6)
     rock_m = material("dirt", a=(132, 130, 140), b=(84, 84, 96), scale=0.05)
-    put("cube", x, y, 11.0, PPT, PPT, 22.0 + r.uniform(-2, 3), rock_m)
+    h = 22.0 + r.uniform(-2, 3)
+    put("cube", x, y, h / 2.0, PPT, PPT, h, rock_m)
+    wall_cap(x, y, h, rock_m)
+    _OVER[0] = True
     for i in range(2):
         put("sphere", x + r.uniform(-4, 4), y + r.uniform(-4, 4), 22.0 + r.uniform(1, 3),
             r.uniform(6, 9), r.uniform(6, 9), r.uniform(4, 6), rock_m,
             rot=(r.uniform(0, 30), r.uniform(0, 30), r.uniform(0, 90)))
+    _OVER[0] = False
 
 
 def wall_block(tx, ty, name):
@@ -473,6 +477,159 @@ def wall_block(tx, ty, name):
     else:
         stone = material("stone", a=(160, 162, 170), b=(120, 124, 136), grout=(66, 68, 80), scale=0.05)
     put("cube", x, y, 11.0, PPT, PPT, 22.0, stone)
+    wall_cap(x, y, 22.0, stone)
+    south = y - PPT / 2.0
+    if name in ("t_door",):
+        wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.5, along="y")
+        put("cube", x, south - 0.6, 7.0, 9.0, 1.2, 14.0, wood)
+        put("cube", x, south - 1.2, 14.6, 10.6, 1.4, 1.6, material("flat", rgb=(70, 60, 56), rough=0.9))
+        put("sphere", x + 2.8, south - 1.4, 7.0, 1.2, 1.2, 1.2, material("flat", rgb=(220, 190, 90), metallic=0.8, rough=0.3))
+    elif name in ("t_window", "t_palewindow"):
+        put("cube", x, south - 0.6, 12.0, 8.0, 1.2, 8.0, material("flat", rgb=(160, 196, 214), rough=0.1))
+        put("cube", x, south - 1.2, 12.0, 0.8, 1.4, 8.0, material("flat", rgb=(60, 50, 46), rough=0.9))
+        put("cube", x, south - 1.2, 12.0, 8.0, 1.4, 0.8, material("flat", rgb=(60, 50, 46), rough=0.9))
+
+
+def wall_cap(x, y, top, stone):
+    """The top of a wall rides on the overlay: it leans north over the floor
+    behind the wall, and whoever stands there is behind the wall, so the
+    cap has to draw over them while the face below stays under them."""
+    _OVER[0] = True
+    # A hair above the body's top: coincident faces render black in Cycles.
+    put("cube", x, y, top + 0.8, PPT, PPT, 1.2, stone)
+    _OVER[0] = False
+
+
+def gate(tx, ty):
+    """A portcullis: two stone posts and a grid of iron bars between them."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    stone = material("stone", a=(96, 90, 112), b=(66, 62, 80), grout=(36, 32, 46), scale=0.05)
+    iron = material("flat", rgb=(58, 56, 66), rough=0.5, metallic=0.5)
+    for sx in (-1, 1):
+        put("cube", x + sx * 6.5, y, 11.0, 3.0, PPT, 22.0, stone)
+    put("cube", x, y, 21.0, PPT, PPT, 2.0, stone)
+    wall_cap(x, y, 22.0, stone)
+    for bx in (-3.6, 0.0, 3.6):
+        put("cyl", x + bx, y - 2.0, 10.0, 1.2, 1.2, 20.0, iron)
+    for bz in (4.0, 10.0, 16.0):
+        put("cube", x, y - 2.0, bz, 10.0, 1.0, 1.0, iron, rot=(0, 0, 0))
+
+
+def stairs(tx, ty, down=True):
+    """Down: a well of steps sinking below the floor. Up: steps rising to the
+    north, toward the doorway they lead out through."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    step = material("stone", a=(150, 146, 162), b=(112, 108, 126), grout=(60, 56, 72), scale=0.06)
+    dark = material("flat", rgb=(14, 12, 20), rough=1.0)
+    if down:
+        put("cube", x, y, -8.0, PPT, PPT, 16.0, dark)
+        for i in range(4):
+            depth = -1.5 - i * 3.0
+            put("cube", x, y - PPT / 2.0 + 2.0 + i * 4.0, depth, PPT, 4.0, 1.0, step)
+    else:
+        for i in range(4):
+            put("cube", x, y + PPT / 2.0 - 2.0 - i * 4.0, 1.5 + (3 - i) * 3.0, PPT, 4.0, 1.0, step)
+        put("cube", x, y + PPT / 2.0 - 1.0, 6.0, PPT, 2.0, 12.0, step)
+
+
+def rune(tx, ty, glow=(255, 150, 60), stone_rgb=None):
+    """A sealed square set into the floor, its rune lit from within."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    frame = material("stone", a=(70, 66, 84), b=(48, 44, 60), grout=(30, 28, 40), scale=0.06)
+    put("cube", x, y, 0.4, PPT - 1.0, PPT - 1.0, 0.8, frame)
+    put("cube", x, y, 0.9, 9.0, 9.0, 0.6, material("flat", rgb=glow, emit=9.0))
+    put("cube", x, y, 1.3, 6.2, 6.2, 0.6, frame)
+    put("cube", x, y, 1.7, 3.0, 3.0, 0.6, material("flat", rgb=glow, emit=14.0))
+
+
+def seal(tx, ty):
+    rune(tx, ty, glow=(255, 150, 60))
+
+
+def ward(tx, ty):
+    rune(tx, ty, glow=(96, 210, 240))
+
+
+def brazier(tx, ty):
+    """An iron stand with a bowl of fire; the fire lights the crypt."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    iron = material("flat", rgb=(48, 46, 56), rough=0.5, metallic=0.5)
+    put("cyl", x, y, 0.8, 6.0, 6.0, 1.6, iron)
+    put("cyl", x, y, 6.0, 1.6, 1.6, 9.0, iron)
+    put("cyl", x, y, 11.0, 7.0, 7.0, 3.0, iron)
+    put("sphere", x, y, 13.4, 5.0, 5.0, 3.6, material("flat", rgb=(255, 120, 30), emit=18.0))
+    put("cone", x, y, 16.6, 3.2, 3.2, 4.0, material("flat", rgb=(255, 210, 90), emit=26.0))
+
+
+def bones(tx, ty):
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    r = _rng(tx, ty, 7)
+    bone = material("flat", rgb=(222, 212, 190), rough=0.8)
+    put("sphere", x + r.uniform(-4, 4), y + r.uniform(-3, 3), 2.2, 5.0, 4.6, 4.4, bone)
+    for i in range(3):
+        put("cyl", x + r.uniform(-5, 5), y + r.uniform(-5, 5), 0.8, 1.4, 1.4, r.uniform(7, 10), bone,
+            rot=(90, 0, r.uniform(0, 180)))
+
+
+def hatch(tx, ty):
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.35)
+    iron = material("flat", rgb=(58, 56, 66), rough=0.5, metallic=0.5)
+    put("cube", x, y, 0.6, PPT - 2.0, PPT - 2.0, 1.2, wood)
+    for dy in (-4.0, 4.0):
+        put("cube", x, y + dy, 1.3, PPT - 3.0, 1.4, 0.6, iron)
+    put("cube", x, y, 1.4, 2.2, 3.0, 0.8, iron)
+
+
+def counter(tx, ty):
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    wood = material("wood", a=(150, 104, 58), b=(96, 62, 32), scale=0.4)
+    dark = material("wood", a=(110, 72, 40), b=(70, 44, 24), scale=0.4, along="y")
+    put("cube", x, y, 5.0, PPT, PPT - 2.0, 10.0, dark)
+    put("cube", x, y, 10.6, PPT, PPT, 1.2, wood)
+
+
+def shelf(tx, ty):
+    """A bookcase against a wall, spines out."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.35, along="y")
+    r = _rng(tx, ty, 8)
+    put("cube", x, y + 2.0, 10.0, PPT, PPT - 4.0, 20.0, wood)
+    wall_cap(x, y + 2.0, 20.0, wood)
+    south = y - PPT / 2.0 + 2.0
+    books = [(196, 70, 60), (70, 110, 170), (90, 150, 90), (220, 190, 110), (150, 90, 160)]
+    for shelf_z in (4.0, 10.0, 16.0):
+        put("cube", x, south - 0.4, shelf_z - 2.6, PPT - 1.0, 1.0, 0.6, wood)
+        bx = -6.0
+        while bx < 6.0:
+            w = r.uniform(1.6, 2.6)
+            put("cube", x + bx + w / 2.0, south - 0.6, shelf_z, w, 1.2, r.uniform(3.6, 4.8),
+                material("flat", rgb=r.choice(books), rough=0.7))
+            bx += w + 0.4
+
+
+def bed(tx, ty, head=True):
+    """Two tiles: the head end has the headboard and pillow, the foot end
+    the blanket and footboard."""
+    x = tx * PPT + PPT / 2.0
+    y = -ty * PPT - PPT / 2.0
+    wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.35)
+    put("cube", x, y, 2.0, PPT - 2.0, PPT, 4.0, wood)                       # frame
+    if head:
+        put("cube", x, y, 5.0, PPT - 3.0, PPT, 2.0, material("plaster", a=(236, 230, 214), b=(210, 202, 186)))
+        put("cube", x, y - 1.0, 6.4, PPT - 6.0, 7.0, 1.6, material("flat", rgb=(246, 242, 232), rough=0.9))
+        put("cube", x, y + PPT / 2.0 - 1.0, 6.0, PPT - 2.0, 2.0, 12.0, wood)  # headboard
+    else:
+        put("cube", x, y, 5.0, PPT - 3.0, PPT, 2.0, material("flat", rgb=(176, 60, 62), rough=0.9))
+        put("cube", x, y - PPT / 2.0 + 1.0, 4.0, PPT - 2.0, 2.0, 8.0, wood)   # footboard
 
 
 def house(x0, y0, x1, y1, names):
@@ -531,10 +688,16 @@ def house(x0, y0, x1, y1, names):
     pitch = math.radians(ROOF_PITCH)
     slab_len = half / math.cos(pitch)
     rise = half * math.tan(pitch)
-    shade = material("flat", rgb=(70, 34, 34), rough=0.9)
-    tile_a = material("flat", rgb=(176, 72, 64), rough=0.85)
-    tile_b = material("flat", rgb=(132, 50, 48), rough=0.85)
-    tile_c = material("flat", rgb=(202, 96, 82), rough=0.85)
+    if roof_name == "t_blueroof":
+        shade = material("flat", rgb=(34, 42, 60), rough=0.9)
+        tile_a = material("flat", rgb=(96, 124, 158), rough=0.8)
+        tile_b = material("flat", rgb=(70, 94, 128), rough=0.8)
+        tile_c = material("flat", rgb=(124, 152, 184), rough=0.8)
+    else:
+        shade = material("flat", rgb=(70, 34, 34), rough=0.9)
+        tile_a = material("flat", rgb=(176, 72, 64), rough=0.85)
+        tile_b = material("flat", rgb=(132, 50, 48), rough=0.85)
+        tile_c = material("flat", rgb=(202, 96, 82), rough=0.85)
     r = random.Random(int(cx * 3 + cy * 7))
     _OVER[0] = True   # the roof draws over anyone standing behind the house
     for sign_ in (-1, 1):
@@ -565,6 +728,12 @@ def house(x0, y0, x1, y1, names):
 # ------------------------------------------------------------------ the map
 
 PROPS = {
+    "t_brazier": brazier, "t_bones": bones, "t_gate": gate, "t_hatch": hatch,
+    "t_stairdown": lambda tx, ty: stairs(tx, ty, down=True),
+    "t_stairup": lambda tx, ty: stairs(tx, ty, down=False),
+    "t_seal": seal, "t_ward": ward, "t_counter": counter, "t_shelf": shelf,
+    "t_bedtop": lambda tx, ty: bed(tx, ty, head=True),
+    "t_bedbot": lambda tx, ty: bed(tx, ty, head=False),
     "t_fence": fence, "t_lamp": lamp, "t_lantern": lamp, "t_lampsunk": lamp,
     "t_well": well, "t_tree": tree, "t_bush": bush, "t_rock": rock,
     "t_barrel": barrel, "t_chest": chest, "t_sign": sign,
@@ -585,7 +754,10 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
     PAD = 3
     rx, ry = max(0, rx - PAD), max(0, ry - PAD)
     rw, rh = rw + PAD * 2, rh + PAD * 2
-    houses, taken = find_houses(m, legend, rx, ry, rw, rh)
+    # An interior's walls ring the room; they are walls to stand behind, not
+    # a house to put a roof on.
+    interior = ground_name in ("t_plank", "t_crypt", "t_drowned")
+    houses, taken = find_houses(m, legend, rx, ry, rw, rh) if not interior else ([], set())
     for x0, y0, x1, y1, names in houses:
         for ty in range(y0, y1 + 1):
             for tx in range(x0, x1 + 1):
@@ -611,7 +783,8 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
             under = underlay.get(row[tx])
             base = ground_name if under in (None, "ground") else under
             if name in PROPS:
-                ground(base, tx, ty)
+                if name != "t_stairdown":
+                    ground(base, tx, ty)
                 if name == "t_tree" or name == "t_pinesnow":
                     tree(tx, ty, snow=(name == "t_pinesnow"))
                 else:
@@ -652,6 +825,31 @@ town.STYLES["oblique_over"] = dict(town.STYLES["oblique"], haze=0.0, transparent
                                    note="the overlay pass: roofs and treetops on a clear film")
 
 
+# How each map is lit. Outdoors keep the reference's sun, haze and grade;
+# the crypts and the drowned halls have no sun to speak of, so a weak cool
+# light stands in for it and the braziers and lamps do the rest; the inn is
+# lamplight and a warm sky through the door.
+MAP_LIGHT = {
+    "barrow1": dict(energy=0.9, fill=0.55, sky=(120, 108, 150), haze=0.0, grade=False),
+    "barrow2": dict(energy=0.8, fill=0.55, sky=(120, 108, 150), haze=0.0, grade=False),
+    "mere1":   dict(energy=0.9, fill=0.6,  sky=(80, 130, 150),  haze=0.0, grade=False),
+    "mere2":   dict(energy=0.8, fill=0.6,  sky=(80, 130, 150),  haze=0.0, grade=False),
+    "inn":     dict(energy=2.2, fill=0.7,  sky=(220, 190, 150), haze=0.0, grade=False),
+    "hollow":  dict(sky=(190, 204, 224), fill=0.9),
+    "shore":   dict(sky=(190, 204, 224), fill=0.9),
+}
+
+
+def styles_for(map_id):
+    """The base and overlay style names for a map, registered on demand."""
+    tweak = MAP_LIGHT.get(map_id, {})
+    base = "oblique@" + map_id
+    over = "oblique_over@" + map_id
+    town.STYLES[base] = dict(town.STYLES["oblique"], **tweak)
+    town.STYLES[over] = dict(town.STYLES["oblique_over"], **{k: v for k, v in tweak.items() if k != "haze"})
+    return base, over
+
+
 def shear_scene(k):
     from mathutils import Matrix
     S = Matrix.Identity(4)
@@ -684,10 +882,10 @@ def build_oblique(map_id, rx, ry, rw, rh, facades, layer="all"):
 
 
 def builder_for(style_name):
-    if style_name == "oblique":
-        return lambda *a: build_oblique(*a, layer="base")
-    if style_name == "oblique_over":
+    if style_name.startswith("oblique_over"):
         return lambda *a: build_oblique(*a, layer="over")
+    if style_name.startswith("oblique"):
+        return lambda *a: build_oblique(*a, layer="base")
     return build_hd
 
 
@@ -696,11 +894,12 @@ def render_oblique(map_id, rx, ry, rw, rh, raw, samples, colours=0):
     overlay goes beside it with _over in the name. Returns the two
     game-resolution images."""
     over_raw = raw.replace(".png", "_over.png")
-    town.render(map_id, rx, ry, rw, rh, "oblique", raw, samples, builder=builder_for("oblique"))
-    _, base = town.finish(raw, town.STYLES["oblique"], colours=colours)
-    town.render(map_id, rx, ry, rw, rh, "oblique_over", over_raw, samples,
-                builder=builder_for("oblique_over"))
-    _, over = town.finish(over_raw, town.STYLES["oblique_over"])
+    base_style, over_style = styles_for(map_id)
+    town.render(map_id, rx, ry, rw, rh, base_style, raw, samples, builder=builder_for(base_style))
+    _, base = town.finish(raw, town.STYLES[base_style], colours=colours)
+    town.render(map_id, rx, ry, rw, rh, over_style, over_raw, samples,
+                builder=builder_for(over_style))
+    _, over = town.finish(over_raw, town.STYLES[over_style])
     return base, over
 
 
@@ -727,34 +926,10 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     SHEAR = args.shear
     if args.full:
-        # Same contract as town.py --full: straight down, one game pixel per
-        # pixel, every tile where the tilemap has it, no grade, so the game can
-        # keep drawing sprites and collision from the map it already has.
         maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
-        m = maps[args.map]
-        raw = os.path.join(args.out, "full_hd_%s.png" % args.map)
-        dest = os.path.join(ROOT, "art", "prerender", "%s.png" % args.map)
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        over_dest = dest.replace(".png", "_over.png")
-        if args.style == "flat":
-            town.render(args.map, 0, 0, m["w"], m["h"], "flat", raw, args.samples, builder=build_hd)
-            _, small = town.finish(raw, town.STYLES["flat"], colours=args.colours)
-            over = None
-            if os.path.exists(over_dest):
-                os.remove(over_dest)   # a flat picture has nothing that overhangs
-        else:
-            small, over = render_oblique(args.map, 0, 0, m["w"], m["h"], raw, args.samples,
-                                         colours=args.colours)
-        assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
-            "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
-                                                   m["w"] * PPT, m["h"] * PPT)
-        with open(dest, "wb") as fh:
-            fh.write(small.to_png())
-        print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
-        if over is not None:
-            with open(over_dest, "wb") as fh:
-                fh.write(over.to_png())
-            print("overlay  -> %s" % os.path.relpath(over_dest, ROOT))
+        ids = list(maps) if args.map == "all" else [args.map]
+        for map_id in ids:
+            full(args, maps, map_id)
         return
     names = ["flat", "reference"] if args.style == "both" else [args.style]
     for name in names:
@@ -768,6 +943,37 @@ def main():
                         builder=builder_for(name))
             game, small = town.finish(raw, town.STYLES[name], colours=args.colours)
         print("%-9s -> %s  %dx%d" % (name, os.path.relpath(game, ROOT), small.width, small.height))
+
+
+def full(args, maps, map_id):
+    """Same contract as town.py --full: straight down, one game pixel per
+    pixel, every tile where the tilemap has it, so the game can keep drawing
+    sprites and collision from the map it already has."""
+    m = maps[map_id]
+    args.map = map_id
+    raw = os.path.join(args.out, "full_hd_%s.png" % args.map)
+    dest = os.path.join(ROOT, "art", "prerender", "%s.png" % args.map)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    over_dest = dest.replace(".png", "_over.png")
+    if args.style == "flat":
+        town.render(args.map, 0, 0, m["w"], m["h"], "flat", raw, args.samples, builder=build_hd)
+        _, small = town.finish(raw, town.STYLES["flat"], colours=args.colours)
+        over = None
+        if os.path.exists(over_dest):
+            os.remove(over_dest)   # a flat picture has nothing that overhangs
+    else:
+        small, over = render_oblique(args.map, 0, 0, m["w"], m["h"], raw, args.samples,
+                                     colours=args.colours)
+    assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
+        "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
+                                               m["w"] * PPT, m["h"] * PPT)
+    with open(dest, "wb") as fh:
+        fh.write(small.to_png())
+    print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
+    if over is not None:
+        with open(over_dest, "wb") as fh:
+            fh.write(over.to_png())
+        print("overlay  -> %s" % os.path.relpath(over_dest, ROOT))
 
 
 if __name__ == "__main__":
