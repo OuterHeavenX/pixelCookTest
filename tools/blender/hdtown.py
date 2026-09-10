@@ -352,10 +352,13 @@ def fence(tx, ty):
                 put("cube", cx, cy, z, 1.4, half, 1.6, rail_y)
 
 
+_INTERIOR = [False]   # set per map by build_hd; an interior's lamps light the room
+
+
 def lamp(tx, ty, lit=True, indoors=False):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
-    if lit and indoors:
+    if lit and (indoors or _INTERIOR[0]):
         glow(x, y - 3.6, 21.8, (255, 200, 120), 1800.0)
     iron = material("flat", rgb=(52, 52, 60), rough=0.55, metallic=0.4)
     glass = material("flat", rgb=(255, 196, 104), emit=2.0) if lit \
@@ -489,7 +492,7 @@ def wall_block(tx, ty, name):
             material("dirt", a=(24, 48, 60), b=(14, 30, 40), scale=0.05)
     else:
         stone = material("stone", a=(160, 162, 170), b=(120, 124, 136), grout=(66, 68, 80), scale=0.05)
-        cap = stone
+        cap = material("stone", a=(126, 128, 138), b=(94, 98, 110), grout=(56, 58, 68), scale=0.05)
     put("cube", x, y, 11.0, PPT, PPT, 22.0, stone)
     wall_cap(x, y, 22.0, cap)
     south = y - PPT / 2.0
@@ -785,6 +788,7 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
     # An interior's walls ring the room; they are walls to stand behind, not
     # a house to put a roof on.
     interior = ground_name in ("t_plank", "t_crypt", "t_drowned")
+    _INTERIOR[0] = interior
     houses, taken = find_houses(m, legend, rx, ry, rw, rh) if not interior else ([], set())
     for x0, y0, x1, y1, names in houses:
         for ty in range(y0, y1 + 1):
