@@ -613,10 +613,10 @@ def render(map_id, rx, ry, rw, rh, style_name, out_path, samples, builder=None):
     scene.cycles.samples = samples
     scene.cycles.use_denoising = False
     scene.render.filter_size = 1.1
-    scene.render.film_transparent = False
+    scene.render.film_transparent = bool(style.get("transparent", False))
     scene.view_settings.view_transform = 'Standard'
     scene.render.image_settings.file_format = 'PNG'
-    scene.render.image_settings.color_mode = 'RGB'
+    scene.render.image_settings.color_mode = 'RGBA' if scene.render.film_transparent else 'RGB'
     scene.render.filepath = out_path
     bpy.ops.render.render(write_still=True)
     return out_path

@@ -66,15 +66,32 @@ const atlas = new Image();
    own size (tools/blender/town.py --full). Where one exists the field draws
    it under the sprites instead of the tiles; the tiles still decide where you
    can walk. A map without one draws from tiles, the way every map used to. */
-const Prerender = { images: {} };
+const Prerender = { images: {}, over: {} };
 for (const id in (typeof PRERENDER_PNG !== 'undefined' ? PRERENDER_PNG : {})) {
   const img = new Image();
   img.src = PRERENDER_PNG[id];
   Prerender.images[id] = img;
 }
-function prerenderFor(mapId) {
-  const img = Prerender.images[mapId];
+// The overlay, where a map has one: roofs and treetops on a clear film, drawn
+// after the sprites so whoever stands behind a house is behind it.
+for (const id in (typeof PRERENDER_OVER !== 'undefined' ? PRERENDER_OVER : {})) {
+  const img = new Image();
+  img.src = PRERENDER_OVER[id];
+  Prerender.over[id] = img;
+}
+function readyImage(img) {
   return img && img.complete && img.naturalWidth ? img : null;
+}
+function prerenderFor(mapId) { return readyImage(Prerender.images[mapId]); }
+function prerenderOverFor(mapId) { return readyImage(Prerender.over[mapId]); }
+// A picture at map scale, clipped to the camera. A map smaller than the view
+// is centred, so the camera can sit at a negative offset; drawImage wants a
+// source rectangle inside the picture.
+function drawPicture(img, camX, camY) {
+  const dx = Math.max(0, -camX), dy = Math.max(0, -camY);
+  const sx = Math.max(0, camX), sy = Math.max(0, camY);
+  const sw = Math.min(img.width - sx, VW - dx), sh = Math.min(img.height - sy, VH - dy);
+  if (sw > 0 && sh > 0) ctx.drawImage(img, sx, sy, sw, sh, dx, dy, sw, sh);
 }
 const FRAMES = ATLAS_META.frames;
 
@@ -1351,12 +1368,7 @@ function drawField() {
     // The picture, clipped to the camera. Anything the tile pass would have
     // changed at runtime - the ward cracking, water moving - is baked in here
     // and stays still; that is the trade for light and shadow on everything.
-    // A map smaller than the view is centred, so the camera can sit at a
-    // negative offset; drawImage wants a source rectangle inside the picture.
-    const dx = Math.max(0, -camX), dy = Math.max(0, -camY);
-    const sx = Math.max(0, camX), sy = Math.max(0, camY);
-    const sw = Math.min(pre.width - sx, VW - dx), sh = Math.min(pre.height - sy, VH - dy);
-    if (sw > 0 && sh > 0) ctx.drawImage(pre, sx, sy, sw, sh, dx, dy, sw, sh);
+    drawPicture(pre, camX, camY);
   }
   for (let y = y0; y <= y1 && !pre; y++) {
     for (let x = x0; x <= x1; x++) {
@@ -1406,6 +1418,8 @@ function drawField() {
   });
   ents.sort((a, b) => a.y - b.y);
   ents.forEach(e => e.draw());
+  const over = pre && prerenderOverFor(G.mapId);
+  if (over) drawPicture(over, camX, camY);
 
   drawLocationBanner();
   if (Field.msg) drawMessageBox(Field.msg);

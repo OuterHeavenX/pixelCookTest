@@ -105,10 +105,14 @@ def _template(kind):
     return me
 
 
+_OVER = [False]   # while True, put() marks objects for the overlay layer (roofs, treetops)
+
+
 def put(kind, x, y, z, sx, sy, sz, material, rot=None):
     me = _template(kind).copy()
     me.materials.append(material)
     o = bpy.data.objects.new("hd_" + kind, me)
+    o["over"] = 1 if _OVER[0] else 0
     o.location = (x, y, z)
     o.scale = (sx, sy, sz)
     if rot:
@@ -375,12 +379,14 @@ def tree(tx, ty, snow=False):
         a = r.uniform(0, 360)
         put("cyl", x + math.cos(math.radians(a)) * 3.0, y + math.sin(math.radians(a)) * 3.0,
             15.0, 1.4, 1.4, 8.0, bark, rot=(math.sin(math.radians(a)) * 35, -math.cos(math.radians(a)) * 35, 0))
+    _OVER[0] = True   # the canopy draws over anyone standing behind the trunk
     if snow:
         leaves = [material("leaf", a=(72, 110, 84), b=(40, 70, 52)),
                   material("plaster", a=(232, 238, 246), b=(206, 216, 230))]
         for i, (rad, z, sz) in enumerate(((9.5, 14, 10), (7.5, 21, 9), (5.0, 27, 8))):
             put("cone", x, y, z, rad * 2, rad * 2, sz, leaves[0])
             put("cone", x, y, z + sz * 0.32, rad * 1.9, rad * 1.9, sz * 0.4, leaves[1])
+        _OVER[0] = False
         return
     leaves = [material("leaf"), material("leaf", a=(112, 172, 82), b=(64, 120, 56)),
               material("leaf", a=(72, 126, 60), b=(40, 84, 40))]
@@ -393,6 +399,7 @@ def tree(tx, ty, snow=False):
         cx, cy, cz = x + u * 13.0, y + v * 13.0, 23.0 + w * 7.5
         rad = r.uniform(5.5, 8.5)
         put("sphere", cx, cy, cz, rad, rad, rad * 0.9, r.choice(leaves))
+    _OVER[0] = False
 
 
 def bush(tx, ty):
@@ -529,6 +536,7 @@ def house(x0, y0, x1, y1, names):
     tile_b = material("flat", rgb=(132, 50, 48), rough=0.85)
     tile_c = material("flat", rgb=(202, 96, 82), rough=0.85)
     r = random.Random(int(cx * 3 + cy * 7))
+    _OVER[0] = True   # the roof draws over anyone standing behind the house
     for sign_ in (-1, 1):
         put("cube", cx, cy + sign_ * half / 2.0, WALL_H + rise / 2.0,
             w + EAVE * 2, slab_len, 1.6, shade, rot=(sign_ * -ROOF_PITCH, 0, 0))
@@ -551,6 +559,7 @@ def house(x0, y0, x1, y1, names):
     # A chimney on the north slope.
     put("cube", cx + w / 2.0 - 6.0, cy + 3.0, WALL_H + rise * 0.5 + 6.0, 4.0, 4.0, 12.0,
         material("stone", a=(120, 116, 124), b=(88, 84, 94), grout=(56, 52, 62), scale=0.08))
+    _OVER[0] = False
 
 
 # ------------------------------------------------------------------ the map
@@ -620,14 +629,92 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
                 ground(name, tx, ty)
 
 
+# ------------------------------------------------------------------ oblique
+# The game draws its sprites at tile coordinates, so a background it can sit
+# under has to keep the ground exactly where the tilemap has it. A tilted
+# camera foreshortens the ground and moves every tile. An oblique projection
+# does not: the camera stays straight down and the ground stays one game pixel
+# per pixel, but everything with height is sheared down the screen by
+# SHEAR * z, so walls, doors and windows show the way they do from a
+# three-quarter view. tan(33 degrees), the reference camera's tilt, is 0.65.
+#
+# Height moving north means a roof reaches past the tiles its house stands on,
+# over ground a sprite could be standing on, and a sprite there is behind the
+# house. The game draws sprites over the background, so the parts that can
+# overhang - roofs and treetops - are rendered a second time on their own,
+# with a transparent film, as an overlay the game draws after the sprites.
+SHEAR = 0.65
+
+town.STYLES["oblique"] = dict(town.STYLES["reference"], pitch=90.0, yaw=0.0, dof=0.0,
+                              note="straight down for the ground, sheared for the walls, "
+                                   "lit and graded like the reference")
+town.STYLES["oblique_over"] = dict(town.STYLES["oblique"], haze=0.0, transparent=True,
+                                   note="the overlay pass: roofs and treetops on a clear film")
+
+
+def shear_scene(k):
+    from mathutils import Matrix
+    S = Matrix.Identity(4)
+    S[1][2] = k           # y' = y + k * z : height slides north, up the screen
+    # Objects made through bpy.data carry a stale world matrix until the scene
+    # is evaluated; baking that would leave every mesh at the origin.
+    bpy.context.view_layer.update()
+    for o in list(bpy.context.scene.objects):
+        if o.type != 'MESH':
+            continue
+        me = o.data
+        me.transform(o.matrix_world)
+        me.transform(S)
+        o.matrix_world = Matrix.Identity(4)
+
+
+def build_oblique(map_id, rx, ry, rw, rh, facades, layer="all"):
+    build_hd(map_id, rx, ry, rw, rh, facades)
+    shear_scene(SHEAR)
+    if layer == "all":
+        return
+    # Only the layer's objects are seen by the camera. The rest still cast
+    # shadows and block light, so the base keeps the roofs' shadows and the
+    # overlay's roofs are shaded by the trees beside them.
+    for o in bpy.context.scene.objects:
+        if o.type != 'MESH':
+            continue
+        over = bool(o.get("over", 0))
+        o.visible_camera = over if layer == "over" else not over
+
+
+def builder_for(style_name):
+    if style_name == "oblique":
+        return lambda *a: build_oblique(*a, layer="base")
+    if style_name == "oblique_over":
+        return lambda *a: build_oblique(*a, layer="over")
+    return build_hd
+
+
+def render_oblique(map_id, rx, ry, rw, rh, raw, samples, colours=0):
+    """Both passes of the oblique style. `raw` names the base frame; the
+    overlay goes beside it with _over in the name. Returns the two
+    game-resolution images."""
+    over_raw = raw.replace(".png", "_over.png")
+    town.render(map_id, rx, ry, rw, rh, "oblique", raw, samples, builder=builder_for("oblique"))
+    _, base = town.finish(raw, town.STYLES["oblique"], colours=colours)
+    town.render(map_id, rx, ry, rw, rh, "oblique_over", over_raw, samples,
+                builder=builder_for("oblique_over"))
+    _, over = town.finish(over_raw, town.STYLES["oblique_over"])
+    return base, over
+
+
 def main():
+    global SHEAR
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="town")
     ap.add_argument("--x", type=int, default=16)
     ap.add_argument("--y", type=int, default=12)
     ap.add_argument("--w", type=int, default=18)
     ap.add_argument("--h", type=int, default=14)
-    ap.add_argument("--style", default="both", help="flat, reference, or both")
+    ap.add_argument("--style", default="both", help="flat, reference, oblique, or both")
+    ap.add_argument("--shear", type=float, default=SHEAR,
+                    help="how far down the screen a unit of height slides in the oblique style")
     ap.add_argument("--colours", type=int, default=40,
                     help="palette size for the game-resolution frame; 0 leaves it full colour")
     ap.add_argument("--samples", type=int, default=96)
@@ -638,6 +725,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
+    SHEAR = args.shear
     if args.full:
         # Same contract as town.py --full: straight down, one game pixel per
         # pixel, every tile where the tilemap has it, no grade, so the game can
@@ -645,23 +733,40 @@ def main():
         maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
         m = maps[args.map]
         raw = os.path.join(args.out, "full_hd_%s.png" % args.map)
-        town.render(args.map, 0, 0, m["w"], m["h"], "flat", raw, args.samples, builder=build_hd)
-        game, small = town.finish(raw, town.STYLES["flat"], colours=args.colours)
         dest = os.path.join(ROOT, "art", "prerender", "%s.png" % args.map)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
+        over_dest = dest.replace(".png", "_over.png")
+        if args.style == "flat":
+            town.render(args.map, 0, 0, m["w"], m["h"], "flat", raw, args.samples, builder=build_hd)
+            _, small = town.finish(raw, town.STYLES["flat"], colours=args.colours)
+            over = None
+            if os.path.exists(over_dest):
+                os.remove(over_dest)   # a flat picture has nothing that overhangs
+        else:
+            small, over = render_oblique(args.map, 0, 0, m["w"], m["h"], raw, args.samples,
+                                         colours=args.colours)
         assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT), \
             "prerender is %dx%d, map is %dx%d" % (small.width, small.height,
                                                    m["w"] * PPT, m["h"] * PPT)
         with open(dest, "wb") as fh:
             fh.write(small.to_png())
         print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
+        if over is not None:
+            with open(over_dest, "wb") as fh:
+                fh.write(over.to_png())
+            print("overlay  -> %s" % os.path.relpath(over_dest, ROOT))
         return
     names = ["flat", "reference"] if args.style == "both" else [args.style]
     for name in names:
         raw = os.path.join(args.out, "hd_%s.png" % name)
-        town.render(args.map, args.x, args.y, args.w, args.h, name, raw, args.samples,
-                    builder=build_hd)
-        game, small = town.finish(raw, town.STYLES[name], colours=args.colours)
+        if name == "oblique":
+            small, over = render_oblique(args.map, args.x, args.y, args.w, args.h, raw,
+                                         args.samples, colours=args.colours)
+            game = raw.replace(".png", "_game.png")
+        else:
+            town.render(args.map, args.x, args.y, args.w, args.h, name, raw, args.samples,
+                        builder=builder_for(name))
+            game, small = town.finish(raw, town.STYLES[name], colours=args.colours)
         print("%-9s -> %s  %dx%d" % (name, os.path.relpath(game, ROOT), small.width, small.height))
 
 

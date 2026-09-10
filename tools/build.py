@@ -42,19 +42,30 @@ def main():
     # map under art/prerender/, lit and shadowed in Blender at exactly the
     # map's own size, and the field draws it under the sprites instead of the
     # tiles. A map without one is drawn from tiles as before.
+    # <map>_over.png, when it exists, is the same picture's overhangs - roofs,
+    # treetops - on a clear film, drawn after the sprites so a sprite behind a
+    # house is behind it.
     pre_dir = os.path.join(ROOT, "art", "prerender")
-    prerender = {}
+    prerender, overlay = {}, {}
     if os.path.isdir(pre_dir):
         for name in sorted(os.listdir(pre_dir)):
-            if name.endswith(".png") and name[:-4] in maps:
-                blob = open(os.path.join(pre_dir, name), "rb").read()
-                prerender[name[:-4]] = ("data:image/png;base64,"
-                                        + base64.b64encode(blob).decode("ascii"))
+            if not name.endswith(".png"):
+                continue
+            stem = name[:-4]
+            if stem.endswith("_over") and stem[:-5] in maps:
+                target, stem = overlay, stem[:-5]
+            elif stem in maps:
+                target = prerender
+            else:
+                continue
+            blob = open(os.path.join(pre_dir, name), "rb").read()
+            target[stem] = "data:image/png;base64," + base64.b64encode(blob).decode("ascii")
 
     assets = "\n".join([
         "/* Cooked by tools/spritecook.py and tools/mapcook.py - do not edit by hand. */",
         "const ATLAS_PNG = %s;" % json.dumps(data_uri),
         "const PRERENDER_PNG = %s;" % json.dumps(prerender),
+        "const PRERENDER_OVER = %s;" % json.dumps(overlay),
         "const ATLAS_META = %s;" % json.dumps(meta, separators=(",", ":")),
         "const MAPS = %s;" % json.dumps(maps, separators=(",", ":")),
         "const GAMEDATA = %s;" % json.dumps(gamedata, separators=(",", ":")),
