@@ -132,7 +132,7 @@ def material(kind, **kw):
 
 
 def m_stone(a=(182, 184, 192), b=(146, 150, 162), grout=(72, 74, 86), scale=0.042,
-            rough=0.85):
+            rough=0.85, square=False):
     """Flagstones: a brick pattern with mortar, two stone shades varied by
     noise, and the mortar cut in as bump."""
     m, nt, bsdf, pos = _nodes("stone")
@@ -142,6 +142,9 @@ def m_stone(a=(182, 184, 192), b=(146, 150, 162), grout=(72, 74, 86), scale=0.04
     brick.inputs["Mortar Size"].default_value = 0.06
     brick.inputs["Bias"].default_value = 0.0
     brick.offset = 0.5
+    if square:            # flagstones laid in a grid, not a running bond
+        brick.inputs["Row Height"].default_value = brick.inputs["Brick Width"].default_value
+        brick.offset = 0.0
     nt.links.new(v, brick.inputs["Vector"])
     noise = nt.nodes.new("ShaderNodeTexNoise")
     noise.inputs["Scale"].default_value = 2.4
@@ -212,7 +215,7 @@ def m_wood(a=(150, 104, 58), b=(96, 62, 32), scale=0.5, rough=0.7, along="x"):
     return m
 
 
-def m_plaster(a=(226, 210, 178), b=(196, 178, 146), scale=0.1):
+def m_plaster(a=(226, 210, 178), b=(196, 178, 146), scale=0.1, rough=0.9):
     m, nt, bsdf, pos = _nodes("plaster")
     v = _scaled(nt, pos, scale)
     noise = nt.nodes.new("ShaderNodeTexNoise")
@@ -222,7 +225,7 @@ def m_plaster(a=(226, 210, 178), b=(196, 178, 146), scale=0.1):
     ramp = _ramp(nt, a, b)
     nt.links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
     nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-    bsdf.inputs["Roughness"].default_value = 0.9
+    bsdf.inputs["Roughness"].default_value = rough
     _bump(nt, bsdf, noise.outputs["Fac"], 0.15, 0.3)
     return m
 
@@ -284,12 +287,17 @@ def ground(name, tx, ty):
         put("cube", x, y, -2.5, PPT, PPT, 1.0, material("water"))
         return
     if name == "t_ice":
-        put("cube", x, y, -1.5, PPT, PPT, 1.0, material("flat", rgb=(190, 214, 236), rough=0.15))
+        # Frozen water: bluer than the snow around it, glossy, with the
+        # plaster noise standing in for the cracks in the tile art.
+        put("cube", x, y, -1.5, PPT, PPT, 1.0,
+            material("plaster", a=(150, 194, 232), b=(112, 160, 210), scale=0.05, rough=0.12))
         return
     kind = {
         "t_cobble": material("stone"),
-        "t_crypt": material("stone", a=(124, 116, 140), b=(86, 80, 102), grout=(44, 40, 56), scale=0.03),
-        "t_drowned": material("stone", a=(84, 136, 154), b=(54, 96, 114), grout=(24, 46, 60), scale=0.03),
+        "t_crypt": material("stone", a=(138, 130, 156), b=(100, 92, 118), grout=(50, 46, 64),
+                            scale=0.0625, square=True),
+        "t_drowned": material("stone", a=(92, 146, 166), b=(60, 106, 126), grout=(26, 50, 66),
+                              scale=0.0625, square=True),
         "t_path": material("dirt"),
         "t_sand": material("dirt", a=(222, 206, 158), b=(196, 176, 126)),
         "t_snow": material("plaster", a=(226, 232, 242), b=(200, 210, 226)),
@@ -344,9 +352,11 @@ def fence(tx, ty):
                 put("cube", cx, cy, z, 1.4, half, 1.6, rail_y)
 
 
-def lamp(tx, ty, lit=True):
+def lamp(tx, ty, lit=True, indoors=False):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
+    if lit and indoors:
+        glow(x, y - 3.6, 21.8, (255, 200, 120), 1800.0)
     iron = material("flat", rgb=(52, 52, 60), rough=0.55, metallic=0.4)
     glass = material("flat", rgb=(255, 196, 104), emit=2.0) if lit \
         else material("flat", rgb=(150, 160, 170), rough=0.2)
@@ -474,10 +484,14 @@ def wall_block(tx, ty, name):
         stone = material("stone", a=(96, 90, 112), b=(66, 62, 80), grout=(36, 32, 46), scale=0.05) \
             if name == "t_cryptwall" else \
             material("stone", a=(44, 80, 96), b=(26, 52, 66), grout=(12, 26, 36), scale=0.05)
+        cap = material("dirt", a=(50, 46, 62), b=(32, 30, 42), scale=0.05) \
+            if name == "t_cryptwall" else \
+            material("dirt", a=(24, 48, 60), b=(14, 30, 40), scale=0.05)
     else:
         stone = material("stone", a=(160, 162, 170), b=(120, 124, 136), grout=(66, 68, 80), scale=0.05)
+        cap = stone
     put("cube", x, y, 11.0, PPT, PPT, 22.0, stone)
-    wall_cap(x, y, 22.0, stone)
+    wall_cap(x, y, 22.0, cap)
     south = y - PPT / 2.0
     if name in ("t_door",):
         wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.5, along="y")
@@ -553,6 +567,18 @@ def ward(tx, ty):
     rune(tx, ty, glow=(96, 210, 240))
 
 
+def glow(x, y, z, rgb, energy, radius=3.0):
+    """A point light: emissive meshes this small barely light a floor."""
+    ld = bpy.data.lights.new("glow", type="POINT")
+    ld.energy = energy
+    ld.color = hex_rgb(rgb)[:3]
+    ld.shadow_soft_size = radius
+    o = bpy.data.objects.new("glow", ld)
+    o.location = (x, y, z)
+    bpy.context.collection.objects.link(o)
+    return o
+
+
 def brazier(tx, ty):
     """An iron stand with a bowl of fire; the fire lights the crypt."""
     x = tx * PPT + PPT / 2.0
@@ -563,6 +589,7 @@ def brazier(tx, ty):
     put("cyl", x, y, 11.0, 7.0, 7.0, 3.0, iron)
     put("sphere", x, y, 13.4, 5.0, 5.0, 3.6, material("flat", rgb=(255, 120, 30), emit=18.0))
     put("cone", x, y, 16.6, 3.2, 3.2, 4.0, material("flat", rgb=(255, 210, 90), emit=26.0))
+    glow(x, y, 17.0, (255, 150, 70), 5200.0)
 
 
 def bones(tx, ty):
@@ -734,7 +761,8 @@ PROPS = {
     "t_seal": seal, "t_ward": ward, "t_counter": counter, "t_shelf": shelf,
     "t_bedtop": lambda tx, ty: bed(tx, ty, head=True),
     "t_bedbot": lambda tx, ty: bed(tx, ty, head=False),
-    "t_fence": fence, "t_lamp": lamp, "t_lantern": lamp, "t_lampsunk": lamp,
+    "t_fence": fence, "t_lamp": lamp, "t_lantern": lamp,
+    "t_lampsunk": lambda tx, ty: lamp(tx, ty, indoors=True),
     "t_well": well, "t_tree": tree, "t_bush": bush, "t_rock": rock,
     "t_barrel": barrel, "t_chest": chest, "t_sign": sign,
 }
@@ -830,10 +858,10 @@ town.STYLES["oblique_over"] = dict(town.STYLES["oblique"], haze=0.0, transparent
 # light stands in for it and the braziers and lamps do the rest; the inn is
 # lamplight and a warm sky through the door.
 MAP_LIGHT = {
-    "barrow1": dict(energy=0.9, fill=0.55, sky=(120, 108, 150), haze=0.0, grade=False),
-    "barrow2": dict(energy=0.8, fill=0.55, sky=(120, 108, 150), haze=0.0, grade=False),
-    "mere1":   dict(energy=0.9, fill=0.6,  sky=(80, 130, 150),  haze=0.0, grade=False),
-    "mere2":   dict(energy=0.8, fill=0.6,  sky=(80, 130, 150),  haze=0.0, grade=False),
+    "barrow1": dict(energy=1.4, fill=1.0, sky=(128, 116, 160), haze=0.0, grade=False),
+    "barrow2": dict(energy=1.2, fill=1.0, sky=(128, 116, 160), haze=0.0, grade=False),
+    "mere1":   dict(energy=1.4, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
+    "mere2":   dict(energy=1.2, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
     "inn":     dict(energy=2.2, fill=0.7,  sky=(220, 190, 150), haze=0.0, grade=False),
     "hollow":  dict(sky=(190, 204, 224), fill=0.9),
     "shore":   dict(sky=(190, 204, 224), fill=0.9),
@@ -859,6 +887,8 @@ def shear_scene(k):
     bpy.context.view_layer.update()
     for o in list(bpy.context.scene.objects):
         if o.type != 'MESH':
+            if o.type == 'LIGHT':
+                o.location.y += k * o.location.z
             continue
         me = o.data
         me.transform(o.matrix_world)
