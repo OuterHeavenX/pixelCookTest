@@ -463,6 +463,87 @@ def sign(tx, ty):
     put("cube", x, y - 0.6, 10.0, 12.0, 1.4, 6.0, wood)
 
 
+# ------------------------------------------------------------------ exits
+# A warp that is just a path tile against a cliff band, or at the map's
+# edge, looks like a dead end. Two things fix that: the cliff is cut through
+# in line with the warp, so the road visibly leaves, and a wooden gateway
+# stands on the warp tile with a lantern under its beam.
+def exits(m, legend):
+    """(carve, gates): tiles to build as road instead of cliff, and the
+    gateways to stand, each (tiles, axis) with axis "x" for a beam running
+    east-west across a north-south road."""
+    rows, w, h = m["rows"], m["w"], m["h"]
+
+    def name_at(x, y):
+        if not (0 <= x < w and 0 <= y < h):
+            return None
+        spec = legend.get(rows[y][x])
+        return spec[0] if spec else None
+
+    carve, gates, seen = set(), [], set()
+    for wp in m.get("warps", []):
+        x, y = wp["x"], wp["y"]
+        if (x, y) in seen or name_at(x, y) not in ("t_path", "t_cobble", "t_grass", "t_snow", "t_sand"):
+            continue
+        # The whole run of warp tiles to the same place, side by side.
+        group = [(x, y)]
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            while any(o["x"] == nx and o["y"] == ny and o["to"] == wp["to"] for o in m["warps"]):
+                group.append((nx, ny))
+                nx, ny = nx + dx, ny + dy
+        seen.update(group)
+        # Which way the road leaves: through a cliff band no more than three
+        # tiles deep that reaches the map's edge, or straight off the edge.
+        axis, out = None, None
+        for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+            nx, ny, depth = x + dx, y + dy, 0
+            while name_at(nx, ny) == "t_mountain" and depth < 3:
+                nx, ny, depth = nx + dx, ny + dy, depth + 1
+            if name_at(nx, ny) is None and not (0 <= nx < w and 0 <= ny < h):
+                axis, out = ("x" if dy else "y"), (dx, dy)
+                for gx, gy in group:
+                    rx, ry = gx + dx, gy + dy
+                    while name_at(rx, ry) == "t_mountain":
+                        carve.add((rx, ry))
+                        rx, ry = rx + dx, ry + dy
+                break
+        if axis:
+            gates.append((group, axis))
+    return carve, gates
+
+
+def gateway(tiles, axis):
+    """Two posts, a beam across the road between them, a lantern under it."""
+    xs = [t[0] for t in tiles]; ys = [t[1] for t in tiles]
+    x0, x1 = min(xs) * PPT, (max(xs) + 1) * PPT
+    y0, y1 = -(max(ys) + 1) * PPT, -min(ys) * PPT
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    wood = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.5, along="y")
+    beam = material("wood", a=(120, 78, 44), b=(78, 48, 26), scale=0.5)
+    H = 20.0
+    if axis == "x":                      # road runs north-south; posts east and west
+        for px in (x0 + 1.6, x1 - 1.6):
+            put("cube", px, cy, H / 2.0, 3.0, 3.0, H, wood)
+        _OVER[0] = True
+        put("cube", cx, cy, H + 1.0, x1 - x0 + 2.0, 3.2, 2.4, beam)
+        put("cube", cx, cy, H + 3.0, x1 - x0 - 4.0, 2.0, 1.6, beam)
+        _OVER[0] = False
+    else:                                # road runs east-west; posts north and south
+        for py in (y0 + 1.6, y1 - 1.6):
+            put("cube", cx, py, H / 2.0, 3.0, 3.0, H, wood)
+        _OVER[0] = True
+        put("cube", cx, cy, H + 1.0, 3.2, y1 - y0 + 2.0, 2.4, beam)
+        put("cube", cx, cy, H + 3.0, 2.0, y1 - y0 - 4.0, 1.6, beam)
+        _OVER[0] = False
+    # A lantern hanging from the middle of the beam.
+    iron = material("flat", rgb=(52, 52, 60), rough=0.55, metallic=0.4)
+    put("cyl", cx, cy, H - 1.2, 0.6, 0.6, 2.4, iron)
+    put("cube", cx, cy, H - 4.6, 4.0, 4.0, 4.4, material("flat", rgb=(255, 196, 104), emit=3.0))
+    put("cone", cx, cy, H - 2.0, 5.0, 5.0, 1.2, iron)
+    glow(cx, cy, H - 5.0, (255, 200, 120), 900.0)
+
+
 def mountain(tx, ty):
     """A cliff block: grey rock, not brickwork, with a few boulders on top."""
     x = tx * PPT + PPT / 2.0
@@ -802,6 +883,7 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
                 ground(ground_name, tx, ty)
         house(x0, y0, x1, y1, names)
 
+    carve, gates = exits(m, legend)
     _FENCE.clear()
     for ty in range(m["h"]):
         for tx in range(m["w"]):
@@ -831,13 +913,18 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
                 ground(base, tx, ty)
                 tree(tx, ty, snow=True)
             elif name == "t_mountain":
-                mountain(tx, ty)
+                if (tx, ty) in carve:
+                    ground("t_path", tx, ty)   # the road cut through the cliff
+                else:
+                    mountain(tx, ty)
             elif name in ("t_wall", "t_palewall", "t_cryptwall", "t_drownwall",
                           "t_window", "t_palewindow", "t_door"):
                 ground(base, tx, ty)
                 wall_block(tx, ty, name)
             else:
                 ground(name, tx, ty)
+    for tiles, axis in gates:
+        gateway(tiles, axis)
 
 
 # ------------------------------------------------------------------ oblique
