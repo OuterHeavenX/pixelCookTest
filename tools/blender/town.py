@@ -55,6 +55,11 @@ HEIGHT = {
     "t_water0": -2, "t_water1": -2, "t_ice": -1,
 }
 
+# Tiles whose art is a facade. They are drawn as blocks with that art on the
+# sides and plain slate on top; every other block wears its art all round.
+WALLS = {"t_wall", "t_palewall", "t_cryptwall", "t_drownwall", "t_window",
+         "t_palewindow", "t_door"}
+
 # What shape it is. Everything else is a block, which is right for masonry and
 # wrong for a tree.
 SHAPE = {
@@ -241,9 +246,15 @@ def build_tile(name, colours, tx, ty):
     side = top
 
     if shape == "tree":
-        put("cyl", x, y, 5, 3.4, 3.4, 10, mat(name + "_trunk", rgb, shade=0.55))
-        put("sphere", x, y, 19, 14, 14, 15, top)
-        put("sphere", x - 3, y + 2, 25, 8, 8, 8, mat(name + "_hi", rgb, shade=1.16))
+        # A canopy that spills past its own tile, in three lumps. The single
+        # sphere read as a lollipop; the reference's willow is most of the
+        # square it stands in.
+        leaf = mat("t_bush", colours.get("t_bush", rgb), rough=0.75)
+        put("cyl", x, y, 6, 3.6, 3.6, 12, mat(name + "_trunk", rgb, shade=0.55))
+        put("sphere", x, y, 19, 20, 20, 15, leaf)
+        put("sphere", x - 6, y + 3, 22, 13, 13, 12, leaf)
+        put("sphere", x + 5, y - 4, 23, 12, 12, 11, leaf)
+        put("sphere", x - 2, y + 1, 27, 10, 10, 8, leaf)
         return
     if shape == "pine":
         put("cyl", x, y, 4, 2.8, 2.8, 8, mat(name + "_trunk", rgb, shade=0.5))
@@ -260,7 +271,11 @@ def build_tile(name, colours, tx, ty):
         return
     if shape == "post":
         put("cyl", x, y, h * 0.36, 2.6, 2.6, h * 0.72, mat(name + "_post", rgb, shade=0.5))
-        put("cube", x, y, h - 2.5, 6, 6, 6, mat(name + "_lit", rgb, shade=1.35))
+        lit = mat(name + "_lit", rgb, shade=1.35)
+        if "Emission Strength" in lit.node_tree.nodes[1].inputs:
+            lit.node_tree.nodes[1].inputs["Emission Color"].default_value = hex_rgb((255, 214, 140))
+            lit.node_tree.nodes[1].inputs["Emission Strength"].default_value = 1.1
+        put("cube", x, y, h - 2.5, 6, 6, 6, lit)
         return
     if shape == "rail":
         put("cyl", x, y, h * 0.5, 2.4, 2.4, h, side)
@@ -291,7 +306,116 @@ def build_tile(name, colours, tx, ty):
     # face. Two coincident surfaces trap Cycles' rays between them, and every
     # wall in the town came out solid black - not the material, not the light,
     # not the roof above it, all of which got blamed first.
-    put("cube", x, y, h / 2.0, PPT, PPT, h, top)
+    o = put("cube", x, y, h / 2.0, PPT, PPT, h, top)
+    if name in WALLS:
+        # A wall's art belongs on the face you look at, not on top of it: a
+        # window drawn on the top of a block is a skylight. The top gets slate.
+        o.data.materials.append(mat(name + "_top", (78, 82, 92), rough=0.9, shade=1.0))
+        for poly in o.data.polygons:
+            if poly.normal.z > 0.5:
+                poly.material_index = 1
+
+
+# Tiles that together make a house. On these maps a house is a rectangle of
+# roof rows over wall rows, and the two are NOT two depths - the roof is the
+# building's top and the wall rows are its FRONT FACE, drawn below it on the
+# screen because that is how a flat map shows a facade. Stand each row up as
+# its own block and you get a stepped grey ziggurat; read them as one building
+# and you get a house.
+HOUSE_ROOF = {"t_roof", "t_blueroof", "t_rooftop"}
+HOUSE_WALL = {"t_wall", "t_palewall", "t_window", "t_palewindow", "t_door"}
+WALL_H = 26.0        # eaves height, game pixels
+ROOF_PITCH = 24.0    # degrees
+EAVE = 2.0           # how far the roof reaches past the walls
+
+
+def find_houses(m, legend, rx, ry, rw, rh):
+    """Connected rectangles of house tiles inside the region, each as
+    (x0, y0, x1, y1, rows) with rows the list of [tile names] per map row."""
+    rows = m["rows"]
+    seen = set()
+    houses = []
+    for ty in range(ry, min(ry + rh, m["h"])):
+        for tx in range(rx, min(rx + rw, m["w"])):
+            spec = legend.get(rows[ty][tx])
+            if spec is None or (tx, ty) in seen:
+                continue
+            if spec[0] not in HOUSE_ROOF and spec[0] not in HOUSE_WALL:
+                continue
+            # Flood the component, then take its bounding box: the maps only
+            # ever draw houses as rectangles.
+            stack, comp = [(tx, ty)], []
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in seen or not (0 <= cx < m["w"] and 0 <= cy < m["h"]):
+                    continue
+                sp = legend.get(rows[cy][cx])
+                if sp is None or (sp[0] not in HOUSE_ROOF and sp[0] not in HOUSE_WALL):
+                    continue
+                seen.add((cx, cy))
+                comp.append((cx, cy))
+                stack += [(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)]
+            x0 = min(c[0] for c in comp); x1 = max(c[0] for c in comp)
+            y0 = min(c[1] for c in comp); y1 = max(c[1] for c in comp)
+            names = [[legend[rows[y][x]][0] if rows[y][x] in legend else None
+                      for x in range(x0, x1 + 1)] for y in range(y0, y1 + 1)]
+            houses.append((x0, y0, x1, y1, names))
+    return houses, seen
+
+
+def build_house(x0, y0, x1, y1, names, colours):
+    """One building: a body over the whole footprint, the wall rows' art on its
+    south face, and a pitched roof with an overhang across all of it."""
+    w = (x1 - x0 + 1) * PPT
+    d = (y1 - y0 + 1) * PPT
+    cx = x0 * PPT + w / 2.0
+    cy = -(y0 * PPT) - d / 2.0
+    south = -(y1 + 1) * PPT             # the face the camera sees
+
+    wall_rows = [r for r in names if any(n in HOUSE_WALL for n in r)]
+    roof_name = next((n for r in names for n in r if n in HOUSE_ROOF), "t_roof")
+    wall_name = next((n for r in wall_rows for n in r
+                      if n in ("t_wall", "t_palewall")), "t_wall")
+    body = mat(wall_name, colours.get(wall_name, (200, 180, 150)), rough=0.85)
+
+    # The body, its top plain slate - the roof covers it, but the overhang
+    # leaves a sliver visible at the eaves and it should not be brick.
+    o = put("cube", cx, cy, WALL_H / 2.0, w, d, WALL_H, body)
+    o.data.materials.append(mat("slate", (70, 74, 84), rough=0.9))
+    for poly in o.data.polygons:
+        if poly.normal.z > 0.5:
+            poly.material_index = 1
+
+    # The facade: the wall rows, stacked down the south face in order, each
+    # tile as a thin slab wearing its own art. Windows land where the map puts
+    # windows and the door where it puts the door.
+    if wall_rows:
+        band = WALL_H / len(wall_rows)
+        for i, row in enumerate(wall_rows):
+            z = WALL_H - band * (i + 0.5)
+            for k, n in enumerate(row):
+                if n is None:
+                    continue
+                face = mat(n, colours.get(n, (200, 180, 150)), rough=0.85)
+                # Proud of the wall, not flush with it: flush put the slab's
+                # face exactly on the body's face, which is the coincident-
+                # surface trap that turned the walls black the first time.
+                put("cube", x0 * PPT + k * PPT + PPT / 2.0, south - 0.45, z,
+                    PPT, 0.9, band, face)
+
+    # A pitched roof over the lot, ridge east-west, with eaves past the walls
+    # so it throws the shadow line onto the facade that every house in the
+    # reference has under its roof.
+    half = d / 2.0 + EAVE
+    pitch = math.radians(ROOF_PITCH)
+    slab_len = half / math.cos(pitch)
+    rise = half * math.tan(pitch)
+    roof = mat(roof_name, colours.get(roof_name, (160, 66, 63)), rough=0.8)
+    for sign in (-1, 1):
+        put("cube", cx, cy + sign * half / 2.0, WALL_H + rise / 2.0,
+            w + EAVE * 2, slab_len, 2.4, roof, rot=(sign * -ROOF_PITCH, 0, 0))
+    put("cube", cx, cy, WALL_H + rise + 0.3, w + EAVE * 2 + 1, 3.0, 1.2,
+        mat(roof_name + "_ridge", colours.get(roof_name, (160, 66, 63)), rough=0.8))
 
 
 def build(map_id, rx, ry, rw, rh):
@@ -308,9 +432,21 @@ def build(map_id, rx, ry, rw, rh):
     ground = m.get("ground", "t_grass")
     colours = tile_colours()
 
+    PAD = 3
+    rx, ry, rw, rh = rx - PAD, ry - PAD, rw + PAD * 2, rh + PAD * 2
+    rx, ry = max(0, rx), max(0, ry)
+    houses, taken = find_houses(m, legend, rx, ry, rw, rh)
+    for x0, y0, x1, y1, names in houses:
+        for ty in range(y0, y1 + 1):
+            for tx in range(x0, x1 + 1):
+                build_tile(ground, colours, tx, ty)     # the ground under it
+        build_house(x0, y0, x1, y1, names, colours)
+
     for ty in range(ry, min(ry + rh, m["h"])):
         row = m["rows"][ty]
         for tx in range(rx, min(rx + rw, m["w"])):
+            if (tx, ty) in taken:
+                continue
             ch = row[tx]
             spec = legend.get(ch)
             if spec is None:
@@ -329,13 +465,29 @@ def build(map_id, rx, ry, rw, rh):
 
 # The three ways of looking at it. `pitch` is degrees from horizontal: 90 is
 # straight down, which is the angle the game is drawn from today.
+# `sun_xy` is where on the ground the light is heading: (0.55, 0.72) is a sun
+# over the viewer's left shoulder lighting the faces the camera sees, and
+# (0.62, -0.42) is one from the upper left of the screen, raking across roofs
+# and ground and leaving the facades in shade with the fill to pick them up -
+# which is how the reference town is lit. `haze` is a thin scattering volume
+# over the whole scene, so the sun throws visible shafts wherever a roof or a
+# canopy interrupts it. `soft` is the sun's angular size: bigger is softer
+# shadow edges. `grade` pulls the finished frame toward the reference's cool,
+# misty palette before it is quantised.
 STYLES = {
-    "flat":    {"pitch": 90.0, "yaw": 0.0,  "sun": 58.0, "fill": 0.30, "dof": 0.0,
-                "note": "the angle it is drawn from now, with real light"},
-    "quarter": {"pitch": 58.0, "yaw": 0.0,  "sun": 46.0, "fill": 0.28, "dof": 0.0,
-                "note": "tilted far enough to see the sides of things"},
-    "diorama": {"pitch": 46.0, "yaw": 12.0, "sun": 38.0, "fill": 0.24, "dof": 0.9,
-                "note": "lower, softer, with the ends of the world out of focus"},
+    "flat":      {"pitch": 90.0, "yaw": 0.0,  "sun": 58.0, "sun_xy": (0.55, 0.72),
+                  "fill": 0.30, "dof": 0.0, "haze": 0.0, "soft": 2.5, "grade": False,
+                  "note": "the angle it is drawn from now, with real light"},
+    "quarter":   {"pitch": 58.0, "yaw": 0.0,  "sun": 46.0, "sun_xy": (0.55, 0.72),
+                  "fill": 0.28, "dof": 0.0, "haze": 0.0, "soft": 2.5, "grade": False,
+                  "note": "tilted far enough to see the sides of things"},
+    "diorama":   {"pitch": 46.0, "yaw": 12.0, "sun": 38.0, "sun_xy": (0.55, 0.72),
+                  "fill": 0.24, "dof": 0.9, "haze": 0.0, "soft": 2.5, "grade": False,
+                  "note": "lower, softer, with the ends of the world out of focus"},
+    "reference": {"pitch": 57.0, "yaw": 0.0,  "sun": 38.0, "sun_xy": (0.62, -0.42),
+                  "fill": 0.78, "dof": 0.0, "haze": 0.0022, "soft": 6.0, "grade": True,
+                  "note": "a strict three-quarter view lit from the upper left, "
+                          "with haze for the sun to make shafts in"},
 }
 
 
@@ -344,13 +496,15 @@ def light(style):
     bpy.context.scene.world = world
     world.use_nodes = True
     bg = world.node_tree.nodes["Background"]
-    bg.inputs["Color"].default_value = hex_rgb((150, 170, 220))
+    # A cool grey-green sky rather than a blue one: it is what fills every
+    # shadow in the frame, and the reference's shadows are sage, not navy.
+    bg.inputs["Color"].default_value = hex_rgb((168, 186, 178))
     bg.inputs["Strength"].default_value = style["fill"]
 
     sun_data = bpy.data.lights.new("sun", type="SUN")
-    sun_data.energy = 4.6
-    sun_data.color = hex_rgb((255, 244, 214))[:3]
-    sun_data.angle = math.radians(2.5)      # a hard-ish shadow, not a blur
+    sun_data.energy = 5.2 if style["haze"] > 0 else 4.6
+    sun_data.color = hex_rgb((255, 240, 208))[:3]
+    sun_data.angle = math.radians(style["soft"])
     sun = bpy.data.objects.new("sun", sun_data)
     bpy.context.collection.objects.link(sun)
     # Over the viewer's left shoulder, not from behind the houses. The first
@@ -358,15 +512,50 @@ def light(style):
     # sunset and useless for a town: every face the camera could see was the
     # one in shadow, and the houses came out as black holes under red roofs.
     a = math.radians(style["sun"])
-    d = Vector((math.cos(a) * 0.55, math.cos(a) * 0.72, -math.sin(a)))
+    sx, sy = style["sun_xy"]
+    d = Vector((math.cos(a) * sx, math.cos(a) * sy, -math.sin(a)))
     sun.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
+
+
+def haze(rx, ry, rw, rh, density):
+    """A thin scattering volume over the whole scene.
+
+    On its own the sun just lights things. Through a little fog it becomes
+    visible where it passes between a roof and the ground, and that is the
+    reference's whole atmosphere: the light is something you can see, not
+    just something that falls on the tiles.
+    """
+    if density <= 0.0:
+        return
+    cx = rx * PPT + rw * PPT / 2.0
+    cy = -(ry * PPT + rh * PPT / 2.0)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(cx, cy, 22.0))
+    o = bpy.context.object
+    o.scale = (rw * PPT * 1.6, rh * PPT * 1.6, 48.0)
+    m = bpy.data.materials.new("haze")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    vol = nt.nodes.new("ShaderNodeVolumePrincipled")
+    vol.inputs["Density"].default_value = density
+    vol.inputs["Anisotropy"].default_value = 0.25
+    vol.inputs["Color"].default_value = hex_rgb((214, 226, 220))
+    nt.links.new(vol.outputs["Volume"], out.inputs["Volume"])
+    o.data.materials.append(m)
+    o.display_type = 'WIRE'
+    o.visible_shadow = False
 
 
 def render(map_id, rx, ry, rw, rh, style_name, out_path, samples):
     style = STYLES[style_name]
     build(map_id, rx, ry, rw, rh)
     light(style)
+    haze(rx, ry, rw, rh, style["haze"])
     scene = bpy.context.scene
+    if style["haze"] > 0.0:
+        scene.cycles.volume_bounces = 1
+        scene.cycles.volume_max_steps = 256
 
     # Orthographic, because the game is: a tile has to be the same size at the
     # near edge of the screen and the far one, or the tilemap under it stops
@@ -420,6 +609,54 @@ def render(map_id, rx, ry, rw, rh, style_name, out_path, samples):
     return out_path
 
 
+def grade(img):
+    """Pull a frame toward the reference's palette: cool, misty, low in
+    saturation, with the shadows lifted rather than black and the warm accents
+    left warm. Applied at game resolution, before anything is quantised, so
+    the palette that gets chosen is already the one we want.
+    """
+    from spritecook.imaging import Image
+    out = Image(img.width, img.height)
+    tint = (0.62, 0.72, 0.68)          # sage, as a multiplier on the grey
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.get(x, y)
+            lum = 0.299 * r + 0.587 * g + 0.114 * b
+            # Desaturate less for warm pixels than cool ones, so the shutters
+            # and the lamps keep their colour while the stone goes to sage.
+            warm = max(0.0, min(1.0, (r - b) / 96.0))
+            keep = 0.40 + 0.24 * warm
+            r2 = lum + (r - lum) * keep
+            g2 = lum + (g - lum) * keep
+            b2 = lum + (b - lum) * keep
+            # Mist: lift the darks toward a grey-green and cap the brights.
+            k = 1.0 - lum / 255.0
+            r2 = r2 * (1 - 0.16 * k) + 255 * tint[0] * 0.16 * k
+            g2 = g2 * (1 - 0.16 * k) + 255 * tint[1] * 0.16 * k
+            b2 = b2 * (1 - 0.16 * k) + 255 * tint[2] * 0.16 * k
+            r2 = 0.97 * r2 + 3
+            g2 = 0.97 * g2 + 5
+            b2 = 0.97 * b2 + 4
+            out.set(x, y, (int(max(0, min(255, r2))), int(max(0, min(255, g2))),
+                           int(max(0, min(255, b2))), a))
+    return out
+
+
+def finish(raw_path, style):
+    """The render at game resolution, graded if the style asks for it, saved
+    beside the raw frame. This is what a human compares; the raw frame is four
+    times too big to judge as pixel art."""
+    from spritecook.imported import downscale
+    img = read_png(raw_path)
+    small = downscale(img, img.width // SUPER, img.height // SUPER)
+    if style["grade"]:
+        small = grade(small)
+    out = raw_path.replace(".png", "_game.png")
+    with open(out, "wb") as fh:
+        fh.write(small.to_png())
+    return out, small
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="town")
@@ -438,7 +675,10 @@ def main():
     for name in names:
         path = os.path.join(args.out, "town_%s.png" % name)
         render(args.map, args.x, args.y, args.w, args.h, name, path, args.samples)
-        print("%-8s -> %s  (%s)" % (name, path, STYLES[name]["note"]))
+        game, small = finish(path, STYLES[name])
+        print("%-9s -> %s  %dx%d  (%s)"
+              % (name, os.path.relpath(game, ROOT), small.width, small.height,
+                 STYLES[name]["note"]))
 
 
 if __name__ == "__main__":
