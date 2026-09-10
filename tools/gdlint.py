@@ -18,9 +18,6 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GODOT = os.path.join(ROOT, "godot")
 SCRIPTS = os.path.join(GODOT, "scripts")
-# The third runtime names sprites too, and a name it gets wrong fails exactly
-# the same way: nothing draws, and nothing says why.
-UNREAL = os.path.join(ROOT, "unreal", "Plugins", "Rivenbrook", "Source")
 
 # Receiver name -> the script that defines it.
 OWNERS = {
@@ -39,17 +36,6 @@ CLASS_RE = re.compile(r"^class_name\s+(\w+)", re.M)
 def scripts():
     return {f: open(os.path.join(SCRIPTS, f), encoding="utf-8").read()
             for f in sorted(os.listdir(SCRIPTS)) if f.endswith(".gd")}
-
-
-def unreal_sources():
-    """The Unreal build's C++, by path, or nothing when it is not there yet."""
-    out = {}
-    for base, _dirs, files in os.walk(UNREAL):
-        for f in sorted(files):
-            if f.endswith((".cpp", ".h")):
-                path = os.path.join(base, f)
-                out[os.path.relpath(path, ROOT)] = open(path, encoding="utf-8").read()
-    return out
 
 
 def surface(src):
@@ -82,8 +68,6 @@ def check_references(srcs, problems):
 def check_sprites(srcs, problems):
     meta_path = os.path.join(GODOT, "assets", "atlas.json")
     frames = set(json.load(open(meta_path))["frames"])
-    srcs = dict(srcs)
-    srcs.update(unreal_sources())
     for path, src in srcs.items():
         for i, line in enumerate(src.split("\n"), 1):
             for name in SPRITE_RE.findall(line):

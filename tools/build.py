@@ -27,7 +27,6 @@ def main():
     sh(os.path.join("tools", "mapcook.py"))
     sh(os.path.join("tools", "datacook.py"))
     sh(os.path.join("tools", "godotcook.py"))
-    sh(os.path.join("tools", "unrealcook.py"))
 
     png = open(os.path.join(ROOT, "assets", "atlas.png"), "rb").read()
     meta = json.load(open(os.path.join(ROOT, "assets", "atlas.json")))
