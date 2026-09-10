@@ -425,6 +425,7 @@ def build_house(x0, y0, x1, y1, names, colours):
 
 
 def build(map_id, rx, ry, rw, rh, houses_too=True):
+    """Stand the map's tiles up as geometry wearing their own art."""
     global _ATLAS_IMAGE
     # A factory reset takes the loaded atlas with it, and a cached handle to a
     # deleted datablock is a crash on the second render rather than an error on
@@ -553,11 +554,15 @@ def haze(rx, ry, rw, rh, density):
     o.visible_shadow = False
 
 
-def render(map_id, rx, ry, rw, rh, style_name, out_path, samples):
+def render(map_id, rx, ry, rw, rh, style_name, out_path, samples, builder=None):
+    """Photograph a region. `builder` puts the scene together; by default that
+    is build() above, which stands the map's own tiles up. hdtown.py passes a
+    builder that models the town instead. Camera, light and haze are the same
+    either way, so two builders can be judged on the geometry alone."""
     style = STYLES[style_name]
     global FACADES
     FACADES = style["pitch"] < 89.0
-    build(map_id, rx, ry, rw, rh, houses_too=FACADES)
+    (builder or build)(map_id, rx, ry, rw, rh, FACADES)
     light(style)
     haze(rx, ry, rw, rh, style["haze"])
     scene = bpy.context.scene
@@ -650,15 +655,21 @@ def grade(img):
     return out
 
 
-def finish(raw_path, style):
-    """The render at game resolution, graded if the style asks for it, saved
-    beside the raw frame. This is what a human compares; the raw frame is four
-    times too big to judge as pixel art."""
+def finish(raw_path, style, colours=0):
+    """The render at game resolution, graded if the style asks for it, and
+    quantised to `colours` when that is set, saved beside the raw frame. This
+    is what a human compares; the raw frame is four times too big to judge as
+    pixel art, and a full-colour render next to palette sprites is a
+    photograph next to a drawing until it has been through the palette step
+    the monsters and backdrops go through."""
     from spritecook.imported import downscale
     img = read_png(raw_path)
     small = downscale(img, img.width // SUPER, img.height // SUPER)
     if style["grade"]:
         small = grade(small)
+    if colours > 0:
+        from pixelate import build_palette, quantise
+        small = quantise(small, build_palette(small, colours))
     out = raw_path.replace(".png", "_game.png")
     with open(out, "wb") as fh:
         fh.write(small.to_png())
