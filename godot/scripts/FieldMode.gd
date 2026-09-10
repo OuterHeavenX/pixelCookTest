@@ -619,11 +619,23 @@ func draw(c: CanvasItem) -> void:
 
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color("#12101c"))
 
+	# The Blender picture, where the map has one. Anything the tile pass would
+	# have changed at runtime - the ward cracking - is baked in and stays
+	# still; the water moves because its frames are drawn over it in turn.
+	var pics := Art.pictures_for(Gs.map_id)
+	if pics.has("base"):
+		Art.draw_picture(c, pics["base"], cam)
+		if pics.has("water"):
+			var frames: Array = pics["water"]
+			Art.draw_picture(c, frames[int(anim * 3.0) % frames.size()], cam)
+
 	var x0 := int(cam.x / TILE)
 	var y0 := int(cam.y / TILE)
 	var x1 := int(ceil((cam.x + Art.VW) / TILE))
 	var y1 := int(ceil((cam.y + Art.VH) / TILE))
-	for y in range(y0, y1 + 1):
+	# The tile pass only where there is no picture to stand in for it.
+	var rows: Array = range(y0, y1 + 1) if not pics.has("base") else []
+	for y in rows:
 		for x in range(x0, x1 + 1):
 			var ch := tile_at(x, y)
 			if ch == "" or not Dat.legend.has(ch):
@@ -674,6 +686,10 @@ func draw(c: CanvasItem) -> void:
 			Art.draw_shadow(c, npos + Vector2(8, 15), 6.0)
 			Art.spr_foot(c, "%s_%s%d" % [n["sprite"], n["dir"], walk_frame(float(n["phase"]))],
 				npos + Vector2(8, 16))
+
+	# Roofs and treetops, over whoever stands behind them.
+	if pics.has("over"):
+		Art.draw_picture(c, pics["over"], cam)
 
 	draw_location_banner(c)
 	if not msg.is_empty():

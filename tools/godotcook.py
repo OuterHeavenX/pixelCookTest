@@ -45,6 +45,25 @@ def build():
         shutil.copyfile(src, os.path.join(GODOT_ASSETS, name))
         copied.append(name)
 
+    # The Blender pictures, where a map has them: the base picture, its
+    # overlay of roofs and treetops, and the water frames. The field draws
+    # them in place of the tiles exactly as the browser build does.
+    pre_src = os.path.join(ROOT, "art", "prerender")
+    pre_dst = os.path.join(GODOT_ASSETS, "prerender")
+    if os.path.isdir(pre_dst):
+        for name in os.listdir(pre_dst):
+            if name.endswith(".png"):
+                os.remove(os.path.join(pre_dst, name))
+    pictures = 0
+    if os.path.isdir(pre_src):
+        os.makedirs(pre_dst, exist_ok=True)
+        for name in sorted(os.listdir(pre_src)):
+            if name.endswith(".png"):
+                shutil.copyfile(os.path.join(pre_src, name), os.path.join(pre_dst, name))
+                pictures += 1
+    if pictures:
+        copied.append("prerender/ (%d pictures)" % pictures)
+
     font = parse_font(os.path.join(ROOT, "src", "font.js"))
     with open(os.path.join(GODOT_ASSETS, "font.json"), "w") as fh:
         json.dump(font, fh, indent=0, sort_keys=True)

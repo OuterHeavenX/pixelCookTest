@@ -195,6 +195,10 @@ func _run() -> void:
 		"New Game reaches the field")
 	_expect(Gs.party.size() == 3, "three characters in the party")
 	_expect(Gs.map_id == "town", "starts in town")
+	var pics: Dictionary = Art.pictures_for("town")
+	_expect(pics.has("base") and pics.has("over"), "the town draws from its Blender picture and overlay")
+	_expect(pics.has("water") and (pics["water"] as Array).size() == 4, "with four frames of water")
+	_expect(not Art.pictures_for("barrow1").has("water"), "and the barrow has no water to animate")
 	await _shot("field")
 
 	_say("equipment")

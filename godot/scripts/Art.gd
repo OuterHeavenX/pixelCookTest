@@ -75,6 +75,66 @@ func _build_font() -> void:
 	_glyph_sheet = ImageTexture.create_from_image(img)
 
 
+# --- pictures ---------------------------------------------------------------
+## The Blender render of a map, where one exists under assets/prerender/:
+## the base picture drawn in place of the tiles, an overlay of roofs and
+## treetops drawn after the sprites, and the water frames drawn over the
+## base in turn. A map without a picture draws from tiles as it always did.
+
+var _pictures := {}
+
+
+func _picture(path: String) -> Texture2D:
+	if not FileAccess.file_exists(path):
+		return null
+	var tex = load(path)
+	if tex is Texture2D:
+		return tex
+	# Not imported (a fresh copy the editor has not scanned): read it directly.
+	var img := Image.load_from_file(path)
+	if img == null:
+		return null
+	return ImageTexture.create_from_image(img)
+
+
+func pictures_for(map_id: String) -> Dictionary:
+	if _pictures.has(map_id):
+		return _pictures[map_id]
+	var out := {}
+	var base := _picture("res://assets/prerender/%s.png" % map_id)
+	if base != null:
+		out["base"] = base
+		var over := _picture("res://assets/prerender/%s_over.png" % map_id)
+		if over != null:
+			out["over"] = over
+		var water: Array = []
+		var k := 0
+		while true:
+			var frame := _picture("res://assets/prerender/%s_water%d.png" % [map_id, k])
+			if frame == null:
+				break
+			water.append(frame)
+			k += 1
+		if not water.is_empty():
+			out["water"] = water
+	_pictures[map_id] = out
+	return out
+
+
+## A picture at map scale, clipped to the camera. A map smaller than the view
+## is centred, so the camera can sit at a negative offset; the source
+## rectangle has to stay inside the picture.
+func draw_picture(c: CanvasItem, tex: Texture2D, cam: Vector2) -> void:
+	var dx: float = maxf(0.0, -cam.x)
+	var dy: float = maxf(0.0, -cam.y)
+	var sx: float = maxf(0.0, cam.x)
+	var sy: float = maxf(0.0, cam.y)
+	var sw: float = minf(tex.get_width() - sx, VW - dx)
+	var sh: float = minf(tex.get_height() - sy, VH - dy)
+	if sw > 0.0 and sh > 0.0:
+		c.draw_texture_rect_region(tex, Rect2(dx, dy, sw, sh), Rect2(sx, sy, sw, sh))
+
+
 # --- sprites ----------------------------------------------------------------
 
 func frame_size(sprite_name: String) -> Vector2:
