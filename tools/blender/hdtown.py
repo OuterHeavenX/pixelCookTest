@@ -965,6 +965,13 @@ def build_hd(map_id, rx, ry, rw, rh, facades):
 # with a transparent film, as an overlay the game draws after the sprites.
 SHEAR = 0.65
 
+# How much of the reference's misty grade the outdoor maps get. It desaturates
+# to about half and lifts the shadows grey-green; on a phone that reads as
+# washed out, so the pictures ship with the render's own colour. 1.0 brings
+# the mist back, 0.5 splits the difference: --grade sets it, --regrade applies
+# it to the raw frames on disk without rendering anything.
+OUTDOOR_GRADE = 0.0
+
 town.STYLES["oblique"] = dict(town.STYLES["reference"], pitch=90.0, yaw=0.0, dof=0.0,
                               note="straight down for the ground, sheared for the walls, "
                                    "lit and graded like the reference")
@@ -994,6 +1001,7 @@ MAP_LIGHT = {
 def styles_for(map_id):
     """The base and overlay style names for a map, registered on demand."""
     tweak = {k: v for k, v in MAP_LIGHT.get(map_id, {}).items() if k != "lamps"}
+    tweak.setdefault("grade", OUTDOOR_GRADE)
     base = "oblique@" + map_id
     over = "oblique_over@" + map_id
     water = "oblique_water@" + map_id
@@ -1089,7 +1097,7 @@ def render_oblique(map_id, rx, ry, rw, rh, raw, samples, colours=0):
 
 
 def main():
-    global SHEAR
+    global SHEAR, OUTDOOR_GRADE
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="town")
     ap.add_argument("--x", type=int, default=16)
@@ -1102,6 +1110,10 @@ def main():
     ap.add_argument("--colours", type=int, default=40,
                     help="palette size for the game-resolution frame; 0 leaves it full colour")
     ap.add_argument("--samples", type=int, default=96)
+    ap.add_argument("--grade", type=float, default=OUTDOOR_GRADE,
+                    help="strength of the misty grade on outdoor maps, 0 to 1")
+    ap.add_argument("--regrade", action="store_true",
+                    help="with --full: redo the game-resolution frames from the raw renders on disk")
     ap.add_argument("--water-only", action="store_true",
                     help="with --full: render just the water frames, leaving the pictures as they are")
     ap.add_argument("--full", action="store_true",
@@ -1112,11 +1124,15 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     SHEAR = args.shear
+    OUTDOOR_GRADE = args.grade
     if args.full:
         maps = json.load(open(os.path.join(ROOT, "assets", "maps.json")))
         ids = list(maps) if args.map == "all" else [args.map]
         for map_id in ids:
-            full(args, maps, map_id)
+            if args.regrade:
+                regrade(args, maps, map_id)
+            else:
+                full(args, maps, map_id)
         return
     names = ["flat", "reference"] if args.style == "both" else [args.style]
     for name in names:
@@ -1130,6 +1146,36 @@ def main():
                         builder=builder_for(name))
             game, small = town.finish(raw, town.STYLES[name], colours=args.colours)
         print("%-9s -> %s  %dx%d" % (name, os.path.relpath(game, ROOT), small.width, small.height))
+
+
+def regrade(args, maps, map_id):
+    """The finish step alone: every raw frame the last render left under
+    art/blender goes through downscale and grade again and lands under
+    art/prerender. Nothing is rendered."""
+    m = maps[map_id]
+    raw = os.path.join(args.out, "full_hd_%s.png" % map_id)
+    if not os.path.exists(raw):
+        print("%-9s no raw render on disk, skipped" % map_id)
+        return
+    dest = os.path.join(ROOT, "art", "prerender", "%s.png" % map_id)
+    base_style, over_style, water_style = styles_for(map_id)
+    _, small = town.finish(raw, town.STYLES[base_style], colours=args.colours)
+    assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT)
+    with open(dest, "wb") as fh:
+        fh.write(small.to_png())
+    over_raw = raw.replace(".png", "_over.png")
+    if os.path.exists(over_raw):
+        _, over = town.finish(over_raw, town.STYLES[over_style])
+        with open(dest.replace(".png", "_over.png"), "wb") as fh:
+            fh.write(over.to_png())
+    k = 0
+    while os.path.exists(raw.replace(".png", "_water%d.png" % k)):
+        _, frame = town.finish(raw.replace(".png", "_water%d.png" % k), town.STYLES[water_style])
+        with open(dest.replace(".png", "_water%d.png" % k), "wb") as fh:
+            fh.write(frame.to_png())
+        k += 1
+    print("%-9s regraded at %.2f%s" % (map_id, town.STYLES[base_style]["grade"],
+                                        ", %d water frames" % k if k else ""))
 
 
 def full(args, maps, map_id):

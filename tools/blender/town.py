@@ -665,8 +665,21 @@ def finish(raw_path, style, colours=0):
     from spritecook.imported import downscale
     img = read_png(raw_path)
     small = downscale(img, img.width // SUPER, img.height // SUPER)
-    if style["grade"]:
-        small = grade(small)
+    # "grade" is a strength: 1.0 is the reference's full mist, 0 leaves the
+    # render's own colour, anything between blends the two.
+    strength = float(style["grade"])
+    if strength > 0.0:
+        full = grade(small)
+        if strength < 1.0:
+            from spritecook.imaging import Image
+            mixed = Image(small.width, small.height)
+            for y in range(small.height):
+                for x in range(small.width):
+                    a = small.get(x, y)
+                    b = full.get(x, y)
+                    mixed.set(x, y, tuple(int(a[i] + (b[i] - a[i]) * strength) for i in range(3)) + (a[3],))
+            full = mixed
+        small = full
     if colours > 0:
         from pixelate import build_palette, quantise
         small = quantise(small, build_palette(small, colours))

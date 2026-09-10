@@ -13,6 +13,10 @@ from .grade import grade_cast
 # which draws as half a backdrop and nothing anywhere complains.
 ATLAS_WIDTH = 512
 
+# Whether the cast is pulled toward the pictures' misty grade. Off, like the
+# outdoor grade in tools/blender/hdtown.py; turn both on together or neither.
+CAST_GRADE = False
+
 
 def cook_all():
     sprites = {}
@@ -28,8 +32,10 @@ def cook_all():
     sprites.update(imported.cook())
     # Recolours run last, so they inherit whichever version of a monster won.
     sprites.update(tints.cook(sprites))
-    # Then the cast is graded a step toward the Blender pictures it stands on.
-    return grade_cast(sprites)
+    # The cast is graded toward the pictures only when the pictures are graded
+    # themselves; with the outdoor grade off they keep the colour they were
+    # painted with.
+    return grade_cast(sprites) if CAST_GRADE else sprites
 
 
 def build(out_dir):
