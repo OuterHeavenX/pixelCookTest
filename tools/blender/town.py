@@ -286,12 +286,12 @@ def build_tile(name, colours, tx, ty):
         # Ground, and water a little below it.
         put("cube", x, y, h / 2.0 - 0.5, PPT, PPT, 1.0 + abs(h), top)
         return
-    # One block, with its top face the tile's own art and its sides the same
-    # art in shadow. A separate cap for the top sat exactly on the body's top
-    # face - two coplanar surfaces, which is a coin toss per pixel - and every
-    # wall in the town came out black.
-    put("cube", x, y, h / 2.0, PPT, PPT, h, side)
-    put("cube", x, y, h - 0.5, PPT * 0.999, PPT * 0.999, 1.0, top)
+    # One block, the tile's own art on every face. It used to be two: a body
+    # and a thin cap for the top, and the cap sat exactly on the body's top
+    # face. Two coincident surfaces trap Cycles' rays between them, and every
+    # wall in the town came out solid black - not the material, not the light,
+    # not the roof above it, all of which got blamed first.
+    put("cube", x, y, h / 2.0, PPT, PPT, h, top)
 
 
 def build(map_id, rx, ry, rw, rh):
