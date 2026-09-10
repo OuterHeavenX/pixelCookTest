@@ -1078,7 +1078,7 @@ function interact() {
     npc.dir = { up: 'down', down: 'up', left: 'right', right: 'left' }[G.dir];
     npc.cool = 3;
     if (npc.service === 'inn') { openInn(npc); return; }
-    if (npc.service === 'shop') { openShop(npc); return; }
+    if (npc.service === 'shop') { openShop(npc.shelf || 'amber'); return; }
     // Some conversations end with somebody picking up their kit and following
     // you out. They only do it once.
     // `after` means two different things depending on who is speaking: for
@@ -2940,9 +2940,14 @@ function shopTab(i) {
 
 function shopNote(text) { Shop.note = text; Shop.noteT = 1.6; }
 
-function openShop(npc) {
+/* Takes the shelf, the way the Godot build's open_shop does. It used to take
+   the whole NPC and read the shelf off it, so the same function had two
+   different contracts in the two builds and openShop('hollow') quietly sold
+   you Rivenbrook's stock - a string has no .shelf, so it fell through to the
+   default and nothing said a word. */
+function openShop(shelf) {
   G.mode = 'shop'; Shop.index = 0; Shop.tab = 0; Shop.note = ''; Shop.noteT = 0;
-  Shop.shelf = (npc && npc.shelf) || 'amber';
+  Shop.shelf = shelf || 'amber';
   Audio_.sfx('confirm');
 }
 

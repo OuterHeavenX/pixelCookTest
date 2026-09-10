@@ -19,3 +19,8 @@ unreal/Saved/
 unreal/DerivedDataCache/
 unreal/Plugins/*/Binaries/
 unreal/Plugins/*/Intermediate/
+
+# The touch run's screenshots. The desktop run's are committed as the record
+# of what each screen looks like; a second set at phone shape is the same
+# screens again and only doubles the churn.
+art/web-touch/

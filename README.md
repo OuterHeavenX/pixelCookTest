@@ -12,6 +12,25 @@ dependencies.
 **Open in Godot** — Godot 4.3 or newer (verified on 4.5), `Import` the `godot/`
 folder, and press play. Same game, same art, same numbers.
 
+## Checking it
+
+Both runtimes have a harness that plays the whole game and reports. They are
+the same test twice: boot, walk, talk, fight, buy, save, and every mode
+screenshotted on the way through.
+
+    python3 tools/websmoke.py                  # the browser build
+    python3 tools/websmoke.py --view 915x412 --dpr 3 --touch
+    python3 tools/godotsmoke.py                # the Godot build
+    python3 tools/godotsmoke.py --screen 1280x560
+
+    python3 tools/gdlint.py                    # names, types, flags, sprites
+
+The rule both harnesses follow is to drive the game the way a player does.
+Calling the game's own functions proves the functions work and nothing about
+the paths that reach them: random encounters were dead in a shipped browser
+build for a whole chapter because every test called `startEncounter()` and
+none of them ever took a step.
+
 ## What's in it
 
 - **The town of Rivenbrook** — a walkable map with houses, a plaza and well, a
