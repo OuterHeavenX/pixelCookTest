@@ -541,10 +541,16 @@ def stairs(tx, ty, down=True):
     step = material("stone", a=(150, 146, 162), b=(112, 108, 126), grout=(60, 56, 72), scale=0.06)
     dark = material("flat", rgb=(14, 12, 20), rough=1.0)
     if down:
-        put("cube", x, y, -8.0, PPT, PPT, 16.0, dark)
+        # A well: a dark floor at the bottom and dark sides, open at the top,
+        # so the camera sees the steps going down and not a lid over them.
+        put("cube", x, y, -15.5, PPT, PPT, 1.0, dark)
+        for sx in (-1, 1):
+            put("cube", x + sx * (PPT / 2.0 - 0.4), y, -8.0, 0.8, PPT, 16.0, dark)
+        for sy in (-1, 1):
+            put("cube", x, y + sy * (PPT / 2.0 - 0.4), -8.0, PPT, 0.8, 16.0, dark)
         for i in range(4):
             depth = -1.5 - i * 3.0
-            put("cube", x, y - PPT / 2.0 + 2.0 + i * 4.0, depth, PPT, 4.0, 1.0, step)
+            put("cube", x, y - PPT / 2.0 + 2.0 + i * 4.0, depth, PPT - 1.6, 4.0, 1.0, step)
     else:
         for i in range(4):
             put("cube", x, y + PPT / 2.0 - 2.0 - i * 4.0, 1.5 + (3 - i) * 3.0, PPT, 4.0, 1.0, step)
