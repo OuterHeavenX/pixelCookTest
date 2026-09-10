@@ -5,8 +5,29 @@ extends Node
 ## tools/spritecook.py). The 5x7 font is rebuilt into a white glyph sheet at
 ## startup and tinted per draw, so text can be any colour without extra art.
 
-const VW := 320
-const VH := 180
+## The virtual screen. Not a fixed 320x180 any more: the game picks a size
+## that matches the window it is in, so a 20:9 display gets a 20:9 view rather
+## than a 16:9 one with bars either side. Every game pixel stays the same whole
+## number of real pixels, the view is never smaller than the 320x180 the game
+## was composed for, and never wider than a backdrop can cover.
+const VMIN_W := 320
+const VMIN_H := 180
+const VMAX_W := 512
+const VMAX_H := 288
+var VW := VMIN_W
+var VH := VMIN_H
+
+
+## Choose the view for a window of this size, and report whether it changed.
+func fit(win: Vector2i) -> bool:
+	var scale: int = maxi(1, mini(int(win.x) / VMIN_W, int(win.y) / VMIN_H))
+	var w: int = clampi((int(win.x) / scale) & ~1, VMIN_W, VMAX_W)
+	var h: int = clampi((int(win.y) / scale) & ~1, VMIN_H, VMAX_H)
+	if w == VW and h == VH:
+		return false
+	VW = w
+	VH = h
+	return true
 const TILE := 16
 const GLYPH_W := 6
 const GLYPH_H := 8
@@ -71,6 +92,20 @@ func spr(c: CanvasItem, sprite_name: String, pos: Vector2, scale := 1.0,
 	var src := Rect2(f[0], f[1], f[2], f[3])
 	var dst := Rect2(round(pos.x), round(pos.y), f[2] * scale, f[3] * scale)
 	c.draw_texture_rect_region(atlas, dst, src, modulate)
+
+
+## Part of a sprite, stretched over a rectangle. Used to carry one pixel of a
+## backdrop's sky up over whatever headroom a tall view has.
+func spr_stretched(c: CanvasItem, sprite_name: String, dst: Rect2,
+		part := Rect2()) -> void:
+	if not frames.has(sprite_name):
+		return
+	var f: Array = frames[sprite_name]
+	var src := Rect2(f[0], f[1], f[2], f[3])
+	if part.size != Vector2.ZERO:
+		src = Rect2(f[0] + part.position.x, f[1] + part.position.y,
+			part.size.x, part.size.y)
+	c.draw_texture_rect_region(atlas, dst, src)
 
 
 ## Sprites are not all one size any more - procedural characters are 16x24 and

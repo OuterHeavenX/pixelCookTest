@@ -19,7 +19,22 @@ import sys
 import bpy
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WIDTH, HEIGHT = 320, 116
+# Wide enough to cover the widest view the game will ever ask for. The screen
+# is not a fixed 320 any more - a phone gets a 20:9 view - and a backdrop that
+# stops at 320 would leave the ends of the world missing. The height stays
+# where it was; a view taller than this extends the top row of sky, which is
+# flat, so nothing shows.
+WIDTH, HEIGHT = 512, 116
+
+# The lens and the shift are both tied to the frame's aspect. Blender fits the
+# sensor to the LONGER side, so widening the frame at a fixed focal length
+# crops the top and bottom off instead of showing more of the sides: the lens
+# has to open by the same factor the aspect changed. And shift_y is in sensor
+# WIDTH units, so the shift that put the horizon 65% down the frame has to
+# shrink by the same factor to keep it there.
+_ASPECT = WIDTH / float(HEIGHT)
+_LENS = 42.0 * (320.0 / 116.0) / _ASPECT
+_SHIFT_Y = 0.0544 * (320.0 / 116.0) / _ASPECT
 
 # Two moods: the ordinary encounter at dusk, and the boss shrine at night.
 MOODS = {
@@ -329,10 +344,10 @@ def render(mood_name, out_path, samples=8):
     m = MOODS[mood_name]
 
     cam_data = bpy.data.cameras.new("cam")
-    cam_data.lens = 42
+    cam_data.lens = _LENS
     # shift_y is in sensor-WIDTH units; one unit moves the image 2.76 frame
     # heights here, so this drops the horizon to 65% down the frame.
-    cam_data.shift_y = 0.0544
+    cam_data.shift_y = _SHIFT_Y
     cam = bpy.data.objects.new("cam", cam_data)
     bpy.context.collection.objects.link(cam)
     scene.camera = cam

@@ -29,7 +29,19 @@ func _ready() -> void:
 	shop = ShopMode.new(self)
 	title = TitleMode.new(self)
 	ending = EndingMode.new(self)
+	_fit_view()
+	get_tree().get_root().size_changed.connect(_fit_view)
 	Snd.play("town")
+
+
+## Match the view to the window. Godot's own "keep aspect" would letterbox a
+## 320x180 picture inside a wider window; this hands it a view of the window's
+## own shape instead, so the extra room becomes more world rather than bars.
+func _fit_view() -> void:
+	var win := get_window()
+	if Art.fit(win.size):
+		win.content_scale_size = Vector2i(Art.VW, Art.VH)
+	queue_redraw()
 
 
 func _process(dt: float) -> void:

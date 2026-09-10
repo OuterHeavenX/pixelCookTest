@@ -590,8 +590,13 @@ func camera_for(offset: Vector2) -> Vector2:
 	var mh := int(map["h"]) * TILE
 	var cx: float = (Gs.px + offset.x) * TILE + TILE / 2.0 - Art.VW / 2.0
 	var cy: float = (Gs.py + offset.y) * TILE + TILE / 2.0 - Art.VH / 2.0
-	cx = clamp(cx, 0.0, max(0.0, mw - Art.VW))
-	cy = clamp(cy, 0.0, max(0.0, mh - Art.VH))
+	# A map narrower or shorter than the view is centred rather than shoved
+	# into a corner with the void beside it - the inn is 19 tiles across and a
+	# wide screen now has room for 28.
+	var slack_x := float(mw - Art.VW)
+	var slack_y := float(mh - Art.VH)
+	cx = clampf(cx, 0.0, slack_x) if slack_x > 0.0 else slack_x / 2.0
+	cy = clampf(cy, 0.0, slack_y) if slack_y > 0.0 else slack_y / 2.0
 	return Vector2(round(cx), round(cy))
 
 

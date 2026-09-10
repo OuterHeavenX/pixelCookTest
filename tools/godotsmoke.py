@@ -133,6 +133,10 @@ def main():
     ap.add_argument("--godot")
     ap.add_argument("--shots", default=os.path.join(ROOT, "art", "godot"))
     ap.add_argument("--timeout", type=int, default=600)
+    # The view is not a fixed 320x180 any more: it takes the shape of the
+    # window. A run at one aspect ratio proves nothing about the others, so
+    # the screen the run happens on is a knob.
+    ap.add_argument("--screen", default="1280x720")
     args = ap.parse_args()
 
     godot = find_godot(args.godot)
@@ -181,11 +185,15 @@ def main():
     if os.path.exists(progress):
         os.remove(progress)
     argv = [godot, "--path", PROJECT, "res://scenes/Smoke.tscn",
-            "--rendering-driver", "opengl3"]
+            "--rendering-driver", "opengl3",
+            # The project overrides its own window size, so the screen alone
+            # does not decide the shape of the view - the window has to be
+            # told too, or every run is 16:9 whatever the display is.
+            "--resolution", args.screen]
     if shutil.which("stdbuf"):
         argv = ["stdbuf", "-oL", "-eL"] + argv
     if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
-        argv = ["xvfb-run", "-a", "-s", "-screen 0 1280x720x24"] + argv
+        argv = ["xvfb-run", "-a", "-s", "-screen 0 %sx24" % args.screen] + argv
     code, out = run(argv, env, args.timeout, stream=True)
     # The harness writes its own progress to a file because Godot buffers
     # stdout into a pipe. On a timeout that file is the only record of how far

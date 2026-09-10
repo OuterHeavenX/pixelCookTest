@@ -92,6 +92,15 @@ func update(dt: float) -> void:
 
 func draw(c: CanvasItem, anim: float) -> void:
 	c.draw_rect(Rect2(0, 0, Art.VW, Art.VH), Color(0.03, 0.02, 0.07, 0.7))
+	# A two-column layout composed at 320x180. It does not get better for being
+	# stretched across a wide view; it gets better for being in the middle.
+	c.draw_set_transform(Vector2(roundf((Art.VW - 320) / 2.0),
+		roundf((Art.VH - 180) / 2.0)))
+	_draw_panel(c, anim)
+	c.draw_set_transform(Vector2.ZERO)
+
+
+func _draw_panel(c: CanvasItem, anim: float) -> void:
 	Art.draw_window(c, Rect2(20, 14, 180, 150))
 	Art.draw_text(c, "QUARTERMASTER", Vector2(30, 20), Color("#f6e2a8"))
 

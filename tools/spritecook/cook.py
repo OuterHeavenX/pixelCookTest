@@ -6,8 +6,11 @@ import os
 from .imaging import Packer
 from . import backdrops, beasts, chars, imported, rendered, tiles, tints
 
-# Wide enough for a full-width battle backdrop to sit on the page.
-ATLAS_WIDTH = 320
+# Wide enough for a full-width battle backdrop to sit on the page. The screen
+# is not a fixed 320 any more, so neither is this: a sprite wider than the page
+# used to be recorded at its real width and then quietly clipped to the page,
+# which draws as half a backdrop and nothing anywhere complains.
+ATLAS_WIDTH = 512
 
 
 def cook_all():
@@ -29,6 +32,9 @@ def cook_all():
 
 def build(out_dir):
     sprites = cook_all()
+    widest = max(s.width for s in sprites.values())
+    assert widest <= ATLAS_WIDTH, (
+        "%dpx sprite will not fit a %dpx page" % (widest, ATLAS_WIDTH))
     packer = Packer(ATLAS_WIDTH, padding=1)
     # Tallest first keeps the shelves tight and the page small.
     for name in sorted(sprites, key=lambda n: (-sprites[n].height, n)):

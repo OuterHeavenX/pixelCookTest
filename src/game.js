@@ -5,7 +5,19 @@
    =========================================================================== */
 'use strict';
 
-const VW = 320, VH = 180, TILE = 16;
+/* The virtual screen. It is not a fixed 320x180 any more: the game picks a
+   size that matches the device it is on, so a 20:9 phone gets a 20:9 view
+   instead of a 16:9 one letterboxed inside it.
+
+   The rules are: every game pixel is the same whole number of device pixels
+   (no shearing), the view is never smaller than the 320x180 the game was
+   composed for, and never so large that a screen becomes a wall of empty
+   floor. Everything the game draws is anchored to an edge or to the middle,
+   so the extra room turns into more world and the HUD stays where the thumbs
+   expect it. */
+const VMIN_W = 320, VMIN_H = 180, VMAX_W = 512, VMAX_H = 288;
+let VW = VMIN_W, VH = VMIN_H;
+const TILE = 16;
 
 /* --------------------------------------------------------------- canvas -- */
 const canvas = document.getElementById('screen');
@@ -13,14 +25,39 @@ const ctx = canvas.getContext('2d', { alpha: false });
 canvas.width = VW; canvas.height = VH;
 ctx.imageSmoothingEnabled = false;
 
+/* Fit the canvas to the device's pixels rather than to CSS pixels.
+
+   Every game pixel has to come out the same size or the art shears - one
+   column two screen pixels wide, the next three - so the scale has to land on
+   a whole number of screen pixels. It does not have to land on a whole number
+   of CSS pixels, and insisting that it did threw away up to an entire step:
+   on a phone at 3x device pixel ratio the game sat at 2x in the middle of a
+   screen with room for 2.83x, which is where the bars came from. Flooring in
+   device pixels instead keeps every game pixel exact and lands within a third
+   of a CSS pixel of the room available. */
 function fitCanvas() {
-  const pad = 8;
-  const scale = Math.max(1, Math.floor(Math.min(
-    (window.innerWidth - pad) / VW, (window.innerHeight - pad) / VH)));
-  canvas.style.width = (VW * scale) + 'px';
-  canvas.style.height = (VH * scale) + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  const touch = document.body.classList.contains('touch');
+  // A border and a keyboard legend are worth their space on a desktop and are
+  // only in the way on a phone.
+  const pad = touch ? 0 : 12;
+  const availW = Math.max(VMIN_W, (window.innerWidth - pad) * dpr);
+  const availH = Math.max(VMIN_H, (window.innerHeight - pad) * dpr);
+  // Pick the chunkiest whole-device-pixel scale at which the smallest allowed
+  // view still fits, then spend whatever room is left on a bigger view rather
+  // than on bars. Even numbers, because half of the UI is positioned on
+  // halves and a half of an odd number lands between two pixels.
+  const scale = Math.max(1, Math.floor(Math.min(availW / VMIN_W, availH / VMIN_H)));
+  VW = clamp(Math.floor(availW / scale) & ~1, VMIN_W, VMAX_W);
+  VH = clamp(Math.floor(availH / scale) & ~1, VMIN_H, VMAX_H);
+  canvas.width = VW;
+  canvas.height = VH;
+  ctx.imageSmoothingEnabled = false;
+  canvas.style.width = (VW * scale / dpr) + 'px';
+  canvas.style.height = (VH * scale / dpr) + 'px';
 }
 window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', fitCanvas);
 
 /* ---------------------------------------------------------------- atlas -- */
 const atlas = new Image();
@@ -246,9 +283,12 @@ const Input = {
     if (!root) return;
     if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
     root.style.display = 'block';
-    // The keyboard legend is only in the way on a phone.
+    // The keyboard legend is only in the way on a phone, and the frame around
+    // the screen is spending pixels a phone does not have to spare.
+    document.body.classList.add('touch');
     const hint = document.getElementById('hint');
     if (hint) hint.style.display = 'none';
+    fitCanvas();
     this.initButtons(root);
     this.initStick(root);
   },
@@ -390,12 +430,19 @@ const Input = {
    land straight on Magic. Zones live in virtual (320x180) coordinates, so the
    canvas can be scaled to any size and the maths does not change. */
 const Taps = {
-  zones: [], pending: null, held: null,
+  zones: [], pending: null, held: null, ox: 0, oy: 0,
 
-  clear() { this.zones.length = 0; },
+  clear() { this.zones.length = 0; this.ox = 0; this.oy = 0; },
+
+  /* Screens composed at a fixed size are drawn through a canvas translate;
+     the same shift has to reach the tap zones or a button ends up drawn in
+     one place and tappable in another. */
+  origin(x, y) { this.ox = x; this.oy = y; },
 
   /* act() runs on release, the frame after the tap. */
-  add(id, x, y, w, h, act) { this.zones.push({ id: id, x: x, y: y, w: w, h: h, act: act }); },
+  add(id, x, y, w, h, act) {
+    this.zones.push({ id: id, x: x + this.ox, y: y + this.oy, w: w, h: h, act: act });
+  },
 
   at(vx, vy) {
     // Last registered wins: later draw calls are the ones on top.
@@ -1248,8 +1295,12 @@ function cameraFor(px, py, ox, oy) {
   const m = Field.map;
   let cx = (px + ox) * TILE + TILE / 2 - VW / 2;
   let cy = (py + oy) * TILE + TILE / 2 - VH / 2;
-  cx = clamp(cx, 0, Math.max(0, m.w * TILE - VW));
-  cy = clamp(cy, 0, Math.max(0, m.h * TILE - VH));
+  // A map narrower or shorter than the screen is centred rather than shoved
+  // into a corner with the void beside it - the inn is 19 tiles across and a
+  // phone now has room for 28.
+  const slackX = m.w * TILE - VW, slackY = m.h * TILE - VH;
+  cx = slackX > 0 ? clamp(cx, 0, slackX) : slackX / 2;
+  cy = slackY > 0 ? clamp(cy, 0, slackY) : slackY / 2;
   return [Math.round(cx), Math.round(cy)];
 }
 
@@ -1356,7 +1407,7 @@ function drawLocationBanner() {
 function drawMessageBox(m) {
   const boxH = 42;
   const y = VH - boxH - 6;
-  drawWindow(6, y, VW - 12, boxH);
+  drawWindow(6, y, VW - 12 - touchGutter(), boxH);
   if (m.speaker) {
     const nw = textWidth(m.speaker) + 12;
     drawWindow(10, y - 9, nw, 15, { tone: 'dark' });
@@ -1438,11 +1489,33 @@ function startEncounter(group, isBoss) {
 function livingEnemies() { return Battle.enemies.filter(e => e.alive); }
 function livingHeroes() { return G.party.filter(h => h.alive); }
 
+/* The battle is composed as a 320-wide stage sitting on top of a HUD glued to
+   the bottom edge. On a wider screen the stage is centred and the backdrop
+   simply shows more world either side; on a taller one the sky above it gets
+   deeper. Everything in the fight is positioned from these two, so none of it
+   has to know how big the screen turned out to be. */
+const HUD_H = 64;
+function stageX() { return Math.round((VW - 320) / 2); }
+function stageFloor() { return VH - HUD_H; }
+
+/* On a phone the A/B/menu cluster sits in the bottom-right corner of the
+   screen. The game reaches the corners now, so the HUD has to leave it
+   somewhere to be: this is how much of the right-hand edge is spoken for. It
+   only ever comes out of the width beyond the 320 the game was composed in,
+   so a screen with nothing spare keeps its whole HUD and the buttons overlap
+   it the way they always did. */
+function touchGutter() {
+  return document.body.classList.contains('touch')
+    ? Math.min(112, Math.max(0, VW - 320)) : 0;
+}
+
 /* The party stands in a receding diagonal, the way the 16-bit games framed
    it: each member a little nearer and a little lower than the last. */
 /* The backdrop's meadow starts about 6px below the geometric horizon, so the
    front of the line stands on grass rather than in the treeline. */
-function heroSlot(i) { return { x: 266 - i * 16, y: 50 + i * 12 }; }
+function heroSlot(i) {
+  return { x: stageX() + 266 - i * 16, y: stageFloor() - 66 + i * 12 };
+}
 /* Enemies are baseline-anchored so tall and short monsters share a ground
    line and none of them dips behind the HUD. */
 /* How big a monster stands, from the height its data asks for rather than
@@ -1458,12 +1531,12 @@ function enemySlot(e, i, n) {
   // Pack the line from the monsters' own widths. A fixed 48px column was
   // spaced for sprites drawn at double size; once they were sized honestly it
   // left them scattered across the field with holes between them.
-  let x = 30 + row * 20;
+  let x = stageX() + 30 + row * 20;
   for (let k = 0; k < col; k++) {
     const prev = Battle.enemies[row * cols + k];
     x += (prev ? sprSize(prev.sprite)[0] * enemyScale(prev) : 32) + 16;
   }
-  const baseY = 92 + col * 8 - row * 20;
+  const baseY = stageFloor() - 24 + col * 8 - row * 20;
   return { x: x, y: baseY - h, w: w, h: h, baseY };
 }
 
@@ -2007,7 +2080,20 @@ function endBattle(how) {
 function drawBattleBackdrop() {
   // Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
   // palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
-  spr('bg_' + (Battle.bg || 'dusk'), 0, 0);
+  const name = 'bg_' + (Battle.bg || 'dusk');
+  const [bw, bh] = sprSize(name);
+  const bx = Math.round((VW - bw) / 2), by = stageFloor() - bh;
+  // A view taller than the render leaves sky above it. The top row of every
+  // backdrop is flat, so carrying it up fills that with more of the same sky
+  // rather than with a black band.
+  if (by > 0) {
+    // One pixel of the backdrop's own sky, stretched over the gap. Stretching
+    // the whole top ROW instead put its horizontal variation on screen as a
+    // hard-edged band across the top, which reads as a bug rather than as sky.
+    const f = FRAMES[name];
+    ctx.drawImage(atlas, f[0], f[1], 1, 1, 0, 0, VW, by + 1);
+  }
+  spr(name, bx, by);
 }
 
 function drawBattle() {
@@ -2160,6 +2246,11 @@ function drawFx() {
 }
 
 function drawBattleUi() {
+  // The band the HUD sits in. Two windows used to cover it exactly; on a
+  // wider screen they do not, and an unpainted canvas keeps the last frame.
+  ctx.fillStyle = '#0b0a16';
+  ctx.fillRect(0, stageFloor(), VW, HUD_H);
+
   // Top banner.
   if (Battle.bannerT > 0) {
     const w = Math.min(VW - 16, textWidth(Battle.banner) + 20);
@@ -2167,22 +2258,23 @@ function drawBattleUi() {
     drawText(Battle.banner, VW / 2, 11, '#f6f0d8', { align: 'center' });
   }
 
-  const panelY = 116, panelH = 60;
-  // Party status, right.
-  drawWindow(120, panelY, 196, panelH);
+  const panelY = stageFloor(), panelH = HUD_H - 4;
+  // Party status, right - anchored to the right edge, not to a 320 screen.
+  const pr = VW - 200 - touchGutter();
+  drawWindow(pr, panelY, 196, panelH);
   G.party.forEach((h, i) => {
     const y = panelY + 6 + i * 14;
     const active = Battle.actor === h;
-    drawText(h.name, 132, y, h.alive ? (active ? '#ffe9a0' : '#f2f4ff') : '#9a8090');
-    if (h.defending && h.alive) spr('i_shield', 124, y - 1);
-    else if (h.alive && h.hp / h.maxhp < 0.25) spr('i_heart', 124, y - 1);
+    drawText(h.name, pr + 12, y, h.alive ? (active ? '#ffe9a0' : '#f2f4ff') : '#9a8090');
+    if (h.defending && h.alive) spr('i_shield', pr + 4, y - 1);
+    else if (h.alive && h.hp / h.maxhp < 0.25) spr('i_heart', pr + 4, y - 1);
     // Columns sized for four digits each: a late-game 394/394 and 118/118 ran
     // into each other at the old spacing.
-    drawText(h.alive ? h.hp + '/' + h.maxhp : 'K.O.', 214, y, hpColor(h), { align: 'right' });
-    drawText(h.maxmp ? h.mp + '/' + h.maxmp : '-', 260, y, '#9fd0ff', { align: 'right' });
-    drawBar(264, y + 1, 46, 5, h.alive ? h.atb / 100 : 0,
+    drawText(h.alive ? h.hp + '/' + h.maxhp : 'K.O.', pr + 94, y, hpColor(h), { align: 'right' });
+    drawText(h.maxmp ? h.mp + '/' + h.maxmp : '-', pr + 140, y, '#9fd0ff', { align: 'right' });
+    drawBar(pr + 144, y + 1, 46, 5, h.alive ? h.atb / 100 : 0,
       h.atb >= 100 ? '#fff0a8' : '#8fd8ff', h.atb >= 100 ? '#e0a83c' : '#3a72c8');
-    if (active) drawCursor(124, y - 1, Battle.t);
+    if (active) drawCursor(pr + 4, y - 1, Battle.t);
   });
 
   // Command / list window, left. Everything in here is a button you can hit
@@ -2865,10 +2957,27 @@ function updateShop(dt) {
   if (Input.tap('confirm')) buyStock(Shop.index);
 }
 
+/* A screen composed at a fixed size, centred in whatever the screen turned
+   out to be. The shop is a two-column layout that does not get better for
+   being stretched; it gets better for being in the middle. */
+function panel(w, h, draw) {
+  const ox = Math.round((VW - w) / 2), oy = Math.round((VH - h) / 2);
+  ctx.save();
+  ctx.translate(ox, oy);
+  Taps.origin(ox, oy);
+  draw();
+  Taps.origin(0, 0);
+  ctx.restore();
+}
+
 function drawShop() {
   drawField();
   ctx.fillStyle = 'rgba(8,6,18,0.7)';
   ctx.fillRect(0, 0, VW, VH);
+  panel(320, 180, drawShopPanel);
+}
+
+function drawShopPanel() {
   drawWindow(20, 14, 180, 150);
   drawText('QUARTERMASTER', 30, 20, '#f6e2a8');
 
@@ -2911,7 +3020,8 @@ function drawShop() {
     drawText(wearer ? wearer.name + ': ' + gearDelta(wearer, sel) : 'Nobody here can use it.',
       30, 152, wearer ? '#8fd8a0' : '#e08a90');
   } else {
-    drawText('[Z] buy   [X] leave', 30, 152, '#7a82a8');
+    drawText(document.body.classList.contains('touch')
+      ? 'Tap to buy   B to leave' : '[Z] buy   [X] leave', 30, 152, '#7a82a8');
   }
 
   drawWindow(206, 14, 96, 44);
@@ -2969,6 +3079,14 @@ function drawTitle() {
   const g = ctx.createLinearGradient(0, 0, 0, VH);
   g.addColorStop(0, '#0d1030'); g.addColorStop(0.55, '#24244e'); g.addColorStop(1, '#5a3a54');
   ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  // Laid out from the bottom up: the key hint on the last line, the menu
+  // above it, the skyline behind that. Anchoring the menu to a fixed row
+  // instead put its bottom two pixels off the end of a 180-tall screen, and
+  // under the hint on anything taller.
+  const titleOpts = ['New Game'].concat(hasSave() ? ['Continue'] : []);
+  const boxH = 16 + titleOpts.length * 14;
+  const boxY = VH - 16 - boxH;
+  const horizon = boxY - 10;
   for (let i = 0; i < 60; i++) {
     const x = (i * 71) % VW, y = (i * 37) % 90;
     const tw = 0.5 + 0.5 * Math.sin(Title.t * 2 + i);
@@ -2977,34 +3095,40 @@ function drawTitle() {
   }
   // Skyline of the town, silhouetted.
   ctx.fillStyle = '#171a38';
-  ctx.fillRect(0, 128, VW, VH - 128);
-  for (let i = 0; i < 9; i++) {
+  ctx.fillRect(0, horizon, VW, VH - horizon);
+  // As many roofs as the screen is wide, rather than the nine that happened
+  // to reach the edge of a 320-pixel one.
+  for (let i = 0; i < Math.ceil(VW / 38) + 1; i++) {
     const x = i * 38 - 10, h = 20 + (i % 4) * 12;
-    ctx.fillRect(x, 128 - h, 30, h);
+    ctx.fillRect(x, horizon - h, 30, h);
     ctx.beginPath();
-    ctx.moveTo(x - 4, 128 - h); ctx.lineTo(x + 15, 128 - h - 12); ctx.lineTo(x + 34, 128 - h);
+    ctx.moveTo(x - 4, horizon - h); ctx.lineTo(x + 15, horizon - h - 12);
+    ctx.lineTo(x + 34, horizon - h);
     ctx.closePath(); ctx.fill();
   }
   ctx.fillStyle = 'rgba(246,226,168,0.9)';
-  for (let i = 0; i < 14; i++) ctx.fillRect(10 + i * 22, 118 + (i % 3) * 6, 2, 3);
+  for (let i = 0; i < Math.ceil(VW / 22); i++) {
+    ctx.fillRect(10 + i * 22, horizon - 10 + (i % 3) * 6, 2, 3);
+  }
 
   drawTextBig('RIVENBROOK', VW / 2, 26, '#f6e2a8', 3, { align: 'center' });
   drawText('a tale of the thornwilds', VW / 2, 60, '#c8cdf0', { align: 'center' });
 
   ['aldric', 'lyra', 'mira'].forEach((who, i) => {
     const name = who + '_right0';
-    sprFoot(name, 140 + i * 24, 144, { scale: scaleFor(name, 48) });
+    sprFoot(name, VW / 2 - 20 + i * 24, horizon + 16, { scale: scaleFor(name, 48) });
   });
 
-  const opts = ['New Game'];
-  if (hasSave()) opts.push('Continue');
-  drawWindow(VW / 2 - 52, 138, 104, 16 + opts.length * 14);
-  opts.forEach((o, i) => {
-    const y = 145 + i * 14;
+  drawWindow(VW / 2 - 52, boxY, 104, boxH);
+  titleOpts.forEach((o, i) => {
+    const y = boxY + 7 + i * 14;
     drawText(o, VW / 2 - 22, y, i === Title.index ? '#ffe9a0' : '#f2f4ff');
     if (i === Title.index) drawCursor(VW / 2 - 36, y - 1, Title.t);
   });
-  drawText('Arrows move   Z confirm   X cancel   C menu', VW / 2, VH - 10, '#8f97c0', { align: 'center' });
+  drawText(document.body.classList.contains('touch')
+    ? 'Drag the left of the screen to walk   A confirm   B cancel'
+    : 'Arrows move   Z confirm   X cancel   C menu',
+    VW / 2, VH - 8, '#8f97c0', { align: 'center' });
 }
 
 function updateTitle(dt) {

@@ -103,8 +103,22 @@ func living_enemies() -> Array:
 
 ## The backdrop's meadow starts about 6px below the geometric horizon, so the
 ## front of the line stands on grass rather than in the treeline.
+## The fight is composed as a 320-wide stage on top of a HUD glued to the
+## bottom edge. On a wider view the stage is centred and the backdrop shows
+## more world either side; on a taller one the sky above it gets deeper.
+const HUD_H := 64
+
+
+func stage_x() -> float:
+	return roundf((Art.VW - 320.0) / 2.0)
+
+
+func stage_floor() -> float:
+	return float(Art.VH - HUD_H)
+
+
 func hero_slot(i: int) -> Vector2:
-	return Vector2(266 - i * 16, 50 + i * 12)
+	return Vector2(stage_x() + 266 - i * 16, stage_floor() - 66 + i * 12)
 
 
 ## Humanoid monsters are drawn at hero scale; beasts and the boss stay chunky.
@@ -128,7 +142,7 @@ func enemy_slot(e: Dictionary, i: int, n: int) -> Dictionary:
 	# Pack the line from the monsters' own widths. A fixed 48px column was
 	# spaced for sprites drawn at double size; once they were sized honestly it
 	# left them scattered across the field with holes between them.
-	var x := 30.0 + row * 20.0
+	var x := stage_x() + 30.0 + row * 20.0
 	for k in col:
 		var idx := row * cols + k
 		if idx < enemies.size():
@@ -136,7 +150,7 @@ func enemy_slot(e: Dictionary, i: int, n: int) -> Dictionary:
 			x += Art.frame_size(prev["sprite"]).x * enemy_scale(prev) + 16.0
 		else:
 			x += 48.0
-	var base_y := 92.0 + col * 8.0 - row * 20.0
+	var base_y := stage_floor() - 24.0 + col * 8.0 - row * 20.0
 	return {"x": x, "y": base_y - h, "w": w, "h": h, "base_y": base_y}
 
 
@@ -814,7 +828,16 @@ func class_icon(h: Dictionary) -> String:
 func draw_backdrop(c: CanvasItem) -> void:
 	# Rendered in Blender (tools/blender/backdrop.py) and quantised to the game
 	# palette (tools/pixelate.py), so it arrives on the atlas as one sprite.
-	Art.spr(c, "bg_" + backdrop, Vector2.ZERO)
+	var name := "bg_" + backdrop
+	var size := Art.frame_size(name)
+	var bx := roundf((Art.VW - size.x) / 2.0)
+	var by := stage_floor() - size.y
+	# A view taller than the render leaves sky above it. One pixel of the
+	# backdrop's own sky, stretched over the gap; stretching the whole top row
+	# put its horizontal variation on screen as a hard band across the top.
+	if by > 0.0:
+		Art.spr_stretched(c, name, Rect2(0, 0, Art.VW, by + 1.0), Rect2(0, 0, 1, 1))
+	Art.spr(c, name, Vector2(bx, by))
 
 
 func draw(c: CanvasItem) -> void:
@@ -939,10 +962,15 @@ func draw_ui(c: CanvasItem) -> void:
 		Art.draw_window(c, Rect2(Art.VW / 2.0 - w / 2.0, 6, w, 18), "dark")
 		Art.draw_text(c, banner, Vector2(Art.VW / 2.0, 11), Color("#f6f0d8"), "center")
 
-	var panel_y := 116
-	var panel_h := 60
+	# The band the HUD sits in. Two windows used to cover it exactly; on a
+	# wider view they do not, and the gap has to be painted.
+	c.draw_rect(Rect2(0, stage_floor(), Art.VW, HUD_H), Color("#0b0a16"))
 
-	Art.draw_window(c, Rect2(120, panel_y, 196, panel_h))
+	var panel_y := stage_floor()
+	var panel_h := float(HUD_H - 4)
+
+	var pr := Art.VW - 200.0
+	Art.draw_window(c, Rect2(pr, panel_y, 196, panel_h))
 	for i in Gs.party.size():
 		var h: Dictionary = Gs.party[i]
 		var y := panel_y + 6 + i * 14
@@ -950,28 +978,28 @@ func draw_ui(c: CanvasItem) -> void:
 		var name_color := Color("#9a8090")
 		if bool(h["alive"]):
 			name_color = Color("#ffe9a0") if active else Color("#f2f4ff")
-		Art.draw_text(c, h["name"], Vector2(132, y), name_color)
+		Art.draw_text(c, h["name"], Vector2(pr + 12, y), name_color)
 		if bool(h["defending"]) and bool(h["alive"]):
-			Art.spr(c, "i_shield", Vector2(124, y - 1))
+			Art.spr(c, "i_shield", Vector2(pr + 4, y - 1))
 		elif bool(h["alive"]) and float(h["hp"]) / float(h["maxhp"]) < 0.25:
-			Art.spr(c, "i_heart", Vector2(124, y - 1))
+			Art.spr(c, "i_heart", Vector2(pr + 4, y - 1))
 		var hp_text := "K.O."
 		if bool(h["alive"]):
 			hp_text = "%d/%d" % [int(h["hp"]), int(h["maxhp"])]
 		# Columns sized for four digits each: a late-game 394/394 and 118/118
 		# ran into each other at the old spacing.
-		Art.draw_text(c, hp_text, Vector2(214, y), hp_color(h), "right")
+		Art.draw_text(c, hp_text, Vector2(pr + 94, y), hp_color(h), "right")
 		var mp_text := "-"
 		if int(h["maxmp"]) > 0:
 			mp_text = "%d/%d" % [int(h["mp"]), int(h["maxmp"])]
-		Art.draw_text(c, mp_text, Vector2(260, y), Color("#9fd0ff"), "right")
+		Art.draw_text(c, mp_text, Vector2(pr + 140, y), Color("#9fd0ff"), "right")
 		var full := float(h["atb"]) >= 100.0
-		Art.draw_bar(c, Vector2(264, y + 1), Vector2(46, 5),
+		Art.draw_bar(c, Vector2(pr + 144, y + 1), Vector2(46, 5),
 			float(h["atb"]) / 100.0 if bool(h["alive"]) else 0.0,
 			Color("#fff0a8") if full else Color("#8fd8ff"),
 			Color("#e0a83c") if full else Color("#3a72c8"))
 		if active:
-			Art.draw_cursor(c, Vector2(124, y - 1), t)
+			Art.draw_cursor(c, Vector2(pr + 4, y - 1), t)
 
 	Art.draw_window(c, Rect2(4, panel_y, 112, panel_h))
 	if phase == "command" and actor != null:
