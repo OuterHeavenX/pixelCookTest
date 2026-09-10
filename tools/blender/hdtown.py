@@ -127,7 +127,7 @@ def material(kind, **kw):
     return m
 
 
-def m_stone(a=(150, 152, 160), b=(112, 116, 126), grout=(70, 72, 80), scale=0.22,
+def m_stone(a=(182, 184, 192), b=(146, 150, 162), grout=(72, 74, 86), scale=0.042,
             rough=0.85):
     """Flagstones: a brick pattern with mortar, two stone shades varied by
     noise, and the mortar cut in as bump."""
@@ -149,29 +149,30 @@ def m_stone(a=(150, 152, 160), b=(112, 116, 126), grout=(70, 72, 80), scale=0.22
     brick.inputs["Mortar"].default_value = hex_rgb(grout)
     nt.links.new(brick.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = rough
-    _bump(nt, bsdf, brick.outputs["Fac"], 0.35, 0.6)
+    _bump(nt, bsdf, brick.outputs["Fac"], 0.4, 0.6)
     return m
 
 
-def m_grass(a=(96, 150, 78), b=(70, 122, 60), scale=0.12):
+def m_grass(a=(110, 172, 82), b=(62, 120, 54), scale=0.045):
     m, nt, bsdf, pos = _nodes("grass")
     v = _scaled(nt, pos, scale)
     noise = nt.nodes.new("ShaderNodeTexNoise")
     noise.inputs["Scale"].default_value = 3.0
-    noise.inputs["Detail"].default_value = 6.0
+    noise.inputs["Detail"].default_value = 2.0
+    noise.inputs["Roughness"].default_value = 0.4
     nt.links.new(v, noise.inputs["Vector"])
     ramp = _ramp(nt, a, b)
     nt.links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
     nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = 0.92
     fine = nt.nodes.new("ShaderNodeTexNoise")
-    fine.inputs["Scale"].default_value = 22.0
+    fine.inputs["Scale"].default_value = 6.0
     nt.links.new(v, fine.inputs["Vector"])
     _bump(nt, bsdf, fine.outputs["Fac"], 0.25, 0.3)
     return m
 
 
-def m_dirt(a=(176, 138, 88), b=(140, 104, 62), scale=0.16):
+def m_dirt(a=(190, 148, 92), b=(146, 106, 60), scale=0.06):
     m, nt, bsdf, pos = _nodes("dirt")
     v = _scaled(nt, pos, scale)
     noise = nt.nodes.new("ShaderNodeTexNoise")
@@ -182,7 +183,7 @@ def m_dirt(a=(176, 138, 88), b=(140, 104, 62), scale=0.16):
     nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = 0.95
     pebbles = nt.nodes.new("ShaderNodeTexVoronoi")
-    pebbles.inputs["Scale"].default_value = 14.0
+    pebbles.inputs["Scale"].default_value = 5.0
     nt.links.new(v, pebbles.inputs["Vector"])
     _bump(nt, bsdf, pebbles.outputs["Distance"], 0.3, 0.4)
     return m
@@ -296,7 +297,7 @@ def ground(name, tx, ty):
     if name in ("t_grass", "t_grass2", "t_grass3", "t_flowers", "t_tallgrass"):
         # A few blades, so grass has a surface and not just a colour.
         r = _rng(tx, ty)
-        n = 7 if name == "t_tallgrass" else 3
+        n = 7 if name == "t_tallgrass" else 0
         for _ in range(n):
             gx, gy = x + r.uniform(-6, 6), y + r.uniform(-6, 6)
             h = r.uniform(2.0, 4.5) if name != "t_tallgrass" else r.uniform(4, 7)
@@ -305,11 +306,11 @@ def ground(name, tx, ty):
                         rot=(r.uniform(-14, 14), r.uniform(-14, 14), 0))
             blade.visible_shadow = False   # a blade's shadow is a dark speck, not grass
         if name == "t_flowers":
-            for _ in range(4):
-                fx, fy = x + r.uniform(-6, 6), y + r.uniform(-6, 6)
+            for _ in range(2):
+                fx, fy = x + r.uniform(-5, 5), y + r.uniform(-5, 5)
                 put("cyl", fx, fy, 1.6, 0.5, 0.5, 3.2, material("leaf"))
                 rgb = r.choice(((232, 92, 110), (244, 214, 96), (240, 240, 232)))
-                put("sphere", fx, fy, 3.5, 1.6, 1.6, 1.4, material("flat", rgb=rgb, rough=0.8))
+                put("sphere", fx, fy, 3.5, 2.6, 2.6, 1.8, material("flat", rgb=rgb, rough=0.8))
 
 
 _FENCE = set()   # every fence tile in the region, so rails can meet their neighbours
@@ -343,35 +344,25 @@ def lamp(tx, ty, lit=True):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
     iron = material("flat", rgb=(52, 52, 60), rough=0.55, metallic=0.4)
-    glass = material("flat", rgb=(255, 214, 140), emit=4.0) if lit \
+    glass = material("flat", rgb=(255, 196, 104), emit=2.0) if lit \
         else material("flat", rgb=(150, 160, 170), rough=0.2)
     put("cyl", x, y, 0.8, 4.0, 4.0, 1.6, iron)              # base
-    put("cyl", x, y, 10.5, 1.6, 1.6, 19.0, iron)            # post
+    put("cyl", x, y, 10.5, 2.4, 2.4, 19.0, iron)            # post
     put("cube", x, y - 1.6, 20.4, 1.2, 4.4, 1.2, iron)      # arm
-    for dx in (-2.2, 2.2):                                  # the lantern's cage
-        put("cube", x + dx, y - 3.6, 21.8, 0.6, 0.6, 5.0, iron)
-    for dy in (-2.2, 2.2):
-        put("cube", x, y - 3.6 + dy, 21.8, 0.6, 0.6, 5.0, iron)
-    put("cube", x, y - 3.6, 21.8, 4.0, 4.0, 4.6, glass)      # the glowing pane
-    put("cone", x, y - 3.6, 24.8, 5.6, 5.6, 1.6, iron)      # cap
+    put("cube", x, y - 3.6, 21.8, 6.4, 6.4, 5.0, glass)      # the glowing pane
+    put("cone", x, y - 3.6, 25.0, 4.4, 4.4, 1.4, iron)      # cap, smaller than the pane
     put("sphere", x, y - 3.6, 25.9, 1.2, 1.2, 1.2, iron)    # finial
 
 
 def well(tx, ty):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
-    stone = material("stone", a=(156, 156, 166), b=(118, 120, 132), grout=(66, 66, 76), scale=0.35)
+    stone = material("stone", a=(222, 214, 202), b=(190, 182, 170), grout=(96, 90, 86), scale=0.07)
     wood = material("wood", a=(140, 96, 52), b=(90, 58, 30), scale=0.6, along="y")
-    put("cyl", x, y, 4.5, 13.0, 13.0, 9.0, stone)          # the wall of it
-    put("cyl", x, y, 8.2, 9.4, 9.4, 1.6, material("water", rgb=(30, 60, 90)))
-    put("cyl", x, y, 9.4, 14.2, 14.2, 1.0, stone)          # the rim
-    for sx in (-1, 1):                                     # posts, east and west
-        put("cube", x + sx * 6.4, y, 15.0, 1.8, 1.8, 13.0, wood)
-    put("cyl", x, y, 17.0, 1.2, 1.2, 14.0, wood, rot=(0, 90, 0))   # the axle
-    # No roof: from a camera this high a roof is a brown lid and the well
-    # under it is gone. An open ring with water in it reads as a well at once.
-    put("cyl", x + 1.5, y, 11.0, 2.4, 2.4, 3.2, wood)      # the bucket
-    put("cyl", x + 1.5, y, 14.2, 0.3, 0.3, 4.4, material("flat", rgb=(120, 100, 70)))
+    put("cyl", x, y, 3.0, 14.6, 14.6, 6.0, stone)          # the wall of it
+    put("cyl", x, y, 5.0, 10.6, 10.6, 1.6, material("water", rgb=(28, 70, 118)))
+    put("cyl", x, y, 6.5, 15.8, 15.8, 1.2, stone)          # the rim
+    put("cyl", x + 5.0, y - 3.0, 8.0, 3.0, 3.0, 3.0, wood)  # a bucket left on the rim
 
 
 def tree(tx, ty, snow=False):
@@ -395,12 +386,12 @@ def tree(tx, ty, snow=False):
               material("leaf", a=(72, 126, 60), b=(40, 84, 40))]
     # A canopy as a cloud of lumps inside an ellipsoid. Enough of them that
     # the light finds edges everywhere, which is what a canopy is.
-    for i in range(30):
+    for i in range(36):
         u, v, w = r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1)
         if u * u + v * v + w * w > 1.0:
             continue
-        cx, cy, cz = x + u * 11.0, y + v * 11.0, 23.0 + w * 7.5
-        rad = r.uniform(4.0, 7.0)
+        cx, cy, cz = x + u * 13.0, y + v * 13.0, 23.0 + w * 7.5
+        rad = r.uniform(5.5, 8.5)
         put("sphere", cx, cy, cz, rad, rad, rad * 0.9, r.choice(leaves))
 
 
@@ -456,11 +447,11 @@ def wall_block(tx, ty, name):
     x = tx * PPT + PPT / 2.0
     y = -ty * PPT - PPT / 2.0
     if name in ("t_cryptwall", "t_drownwall"):
-        stone = material("stone", a=(96, 90, 112), b=(66, 62, 80), grout=(36, 32, 46), scale=0.2) \
+        stone = material("stone", a=(96, 90, 112), b=(66, 62, 80), grout=(36, 32, 46), scale=0.05) \
             if name == "t_cryptwall" else \
-            material("stone", a=(44, 80, 96), b=(26, 52, 66), grout=(12, 26, 36), scale=0.2)
+            material("stone", a=(44, 80, 96), b=(26, 52, 66), grout=(12, 26, 36), scale=0.05)
     else:
-        stone = material("stone", a=(150, 152, 160), b=(112, 116, 126), grout=(70, 72, 80), scale=0.2)
+        stone = material("stone", a=(160, 162, 170), b=(120, 124, 136), grout=(66, 68, 80), scale=0.05)
     put("cube", x, y, 11.0, PPT, PPT, 22.0, stone)
 
 
@@ -520,10 +511,10 @@ def house(x0, y0, x1, y1, names):
     pitch = math.radians(ROOF_PITCH)
     slab_len = half / math.cos(pitch)
     rise = half * math.tan(pitch)
-    shade = material("flat", rgb=(84, 44, 42), rough=0.9)
-    tile_a = material("flat", rgb=(158, 66, 62), rough=0.85)
-    tile_b = material("flat", rgb=(140, 58, 56), rough=0.85)
-    tile_c = material("flat", rgb=(172, 76, 70), rough=0.85)
+    shade = material("flat", rgb=(70, 34, 34), rough=0.9)
+    tile_a = material("flat", rgb=(176, 72, 64), rough=0.85)
+    tile_b = material("flat", rgb=(132, 50, 48), rough=0.85)
+    tile_c = material("flat", rgb=(202, 96, 82), rough=0.85)
     r = random.Random(int(cx * 3 + cy * 7))
     for sign_ in (-1, 1):
         put("cube", cx, cy + sign_ * half / 2.0, WALL_H + rise / 2.0,
@@ -532,21 +523,21 @@ def house(x0, y0, x1, y1, names):
         course = 0
         v = 1.6
         while v < slab_len - 1.0:
-            offset = (course % 2) * 2.4
-            u = -(w + EAVE * 2) / 2.0 + 2.4 + offset
+            offset = (course % 2) * 4.8
+            u = -(w + EAVE * 2) / 2.0 + 4.8 + offset
             while u < (w + EAVE * 2) / 2.0 - 1.0:
                 # local (u along the eave, v up the slope) -> world
                 yy = cy - sign_ * (half - v * math.cos(pitch))
                 zz = WALL_H + v * math.sin(pitch) + 1.0
-                put("cube", cx + u, yy, zz, 4.6, 3.0, 0.7, r.choice((tile_a, tile_b, tile_c)),
+                put("cube", cx + u, yy, zz, 9.2, 5.6, 1.0, r.choice((tile_a, tile_b, tile_c)),
                     rot=(sign_ * -ROOF_PITCH, 0, 0))
-                u += 4.8
-            v += 2.6
+                u += 9.6
+            v += 5.2
             course += 1
     put("cube", cx, cy, WALL_H + rise + 1.2, w + EAVE * 2 + 1, 3.2, 1.4, shade)
     # A chimney on the north slope.
     put("cube", cx + w / 2.0 - 6.0, cy + 3.0, WALL_H + rise * 0.5 + 6.0, 4.0, 4.0, 12.0,
-        material("stone", a=(120, 116, 124), b=(88, 84, 94), grout=(56, 52, 62), scale=0.5))
+        material("stone", a=(120, 116, 124), b=(88, 84, 94), grout=(56, 52, 62), scale=0.08))
 
 
 # ------------------------------------------------------------------ the map
