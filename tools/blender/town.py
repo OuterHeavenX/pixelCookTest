@@ -229,6 +229,9 @@ def put(kind, x, y, z, sx, sy, sz, material, rot=None):
     return o
 
 
+FACADES = True   # set per render: False when the camera looks straight down
+
+
 def build_tile(name, colours, tx, ty):
     """One tile of the map, standing up. tx/ty are in tiles; the scene is in
     game pixels, with +x east, +y north and z up."""
@@ -297,9 +300,12 @@ def build_tile(name, colours, tx, ty):
         put("cube", x, y, h - 3.0, PPT, 7.0, 4.5, mat(name + "_cap", rgb, shade=1.08))
         return
 
-    if h <= 0:
-        # Ground, and water a little below it.
-        put("cube", x, y, h / 2.0 - 0.5, PPT, PPT, 1.0 + abs(h), top)
+    if h < 0:
+        # Water: a thin slab sunk to its depth, the banks' sides showing above.
+        put("cube", x, y, h - 0.5, PPT, PPT, 1.0, top)
+        return
+    if h == 0:
+        put("cube", x, y, -0.5, PPT, PPT, 1.0, top)
         return
     # One block, the tile's own art on every face. It used to be two: a body
     # and a thin cap for the top, and the cap sat exactly on the body's top
@@ -307,7 +313,7 @@ def build_tile(name, colours, tx, ty):
     # wall in the town came out solid black - not the material, not the light,
     # not the roof above it, all of which got blamed first.
     o = put("cube", x, y, h / 2.0, PPT, PPT, h, top)
-    if name in WALLS:
+    if name in WALLS and FACADES:
         # A wall's art belongs on the face you look at, not on top of it: a
         # window drawn on the top of a block is a skylight. The top gets slate.
         o.data.materials.append(mat(name + "_top", (78, 82, 92), rough=0.9, shade=1.0))
@@ -549,7 +555,9 @@ def haze(rx, ry, rw, rh, density):
 
 def render(map_id, rx, ry, rw, rh, style_name, out_path, samples):
     style = STYLES[style_name]
-    build(map_id, rx, ry, rw, rh, houses_too=style["pitch"] < 89.0)
+    global FACADES
+    FACADES = style["pitch"] < 89.0
+    build(map_id, rx, ry, rw, rh, houses_too=FACADES)
     light(style)
     haze(rx, ry, rw, rh, style["haze"])
     scene = bpy.context.scene
