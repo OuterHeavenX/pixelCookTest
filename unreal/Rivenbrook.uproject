@@ -1,0 +1,12 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.5",
+	"Category": "",
+	"Description": "Rivenbrook - a tale of the Thornwilds. The third runtime.",
+	"Plugins": [
+		{
+			"Name": "Rivenbrook",
+			"Enabled": true
+		}
+	]
+}

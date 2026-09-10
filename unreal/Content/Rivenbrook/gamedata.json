@@ -1,0 +1,2331 @@
+{
+ "bosses": {
+  "chieftain": {
+   "banner": "The Ogre Chieftain blocks your path!",
+   "challenge": [
+    "The Ogre Chieftain hauls itself off the bier at the barrow's bottom.",
+    "There will be no fleeing from this one. Stand and fight?"
+   ],
+   "ending": "one",
+   "enemy": "ogre",
+   "flag": "bossDown",
+   "name": "Ogre Chieftain",
+   "returns": "town",
+   "sets": [
+    "sealBroken"
+   ],
+   "sprite": "e_ogre",
+   "victory": [
+    "The chieftain falls, and the barrow goes very quiet.",
+    "Beneath the bier, something answers. A seam of light opens in the floor.",
+    "The stone had a ward carved into it. It is cracked now."
+   ]
+  },
+  "drowned": {
+   "banner": "The Drowned Warden rises from the ward!",
+   "challenge": [
+    "The water above the ward turns over, and something stands up out of it.",
+    "It has been cutting the other side of these letters for four hundred years.",
+    "There is nowhere to run to down here. Stand and fight?"
+   ],
+   "ending": "two",
+   "enemy": "warden",
+   "flag": "wardenDown",
+   "name": "Drowned Warden",
+   "returns": "hollow",
+   "sets": [
+    "mereOpen"
+   ],
+   "sprite": "e_warden",
+   "victory": [
+    "The Warden comes apart, and the cutting stops.",
+    "For the first time in eleven years the ward is quiet.",
+    "Above you, very faintly, the lamps of Hollowmere go out one by one."
+   ]
+  }
+ },
+ "chest_loot": {
+  "barrow1:30,16": {
+   "item": "hipotion",
+   "n": 2
+  },
+  "barrow1:33,6": {
+   "flag": "barrowKey",
+   "text": "A heavy iron key, green with age."
+  },
+  "barrow1:6,6": {
+   "gear": "guard_charm"
+  },
+  "barrow2:19,4": {
+   "gear": "flame_brand"
+  },
+  "barrow2:32,22": {
+   "gil": 600
+  },
+  "barrow2:4,6": {
+   "gear": "knight_plate"
+  },
+  "inn:11,2": {
+   "gil": 120
+  },
+  "mere1:34,6": {
+   "item": "hipotion",
+   "n": 3
+  },
+  "mere1:6,6": {
+   "gear": "lantern_stone"
+  },
+  "mere2:28,5": {
+   "gil": 900
+  },
+  "mere2:7,5": {
+   "gear": "keeper_coat"
+  },
+  "town:35,24": {
+   "item": "ether",
+   "n": 1
+  },
+  "town:4,5": {
+   "item": "potion",
+   "n": 2
+  },
+  "wild:13,36": {
+   "gil": 220
+  },
+  "wild:43,39": {
+   "item": "hipotion",
+   "n": 2
+  },
+  "wild:51,5": {
+   "item": "potion",
+   "n": 3
+  },
+  "wild:6,12": {
+   "gear": "copper_ring"
+  }
+ },
+ "classes": {
+  "aldric": {
+   "base": {
+    "atk": 16,
+    "def": 12,
+    "hp": 130,
+    "mag": 4,
+    "mp": 0,
+    "spd": 9
+   },
+   "grow": {
+    "atk": 3.1,
+    "def": 2.4,
+    "hp": 22,
+    "mag": 0.5,
+    "mp": 0,
+    "spd": 0.8
+   },
+   "name": "Aldric",
+   "skill": null,
+   "spells": [],
+   "sprite": "aldric",
+   "title": "Knight"
+  },
+  "bram": {
+   "base": {
+    "atk": 15,
+    "def": 16,
+    "hp": 158,
+    "mag": 3,
+    "mp": 0,
+    "spd": 7
+   },
+   "grow": {
+    "atk": 2.8,
+    "def": 3.0,
+    "hp": 27,
+    "mag": 0.3,
+    "mp": 0,
+    "spd": 0.6
+   },
+   "name": "Bram",
+   "skill": null,
+   "spells": [],
+   "sprite": "bram",
+   "title": "Shieldman"
+  },
+  "lyra": {
+   "base": {
+    "atk": 8,
+    "def": 6,
+    "hp": 74,
+    "mag": 17,
+    "mp": 34,
+    "spd": 11
+   },
+   "grow": {
+    "atk": 1.1,
+    "def": 1.2,
+    "hp": 12,
+    "mag": 3.4,
+    "mp": 7,
+    "spd": 1.1
+   },
+   "name": "Lyra",
+   "spells": [
+    {
+     "id": "fire",
+     "lv": 1
+    },
+    {
+     "id": "ice",
+     "lv": 1
+    },
+    {
+     "id": "bolt",
+     "lv": 3
+    },
+    {
+     "id": "quake",
+     "lv": 6
+    },
+    {
+     "id": "flare",
+     "lv": 9
+    }
+   ],
+   "sprite": "lyra",
+   "title": "Black Mage"
+  },
+  "mira": {
+   "base": {
+    "atk": 9,
+    "def": 8,
+    "hp": 88,
+    "mag": 15,
+    "mp": 30,
+    "spd": 10
+   },
+   "grow": {
+    "atk": 1.3,
+    "def": 1.6,
+    "hp": 15,
+    "mag": 3,
+    "mp": 6,
+    "spd": 1
+   },
+   "name": "Mira",
+   "spells": [
+    {
+     "id": "cure",
+     "lv": 1
+    },
+    {
+     "id": "cura",
+     "lv": 4
+    },
+    {
+     "id": "vigil",
+     "lv": 6
+    },
+    {
+     "id": "life",
+     "lv": 5
+    },
+    {
+     "id": "holy",
+     "lv": 8
+    }
+   ],
+   "sprite": "mira",
+   "title": "White Mage"
+  },
+  "sera": {
+   "base": {
+    "atk": 11,
+    "def": 11,
+    "hp": 96,
+    "mag": 14,
+    "mp": 26,
+    "spd": 12
+   },
+   "grow": {
+    "atk": 1.4,
+    "def": 2.0,
+    "hp": 16,
+    "mag": 2.8,
+    "mp": 6,
+    "spd": 1.2
+   },
+   "name": "Sera",
+   "spells": [
+    {
+     "id": "ward",
+     "lv": 1
+    },
+    {
+     "id": "cure",
+     "lv": 1
+    },
+    {
+     "id": "holy",
+     "lv": 4
+    },
+    {
+     "id": "vigil",
+     "lv": 7
+    }
+   ],
+   "sprite": "sera",
+   "title": "Sealkeeper"
+  }
+ },
+ "encounters": {
+  "barrow": [
+   {
+    "group": [
+     "skeleton"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "bat",
+     "bat",
+     "bat"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "skeleton",
+     "skeleton"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "wight"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "skeleton",
+     "wolf"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "wisp",
+     "wisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "wight",
+     "skeleton"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "bandit",
+     "skeleton"
+    ],
+    "w": 5
+   }
+  ],
+  "mere": [
+   {
+    "group": [
+     "drownkeep"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "coldwisp"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "mereling",
+     "mereling"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "drownkeep",
+     "mereling"
+    ],
+    "w": 14
+   },
+   {
+    "group": [
+     "coldwisp",
+     "coldwisp"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "drownkeep",
+     "drownkeep"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "lampwraith",
+     "coldwisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "drownkeep",
+     "lampwraith",
+     "mereling"
+    ],
+    "w": 6
+   }
+  ],
+  "shore": [
+   {
+    "group": [
+     "rimewolf"
+    ],
+    "w": 24
+   },
+   {
+    "group": [
+     "mereling"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "rimewolf",
+     "rimewolf"
+    ],
+    "w": 16
+   },
+   {
+    "group": [
+     "bat",
+     "bat",
+     "rimewolf"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "lampwraith"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "mereling",
+     "mereling"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "lampwraith",
+     "rimewolf"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "wight",
+     "mereling"
+    ],
+    "w": 5
+   }
+  ],
+  "wild": [
+   {
+    "group": [
+     "slime"
+    ],
+    "w": 26
+   },
+   {
+    "group": [
+     "bat",
+     "bat"
+    ],
+    "w": 20
+   },
+   {
+    "group": [
+     "goblin"
+    ],
+    "w": 18
+   },
+   {
+    "group": [
+     "slime",
+     "slime",
+     "bat"
+    ],
+    "w": 14
+   },
+   {
+    "group": [
+     "wolf"
+    ],
+    "w": 12
+   },
+   {
+    "group": [
+     "goblin",
+     "goblin"
+    ],
+    "w": 10
+   },
+   {
+    "group": [
+     "wisp"
+    ],
+    "w": 8
+   },
+   {
+    "group": [
+     "wolf",
+     "goblin"
+    ],
+    "w": 7
+   },
+   {
+    "group": [
+     "bandit"
+    ],
+    "w": 5
+   },
+   {
+    "group": [
+     "wisp",
+     "bat",
+     "bat"
+    ],
+    "w": 4
+   }
+  ]
+ },
+ "endings": {
+  "one": {
+   "beats": [
+    {
+     "lines": [
+      "The Chieftain was not the barrow's tenant.",
+      "He was its warden. Something older set him",
+      "on that bier and told him to sit, and he sat",
+      "for four hundred years."
+     ],
+     "scene": "barrow"
+    },
+    {
+     "lines": [
+      "Cold comes up through the crack in the ward.",
+      "Not the cold of a cellar. The cold of",
+      "somewhere with no season.",
+      "Far below, something turns over and settles."
+     ],
+     "scene": "rift"
+    },
+    {
+     "lines": [
+      "You walk back into Rivenbrook at dawn.",
+      "The lanterns are still lit. The gate is",
+      "still standing. Elder Halvard meets you at",
+      "the well and does not ask what you saw."
+     ],
+     "scene": "town"
+    },
+    {
+     "lines": [
+      "For tonight the Thornwilds are quiet,",
+      "and that is enough.",
+      "The seal will hold a while yet.",
+      "A while."
+     ],
+     "scene": "town"
+    }
+   ],
+   "credits": [
+    "RIVENBROOK",
+    "A Tale of the Thornwilds",
+    "",
+    "Every sprite cooked by spritecook",
+    "Backdrops and monsters modelled in Blender",
+    "Maps painted by mapcook, rules by datacook",
+    "Played in a browser and in Godot 4",
+    "",
+    "Chapter Two: THE COLD BELOW",
+    "coming up out of the floor"
+   ],
+   "hook": "Your journal is saved. The rift is still open.",
+   "subtitle": "THE WARDEN OF THE BARROW",
+   "title": "CHAPTER ONE"
+  },
+  "two": {
+   "beats": [
+    {
+     "lines": [
+      "The ward under the mere is one half",
+      "of a sentence. The other half was cut",
+      "under a barrow four hundred miles south,",
+      "and you broke that one in the spring."
+     ],
+     "scene": "mere"
+    },
+    {
+     "lines": [
+      "Kestrel Vail climbs the keepers' stair",
+      "for the first time in eleven years.",
+      "She does not say a great deal. She holds",
+      "her daughter's hand the whole way up."
+     ],
+     "scene": "mere"
+    },
+    {
+     "lines": [
+      "You come up into Hollowmere at noon,",
+      "and Hollowmere is dark. Every lantern.",
+      "The whole town, out, in daylight, at once,",
+      "and nobody put them out."
+     ],
+     "scene": "hollow"
+    },
+    {
+     "lines": [
+      "The mere is open water. In midwinter.",
+      "Steaming.",
+      "\"They only ever burned to keep it down,\"",
+      "Kestrel says. \"It is not down.\""
+     ],
+     "scene": "hollow"
+    },
+    {
+     "lines": [
+      "South, the Mere Road runs into the dark.",
+      "Every lamp along it is out, the whole way",
+      "to the bridge. Bram is out there with a",
+      "taper, wondering why."
+     ],
+     "scene": "road"
+    }
+   ],
+   "credits": [
+    "RIVENBROOK",
+    "A Tale of the Thornwilds",
+    "",
+    "Hollowmere, the Mere Road and the ward below",
+    "Monsters modelled in Blender, tiles cooked in Python",
+    "One set of rules, two engines, no drift",
+    "",
+    "Chapter Three: WHAT THE LAMPS WERE FOR",
+    "and who has been lighting them"
+   ],
+   "hook": "The road south is dark. Somebody should tell him.",
+   "subtitle": "THE COLD BELOW",
+   "title": "CHAPTER TWO"
+  }
+ },
+ "enemies": {
+  "bandit": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 70
+    },
+    {
+     "act": "steal",
+     "w": 30
+    }
+   ],
+   "atk": 22,
+   "def": 12,
+   "exp": 30,
+   "gil": 45,
+   "height": 32,
+   "hp": 92,
+   "mag": 6,
+   "name": "Road Bandit",
+   "spd": 12,
+   "sprite": "e_bandit"
+  },
+  "bat": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 80
+    },
+    {
+     "act": "drain",
+     "w": 20
+    }
+   ],
+   "atk": 12,
+   "def": 4,
+   "exp": 9,
+   "gil": 9,
+   "height": 20,
+   "hp": 26,
+   "mag": 5,
+   "name": "Cave Bat",
+   "spd": 15,
+   "sprite": "e_bat",
+   "weak": "fire"
+  },
+  "coldwisp": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 30
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 45
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 22,
+   "def": 12,
+   "exp": 58,
+   "gil": 44,
+   "height": 24,
+   "hp": 116,
+   "mag": 34,
+   "name": "Cold Lamp",
+   "spd": 22,
+   "sprite": "e_wisp_ice",
+   "weak": "fire"
+  },
+  "drownkeep": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 25
+    },
+    {
+     "act": "defend",
+     "w": 20
+    }
+   ],
+   "atk": 30,
+   "def": 20,
+   "exp": 62,
+   "gil": 58,
+   "height": 30,
+   "hp": 148,
+   "mag": 14,
+   "name": "Drowned Keeper",
+   "spd": 14,
+   "sprite": "e_skeleton_ice",
+   "weak": "fire"
+  },
+  "goblin": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 85
+    },
+    {
+     "act": "rally",
+     "w": 15
+    }
+   ],
+   "atk": 15,
+   "def": 9,
+   "exp": 14,
+   "gil": 16,
+   "height": 30,
+   "hp": 52,
+   "mag": 4,
+   "name": "Goblin",
+   "spd": 9,
+   "sprite": "e_goblin"
+  },
+  "lampwraith": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 35
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 40
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 24,
+   "def": 15,
+   "exp": 52,
+   "gil": 46,
+   "height": 30,
+   "hp": 132,
+   "mag": 24,
+   "name": "Lamp Wraith",
+   "spd": 15,
+   "sprite": "e_wight_ice",
+   "weak": "holy"
+  },
+  "mereling": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 45
+    }
+   ],
+   "atk": 21,
+   "def": 19,
+   "exp": 40,
+   "gil": 34,
+   "height": 26,
+   "hp": 120,
+   "mag": 16,
+   "name": "Mereling",
+   "spd": 9,
+   "sprite": "e_slime_ice",
+   "weak": "bolt"
+  },
+  "ogre": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 55
+    },
+    {
+     "act": "smash",
+     "w": 25
+    },
+    {
+     "act": "spell",
+     "spell": "quake",
+     "w": 20
+    }
+   ],
+   "atk": 30,
+   "boss": true,
+   "def": 16,
+   "exp": 260,
+   "gil": 500,
+   "height": 76,
+   "hp": 520,
+   "mag": 12,
+   "name": "Ogre Chieftain",
+   "spd": 10,
+   "sprite": "e_ogre",
+   "weak": "ice"
+  },
+  "rimewolf": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 60
+    },
+    {
+     "act": "pounce",
+     "w": 40
+    }
+   ],
+   "atk": 27,
+   "def": 14,
+   "exp": 38,
+   "gil": 30,
+   "height": 26,
+   "hp": 104,
+   "mag": 6,
+   "name": "Rimewolf",
+   "spd": 18,
+   "sprite": "e_wolf_ice",
+   "weak": "fire"
+  },
+  "skeleton": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 75
+    },
+    {
+     "act": "rally",
+     "w": 25
+    }
+   ],
+   "atk": 22,
+   "def": 16,
+   "exp": 26,
+   "gil": 22,
+   "height": 30,
+   "hp": 78,
+   "mag": 4,
+   "name": "Barrow Guard",
+   "spd": 10,
+   "sprite": "e_skeleton",
+   "weak": "quake"
+  },
+  "slime": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 100
+    }
+   ],
+   "atk": 10,
+   "def": 6,
+   "exp": 8,
+   "gil": 7,
+   "height": 22,
+   "hp": 34,
+   "mag": 4,
+   "name": "Bog Slime",
+   "spd": 5,
+   "sprite": "e_slime",
+   "weak": "bolt"
+  },
+  "warden": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 45
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 25
+    },
+    {
+     "act": "smash",
+     "w": 18
+    },
+    {
+     "act": "drain",
+     "w": 12
+    }
+   ],
+   "atk": 44,
+   "boss": true,
+   "def": 24,
+   "exp": 620,
+   "gil": 1200,
+   "height": 74,
+   "hp": 940,
+   "mag": 34,
+   "name": "Drowned Warden",
+   "spd": 16,
+   "sprite": "e_warden",
+   "weak": "fire"
+  },
+  "wight": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 40
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 35
+    },
+    {
+     "act": "drain",
+     "w": 25
+    }
+   ],
+   "atk": 20,
+   "def": 13,
+   "exp": 34,
+   "gil": 30,
+   "height": 34,
+   "hp": 96,
+   "mag": 19,
+   "name": "Barrow Wight",
+   "spd": 13,
+   "sprite": "e_wight",
+   "weak": "fire"
+  },
+  "wisp": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 45
+    },
+    {
+     "act": "spell",
+     "spell": "fire",
+     "w": 55
+    }
+   ],
+   "atk": 11,
+   "def": 8,
+   "exp": 22,
+   "gil": 24,
+   "height": 24,
+   "hp": 58,
+   "mag": 18,
+   "name": "Marsh Wisp",
+   "spd": 12,
+   "sprite": "e_wisp",
+   "weak": "holy"
+  },
+  "wolf": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 70
+    },
+    {
+     "act": "pounce",
+     "w": 30
+    }
+   ],
+   "atk": 19,
+   "def": 10,
+   "exp": 20,
+   "gil": 18,
+   "height": 24,
+   "hp": 68,
+   "mag": 4,
+   "name": "Direwolf",
+   "spd": 14,
+   "sprite": "e_wolf",
+   "weak": "fire"
+  }
+ },
+ "gear": {
+  "bronze_sword": {
+   "desc": "A recruit's blade. Honest, blunt.",
+   "icon": "i_sword",
+   "name": "Bronze Sword",
+   "price": 120,
+   "slot": "weapon",
+   "stats": {
+    "atk": 6
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "chain_mail": {
+   "desc": "Turns a blade. Slows a step.",
+   "icon": "i_armor",
+   "name": "Chain Mail",
+   "price": 420,
+   "slot": "armour",
+   "stats": {
+    "def": 12,
+    "spd": -1
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "copper_ring": {
+   "desc": "Warm against the skin.",
+   "icon": "i_ring",
+   "name": "Copper Ring",
+   "price": 150,
+   "slot": "trinket",
+   "stats": {
+    "hp": 24
+   },
+   "users": null
+  },
+  "flame_brand": {
+   "desc": "Its edge burns. Ice hates it.",
+   "element": "fire",
+   "icon": "i_sword",
+   "name": "Flame Brand",
+   "price": 1400,
+   "slot": "weapon",
+   "stats": {
+    "atk": 26
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "frost_pike": {
+   "desc": "Cold to carry. Colder to be hit by.",
+   "element": "ice",
+   "icon": "i_sword",
+   "name": "Frost Pike",
+   "price": 1500,
+   "slot": "weapon",
+   "stats": {
+    "atk": 29,
+    "def": 3
+   },
+   "users": [
+    "bram"
+   ]
+  },
+  "furs": {
+   "desc": "Warm. That is the entire argument.",
+   "icon": "i_armor",
+   "name": "Thick Furs",
+   "price": 300,
+   "slot": "armour",
+   "stats": {
+    "def": 8,
+    "spd": -1
+   },
+   "users": null
+  },
+  "guard_charm": {
+   "desc": "Someone wanted you to come home.",
+   "icon": "i_ring",
+   "name": "Guard Charm",
+   "price": 700,
+   "slot": "trinket",
+   "stats": {
+    "def": 7,
+    "hp": 30
+   },
+   "users": null
+  },
+  "ice_charm": {
+   "desc": "Cold to hold, and it keeps the cold out.",
+   "icon": "i_ring",
+   "name": "Rime Charm",
+   "price": 560,
+   "slot": "trinket",
+   "stats": {
+    "def": 5,
+    "mag": 5
+   },
+   "users": null
+  },
+  "iron_halberd": {
+   "desc": "Long enough to keep trouble at arm's length.",
+   "icon": "i_sword",
+   "name": "Iron Halberd",
+   "price": 620,
+   "slot": "weapon",
+   "stats": {
+    "atk": 18,
+    "def": 2
+   },
+   "users": [
+    "bram"
+   ]
+  },
+  "iron_sword": {
+   "desc": "Heavier, and it tells.",
+   "icon": "i_sword",
+   "name": "Iron Sword",
+   "price": 480,
+   "slot": "weapon",
+   "stats": {
+    "atk": 15
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "keeper_coat": {
+   "desc": "Waxed against water that is colder than water.",
+   "icon": "i_armor",
+   "name": "Keeper's Coat",
+   "price": 0,
+   "slot": "armour",
+   "stats": {
+    "def": 22,
+    "hp": 40,
+    "mag": 8
+   },
+   "users": null
+  },
+  "knight_plate": {
+   "desc": "A wall you can walk in.",
+   "icon": "i_armor",
+   "name": "Knight Plate",
+   "price": 1200,
+   "slot": "armour",
+   "stats": {
+    "def": 21,
+    "spd": -2
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "lake_mail": {
+   "desc": "Scales cut from something that lived in the mere.",
+   "icon": "i_armor",
+   "name": "Lake Mail",
+   "price": 780,
+   "slot": "armour",
+   "stats": {
+    "def": 16
+   },
+   "users": [
+    "aldric",
+    "bram"
+   ]
+  },
+  "lamp_key": {
+   "desc": "Her mother's. It still turns the ones on the bridge.",
+   "icon": "i_ring",
+   "name": "Sera's Lamp Key",
+   "price": 0,
+   "slot": "trinket",
+   "stats": {
+    "def": 4,
+    "hp": 20,
+    "mag": 4
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "lantern_stone": {
+   "desc": "Hollowmere keeps its lamps lit with these.",
+   "icon": "i_ring",
+   "name": "Lantern Stone",
+   "price": 820,
+   "slot": "trinket",
+   "stats": {
+    "mag": 4,
+    "mp": 22
+   },
+   "users": null
+  },
+  "leather_vest": {
+   "desc": "Better than a shirt.",
+   "icon": "i_armor",
+   "name": "Leather Vest",
+   "price": 90,
+   "slot": "armour",
+   "stats": {
+    "def": 4
+   },
+   "users": null
+  },
+  "mere_wand": {
+   "desc": "Lake-glass, still cold from the water.",
+   "icon": "i_staff",
+   "name": "Mere Wand",
+   "price": 900,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 17
+   },
+   "users": [
+    "lyra",
+    "sera"
+   ]
+  },
+  "moon_rod": {
+   "desc": "Cold to hold. Sharpens a spell.",
+   "icon": "i_staff",
+   "name": "Moon Rod",
+   "price": 520,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 12
+   },
+   "users": [
+    "lyra"
+   ]
+  },
+  "oak_staff": {
+   "desc": "Plain wood, patiently carved.",
+   "icon": "i_staff",
+   "name": "Oak Staff",
+   "price": 100,
+   "slot": "weapon",
+   "stats": {
+    "atk": 2,
+    "mag": 4
+   },
+   "users": [
+    "lyra",
+    "mira"
+   ]
+  },
+  "rimeblade": {
+   "desc": "The edge frosts over as you draw it.",
+   "element": "ice",
+   "icon": "i_sword",
+   "name": "Rimeblade",
+   "price": 1150,
+   "slot": "weapon",
+   "stats": {
+    "atk": 22
+   },
+   "users": [
+    "aldric"
+   ]
+  },
+  "sage_cane": {
+   "desc": "Carried by healers who walk far.",
+   "icon": "i_staff",
+   "name": "Sage Cane",
+   "price": 560,
+   "slot": "weapon",
+   "stats": {
+    "atk": 3,
+    "mag": 9,
+    "mp": 10
+   },
+   "users": [
+    "mira"
+   ]
+  },
+  "sage_pendant": {
+   "desc": "Holds a little more of the well.",
+   "icon": "i_ring",
+   "name": "Sage Pendant",
+   "price": 300,
+   "slot": "trinket",
+   "stats": {
+    "mp": 14
+   },
+   "users": null
+  },
+  "silk_robe": {
+   "desc": "Woven to carry a spell cleanly.",
+   "icon": "i_armor",
+   "name": "Silk Robe",
+   "price": 380,
+   "slot": "armour",
+   "stats": {
+    "def": 6,
+    "mag": 3
+   },
+   "users": [
+    "lyra",
+    "mira"
+   ]
+  },
+  "swift_boots": {
+   "desc": "The gauge fills that bit faster.",
+   "icon": "i_ring",
+   "name": "Swift Boots",
+   "price": 450,
+   "slot": "trinket",
+   "stats": {
+    "spd": 5
+   },
+   "users": null
+  },
+  "warden_coat": {
+   "desc": "Lined, hooded, and older than anyone wearing it.",
+   "icon": "i_armor",
+   "name": "Warden Coat",
+   "price": 720,
+   "slot": "armour",
+   "stats": {
+    "def": 11,
+    "mag": 4
+   },
+   "users": [
+    "lyra",
+    "mira",
+    "sera"
+   ]
+  },
+  "warden_staff": {
+   "desc": "Hollowmere work. The head is a seal, not an ornament.",
+   "icon": "i_staff",
+   "name": "Warden Staff",
+   "price": 640,
+   "slot": "weapon",
+   "stats": {
+    "atk": 4,
+    "def": 3,
+    "mag": 11
+   },
+   "users": [
+    "sera"
+   ]
+  }
+ },
+ "gear_slots": [
+  {
+   "id": "weapon",
+   "label": "Weapon"
+  },
+  {
+   "id": "armour",
+   "label": "Armour"
+  },
+  {
+   "id": "trinket",
+   "label": "Trinket"
+  }
+ ],
+ "gear_stock": {
+  "amber": [
+   "bronze_sword",
+   "iron_sword",
+   "oak_staff",
+   "moon_rod",
+   "sage_cane",
+   "leather_vest",
+   "chain_mail",
+   "silk_robe",
+   "copper_ring",
+   "sage_pendant",
+   "swift_boots"
+  ],
+  "hollow": [
+   "iron_halberd",
+   "warden_staff",
+   "mere_wand",
+   "rimeblade",
+   "lake_mail",
+   "warden_coat",
+   "furs",
+   "ice_charm",
+   "lantern_stone",
+   "swift_boots"
+  ]
+ },
+ "inn_cost": 50,
+ "items": {
+  "bomb": {
+   "desc": "Hurls fire at one foe.",
+   "icon": "i_phoenix",
+   "kind": "damage",
+   "name": "Fire Bomb",
+   "power": 90,
+   "price": 120
+  },
+  "ether": {
+   "desc": "Restores 40 MP.",
+   "icon": "i_ether",
+   "kind": "mp",
+   "name": "Ether",
+   "power": 40,
+   "price": 200
+  },
+  "hipotion": {
+   "desc": "Restores 250 HP.",
+   "icon": "i_potion",
+   "kind": "heal",
+   "name": "Hi-Potion",
+   "power": 250,
+   "price": 150
+  },
+  "phoenix": {
+   "desc": "Revives a fallen ally.",
+   "icon": "i_phoenix",
+   "kind": "revive",
+   "name": "Phoenix Down",
+   "power": 0.4,
+   "price": 260
+  },
+  "potion": {
+   "desc": "Restores 70 HP.",
+   "icon": "i_potion",
+   "kind": "heal",
+   "name": "Potion",
+   "power": 70,
+   "price": 40
+  }
+ },
+ "legend": {
+  "\"": [
+   "t_tallgrass",
+   0
+  ],
+  "#": [
+   "t_cryptwall",
+   1
+  ],
+  "$": [
+   "t_ward",
+   0,
+   "ward"
+  ],
+  "%": [
+   "t_seal",
+   0,
+   "seal"
+  ],
+  "&": [
+   "t_drowned",
+   0
+  ],
+  "(": [
+   "t_lampsunk",
+   1,
+   "lamp"
+  ],
+  "*": [
+   "t_flowers",
+   0
+  ],
+  ",": [
+   "t_grass2",
+   0
+  ],
+  "-": [
+   "t_path",
+   0
+  ],
+  ".": [
+   "t_grass",
+   0
+  ],
+  "/": [
+   "t_path",
+   0,
+   "pass"
+  ],
+  "1": [
+   "t_bedtop",
+   1,
+   "bed"
+  ],
+  "2": [
+   "t_bedbot",
+   1,
+   "bed"
+  ],
+  "<": [
+   "t_stairup",
+   0,
+   "stair"
+  ],
+  "=": [
+   "t_cobble",
+   0
+  ],
+  ">": [
+   "t_stairdown",
+   0,
+   "stair"
+  ],
+  "@": [
+   "t_drownwall",
+   1
+  ],
+  "A": [
+   "t_barrel",
+   1
+  ],
+  "B": [
+   "t_bridge",
+   0
+  ],
+  "D": [
+   "t_door",
+   0,
+   "door"
+  ],
+  "F": [
+   "t_plank",
+   0
+  ],
+  "G": [
+   "t_window",
+   1
+  ],
+  "H": [
+   "t_shelf",
+   1
+  ],
+  "I": [
+   "t_ice",
+   1,
+   "water"
+  ],
+  "K": [
+   "t_counter",
+   1
+  ],
+  "L": [
+   "t_lantern",
+   1,
+   "lamp"
+  ],
+  "M": [
+   "t_mountain",
+   1
+  ],
+  "P": [
+   "t_palewall",
+   1
+  ],
+  "Q": [
+   "t_blueroof",
+   1
+  ],
+  "R": [
+   "t_roof",
+   1
+  ],
+  "T": [
+   "t_tree",
+   1
+  ],
+  "U": [
+   "t_rug",
+   0
+  ],
+  "V": [
+   "t_palewindow",
+   1
+  ],
+  "W": [
+   "t_wall",
+   1
+  ],
+  "^": [
+   "t_rooftop",
+   1
+  ],
+  "_": [
+   "t_crypt",
+   0
+  ],
+  "b": [
+   "t_bush",
+   1
+  ],
+  "c": [
+   "t_chest",
+   1,
+   "chest"
+  ],
+  "f": [
+   "t_fence",
+   1
+  ],
+  "g": [
+   "t_gate",
+   1,
+   "gate"
+  ],
+  "h": [
+   "t_hatch",
+   1,
+   "hatch"
+  ],
+  "i": [
+   "t_brazier",
+   1
+  ],
+  "j": [
+   "t_bones",
+   0
+  ],
+  "l": [
+   "t_lamp",
+   1,
+   "lamp"
+  ],
+  "n": [
+   "t_snow",
+   0
+  ],
+  "o": [
+   "t_well",
+   1,
+   "well"
+  ],
+  "p": [
+   "t_pinesnow",
+   1
+  ],
+  "r": [
+   "t_rock",
+   1
+  ],
+  "s": [
+   "t_sign",
+   1,
+   "sign"
+  ],
+  "x": [
+   "t_sand",
+   0
+  ],
+  "~": [
+   "t_water0",
+   1,
+   "water"
+  ]
+ },
+ "locks": {
+  "gate": {
+   "flag": "barrowKey",
+   "open": [
+    "The iron gate stands open. The stair falls away below."
+   ],
+   "shut": [
+    "An iron gate, barred and locked.",
+    "The lock is old, and it is not going to give."
+   ]
+  },
+  "hatch": {
+   "flag": "mereOpened",
+   "open": [
+    "The keepers' hatch stands open. Cold comes up out of it."
+   ],
+   "shut": [
+    "Planks and iron, set flush into the shore.",
+    "There is no handle on this side. It opens for keepers."
+   ]
+  },
+  "pass": {
+   "flag": "bossDown",
+   "open": [
+    "The west pass. Someone has been keeping the road clear."
+   ],
+   "shut": [
+    "A pass west, choked with thorn and rockfall.",
+    "Nobody has come through here in a long time."
+   ]
+  }
+ },
+ "map_beats": {
+  "hollow": [
+   {
+    "flag": "seraLamp",
+    "gives": "lamp_key",
+    "lines": [
+     "Hold out your hand. No - the other one. You keep that one free. I have been watching.",
+     "It is a lamp key. Every keeper gets one at twelve and loses it by thirty.",
+     "That one was hers. It still turns the ones on the bridge, so do not drop it in the mere.",
+     "{name}. That is the first time I have said your name without the town in front of it."
+    ],
+    "needs": [
+     "seraDusk"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   },
+   {
+    "flag": "seraKeptTwice",
+    "lines": [
+     "You asked me what I promised. Out on the road, before I told you to ask later.",
+     "Not to let one go out. That is all it is. Nobody ever said why.",
+     "I have added you to it. You do not get a say in that.",
+     "Now stop looking at me like that and go and buy a coat."
+    ],
+    "needs": [
+     "seraClose"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   },
+   {
+    "absent": [
+     "seraClose"
+    ],
+    "flag": "seraKeptQuiet",
+    "lines": [
+     "You never asked me again. Out on the road. What I promised.",
+     "Good. Keep it that way until this is finished.",
+     "Then ask me, and I will still be here, and I will tell you."
+    ],
+    "needs": [
+     "seraKept"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   },
+   {
+    "flag": "mereOpened",
+    "lines": [
+     "Come down to the shore. Past the lanterns. Right down to the ice.",
+     "There is a hatch under that snow with a keeper's lock on it. It has never been opened by anybody who was not one of us.",
+     "My mother went through it eleven years ago to re-cut the ward.",
+     "The town buried an empty box that winter and told me it was the cold. I was twelve. I believed them for about four years.",
+     "You have her key. I gave it to you and I knew exactly what I was doing.",
+     "Open it."
+    ],
+    "needs": [
+     "seraWater"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   }
+  ],
+  "mere1": [
+   {
+    "flag": "mereLamps",
+    "lines": [
+     "Lanterns. The whole length of it. Every one of them lit.",
+     "Nobody has been down here in eleven years, {name}.",
+     "So somebody has been lighting these."
+    ],
+    "speaker": "Sera"
+   }
+  ],
+  "mere2": [
+   {
+    "flag": "cuttingFloor",
+    "lines": [
+     "The room at the bottom of the keepers' stair is not a tomb.",
+     "It is a workshop. Stone chips underfoot. A whetstone worn into a saddle.",
+     "A tally scratched into the wall in fours, and the fours go on and on and on."
+    ]
+   }
+  ],
+  "shore": [
+   {
+    "flag": "bramHoldsRoad",
+    "leaves": "bram",
+    "lines": [
+     "Hold on. Look at the lamps - every one of them lit, all the way back.",
+     "Somebody walks this road at dusk to do that. Every night. Alone.",
+     "If the road goes dark, Hollowmere goes dark, and then it is just you down there.",
+     "So I am staying up here and keeping them lit. No, do not.",
+     "{name}. I have followed you into one hole in the ground already.",
+     "Let me be useful where you can still find me."
+    ],
+    "needs": [
+     "bossDown"
+    ],
+    "party": [
+     "bram",
+     "sera"
+    ],
+    "speaker": "Bram"
+   },
+   {
+    "flag": "seraDusk",
+    "lines": [
+     "He is going to light every one of them, you know. All the way to the bridge.",
+     "My mother did that. Not the whole road - ours, and the two either side, because the Marrows are old.",
+     "I thought it was a chore. Then she went in the winter, and I went out at dusk anyway.",
+     "That was when I understood it was not a chore. It was a promise.",
+     "Ask me what I promised. No - ask me later. When we know what is under the water."
+    ],
+    "needs": [
+     "bramHoldsRoad"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   },
+   {
+    "choice": {
+     "options": [
+      "Sit with her",
+      "There is no time"
+     ],
+     "replies": [
+      [
+       "She does not say anything else for a long while. Neither do you.",
+       "The lamps take, one after another, all the way down to the bridge.",
+       "\"There,\" she says. \"Now I have kept it twice.\""
+      ],
+      [
+       "\"No,\" she agrees. \"There is not.\"",
+       "She stands, walks on ahead of you, and lights the next one anyway.",
+       "She does not sound angry. Somehow that is worse."
+      ]
+     ],
+     "sets": [
+      "seraClose",
+      "seraKept"
+     ]
+    },
+    "flag": "seraWater",
+    "lines": [
+     "Stop a moment. The ice is talking.",
+     "It does that when it is thinking about breaking. Grandmother said it was the mere clearing its throat.",
+     "We are going down there soon, and one of us is going to say something stupid.",
+     "So it may as well be tonight. Sit with me until the lamps take."
+    ],
+    "needs": [
+     "seraLamp"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   }
+  ]
+ },
+ "npcs": {
+  "hollow": [
+   {
+    "after": [
+     "Say the word and I will go first. That is the job.",
+     "Have you talked to the lamp girl? She knows something."
+    ],
+    "dir": "down",
+    "lines": [
+     "{name}. I heard what came out of that barrow, and I heard who went in.",
+     "Four hundred miles I have not seen you, and you still walk like a recruit.",
+     "They are lighting the lamps at noon here. Noon.",
+     "I am not letting you go down there alone twice. Move over."
+    ],
+    "name": "Bram",
+    "recruit": "bram",
+    "sprite": "bram",
+    "wander": false,
+    "x": 21,
+    "y": 28
+   },
+   {
+    "after": [
+     "I keep the lamps because my mother did, and hers.",
+     "Nobody ever said why. We just never let one go out."
+    ],
+    "dir": "up",
+    "lines": [
+     "Careful. The mere took two dogs and a cart this week.",
+     "It has not frozen in summer since my grandmother was small.",
+     "You are the one from Rivenbrook. You broke the ward.",
+     "No - do not apologise. My family cut that ward. We should have told somebody what it was for.",
+     "I am coming with you. It is my mess as much as yours now."
+    ],
+    "name": "Sera",
+    "recruit": "sera",
+    "sprite": "sera",
+    "wander": false,
+    "x": 20,
+    "y": 9
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Beds are warm. The mere is not. Fifty gil."
+    ],
+    "name": "Keeper Ilse",
+    "service": "inn",
+    "sprite": "merchant",
+    "wander": false,
+    "x": 27,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "lines": [
+     "Cold-country work. It weighs more and it is worth it."
+    ],
+    "name": "Armourer Fenn",
+    "service": "shop",
+    "shelf": "hollow",
+    "sprite": "villager",
+    "wander": false,
+    "x": 21,
+    "y": 24
+   },
+   {
+    "dir": "right",
+    "lines": [
+     "Lamps at noon, lad. Lamps at noon.",
+     "My father said the day we stop is the day it comes up."
+    ],
+    "name": "Old Marrow",
+    "sprite": "elder",
+    "wander": false,
+    "x": 12,
+    "y": 19
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "I skated on the mere once. Once.",
+     "Sera pulled me out and did not even shout."
+    ],
+    "name": "Pip",
+    "sprite": "child",
+    "wander": true,
+    "x": 33,
+    "y": 22
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "We watch the water, not the road. The road never hurt anybody."
+    ],
+    "name": "Watchwoman",
+    "sprite": "guard",
+    "wander": false,
+    "x": 8,
+    "y": 22
+   }
+  ],
+  "inn": [
+   {
+    "after": [
+     "Room is on the house tonight. You have earned the bed.",
+     "Do not tell the others, but I have been leaving a lamp lit facing south."
+    ],
+    "dir": "down",
+    "lines": [
+     "Welcome to the Amber Lantern."
+    ],
+    "name": "Innkeeper Bryn",
+    "service": "inn",
+    "sprite": "merchant",
+    "wander": false,
+    "x": 4,
+    "y": 4
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Potions, ethers, and a bomb or two."
+    ],
+    "name": "Quartermaster",
+    "service": "shop",
+    "shelf": "amber",
+    "sprite": "villager",
+    "wander": false,
+    "x": 6,
+    "y": 6
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "If you press {cancel} you can run! Grown-ups always forget."
+    ],
+    "name": "Nib",
+    "sprite": "child",
+    "wander": true,
+    "x": 12,
+    "y": 9
+   }
+  ],
+  "mere2": [
+   {
+    "after": [
+     "It is quiet. I had forgotten that was a thing rooms did.",
+     "Take my hand, girl. I have not let go of anything in eleven years and I am out of practice."
+    ],
+    "after_flag": "wardenDown",
+    "dir": "left",
+    "lines": [
+     "Do not touch the letters. Whatever else you do down here.",
+     "Eleven years. Forty letters. Cut them and it holds, and then the water takes the edges off them again, and you start at the first one.",
+     "You are Sera. You are grown.",
+     "I know. I know exactly what I did. Say it to me afterwards and I will stand still for it.",
+     "The thing on the other side of these is cutting too. It has been cutting the whole time.",
+     "Kill it, and I can stop."
+    ],
+    "name": "Kestrel Vail",
+    "sprite": "sera",
+    "wander": false,
+    "x": 20,
+    "y": 6
+   }
+  ],
+  "town": [
+   {
+    "after": [
+     "You came back. Sit down, {name}. You look like the barrow looked at you.",
+     "The scouts found the shrine sign re-cut. Fresh chisel marks, this week.",
+     "Somebody is still tending that seal. It is not us."
+    ],
+    "dir": "down",
+    "lines": [
+     "Rivenbrook has stood a hundred years, {name}.",
+     "But something stirs in the Thornwilds. A chieftain, the scouts say.",
+     "Take the south gate. And take care."
+    ],
+    "name": "Elder Halvard",
+    "sprite": "elder",
+    "wander": false,
+    "x": 20,
+    "y": 17
+   },
+   {
+    "after": [
+     "Carrots this spring, maybe. The fence held.",
+     "Ground has gone cold at the south end, mind. Nothing takes root there."
+    ],
+    "dir": "right",
+    "lines": [
+     "These beds were carrots last spring.",
+     "Now? Weeds and worry. Nothing grows with monsters at the fence."
+    ],
+    "name": "Gardener Pell",
+    "sprite": "villager",
+    "wander": true,
+    "x": 16,
+    "y": 21
+   },
+   {
+    "after": [
+     "Did you SEE it? Was it big? Was it bigger than the mill?",
+     "Ma says stay off the south road. Ma says a lot of things."
+    ],
+    "dir": "left",
+    "lines": [
+     "I saw a wolf as big as a cart!",
+     "Mum says I made it up. I did not."
+    ],
+    "name": "Tam",
+    "sprite": "child",
+    "wander": true,
+    "x": 24,
+    "y": 14
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Beyond the gate is the Thornwilds. Fight or flee, but never dawdle.",
+     "Press {menu} any time to open your journal."
+    ],
+    "name": "Gate Guard",
+    "sprite": "guard",
+    "wander": false,
+    "x": 19,
+    "y": 26
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "The Amber Lantern keeps a bed and a stocked shelf.",
+     "Rest before you go. Only a fool walks the wilds tired."
+    ],
+    "name": "Gate Guard",
+    "sprite": "guard",
+    "wander": false,
+    "x": 21,
+    "y": 26
+   },
+   {
+    "after": [
+     "Bring me the chieftain's plate and I will make you something out of it.",
+     "Whatever cracked in that barrow, you will want better steel than this."
+    ],
+    "dir": "down",
+    "lines": [
+     "Steel I can give you. Courage you bring yourself.",
+     "Lyra's fire and Mira's mercy - that's a party worth its salt."
+    ],
+    "name": "Smith Orla",
+    "sprite": "villager",
+    "wander": true,
+    "x": 9,
+    "y": 12
+   },
+   {
+    "dir": "left",
+    "lines": [
+     "Buying? The inn keeps my stock these days.",
+     "Too many bandits on the south road for an honest cart."
+    ],
+    "name": "Pedlar Voss",
+    "sprite": "merchant",
+    "wander": true,
+    "x": 33,
+    "y": 16
+   }
+  ],
+  "wild": []
+ },
+ "shop_stock": {
+  "amber": [
+   "potion",
+   "hipotion",
+   "ether",
+   "phoenix",
+   "bomb"
+  ],
+  "hollow": [
+   "potion",
+   "hipotion",
+   "ether",
+   "phoenix",
+   "bomb"
+  ]
+ },
+ "sign_after": {
+  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.",
+  "wild": "THORNWILDS SHRINE - The barrow below is sealed. The letters are fresh cut. Someone re-carved this recently."
+ },
+ "sign_text": {
+  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
+  "hollow": "HOLLOWMERE - Keep the lanterns lit. Keep off the ice.",
+  "mere1": "Cut over the stair, in the keepers' hand: WE GO DOWN SO IT DOES NOT COME UP.",
+  "shore": "THE MERE ROAD - Do not stop between the lamps.",
+  "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
+  "wild": "THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason."
+ },
+ "spells": {
+  "bolt": {
+   "element": "bolt",
+   "fx": "bolt",
+   "kind": "attack",
+   "mp": 6,
+   "name": "Thunder",
+   "power": 28,
+   "target": "enemy"
+  },
+  "cura": {
+   "fx": "heal",
+   "kind": "heal",
+   "mp": 10,
+   "name": "Cura",
+   "power": 110,
+   "target": "ally"
+  },
+  "cure": {
+   "fx": "heal",
+   "kind": "heal",
+   "mp": 4,
+   "name": "Cure",
+   "power": 46,
+   "target": "ally"
+  },
+  "fire": {
+   "element": "fire",
+   "fx": "fire",
+   "kind": "attack",
+   "mp": 4,
+   "name": "Fire",
+   "power": 22,
+   "target": "enemy"
+  },
+  "flare": {
+   "element": null,
+   "fx": "flare",
+   "kind": "attack",
+   "mp": 18,
+   "name": "Flare",
+   "power": 62,
+   "target": "enemy"
+  },
+  "holy": {
+   "element": "holy",
+   "fx": "holy",
+   "kind": "attack",
+   "mp": 20,
+   "name": "Radiance",
+   "power": 58,
+   "target": "enemy"
+  },
+  "ice": {
+   "element": "ice",
+   "fx": "ice",
+   "kind": "attack",
+   "mp": 4,
+   "name": "Blizzard",
+   "power": 20,
+   "target": "enemy"
+  },
+  "life": {
+   "fx": "holy",
+   "kind": "revive",
+   "mp": 16,
+   "name": "Raise",
+   "power": 0.5,
+   "target": "ally"
+  },
+  "quake": {
+   "element": "earth",
+   "fx": "quake",
+   "kind": "attack",
+   "mp": 14,
+   "name": "Quake",
+   "power": 30,
+   "target": "enemies"
+  },
+  "vigil": {
+   "fx": "heal",
+   "kind": "healAll",
+   "mp": 8,
+   "name": "Vigil",
+   "power": 40,
+   "target": "allies"
+  },
+  "ward": {
+   "fx": "holy",
+   "kind": "guardAll",
+   "mp": 6,
+   "name": "Ward",
+   "power": 0,
+   "target": "allies"
+  }
+ },
+ "starting_gear": {
+  "aldric": {
+   "armour": "leather_vest",
+   "trinket": null,
+   "weapon": "bronze_sword"
+  },
+  "bram": {
+   "armour": "chain_mail",
+   "trinket": null,
+   "weapon": "iron_halberd"
+  },
+  "lyra": {
+   "armour": null,
+   "trinket": null,
+   "weapon": "oak_staff"
+  },
+  "mira": {
+   "armour": null,
+   "trinket": null,
+   "weapon": "oak_staff"
+  },
+  "sera": {
+   "armour": "silk_robe",
+   "trinket": "copper_ring",
+   "weapon": "warden_staff"
+  }
+ },
+ "underlay": {
+  "$": "t_drowned",
+  "%": "t_crypt",
+  "(": "t_drowned",
+  "1": "ground",
+  "2": "ground",
+  "A": "ground",
+  "B": "t_water0",
+  "L": "t_snow",
+  "T": "ground",
+  "U": "ground",
+  "b": "ground",
+  "c": "ground",
+  "f": "ground",
+  "g": "t_crypt",
+  "h": "t_snow",
+  "i": "t_crypt",
+  "j": "t_crypt",
+  "l": "t_cobble",
+  "o": "t_cobble",
+  "p": "t_snow",
+  "r": "ground",
+  "s": "ground"
+ }
+}

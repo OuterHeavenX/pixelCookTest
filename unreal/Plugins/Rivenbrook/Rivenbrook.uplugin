@@ -1,0 +1,19 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "Rivenbrook",
+	"Description": "The game, drawn through Slate from the same cooked assets the browser and Godot builds read.",
+	"Category": "Other",
+	"CreatedBy": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Rivenbrook",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
