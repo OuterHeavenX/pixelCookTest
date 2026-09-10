@@ -5,6 +5,7 @@ import os
 
 from .imaging import Packer
 from . import backdrops, beasts, chars, imported, rendered, tiles, tints
+from .grade import grade_cast
 
 # Wide enough for a full-width battle backdrop to sit on the page. The screen
 # is not a fixed 320 any more, so neither is this: a sprite wider than the page
@@ -27,7 +28,8 @@ def cook_all():
     sprites.update(imported.cook())
     # Recolours run last, so they inherit whichever version of a monster won.
     sprites.update(tints.cook(sprites))
-    return sprites
+    # Then the cast is graded a step toward the Blender pictures it stands on.
+    return grade_cast(sprites)
 
 
 def build(out_dir):
