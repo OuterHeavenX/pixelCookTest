@@ -66,6 +66,28 @@
   "barrow2:4,6": {
    "gear": "knight_plate"
   },
+  "hollow_inn:10,2": {
+   "gil": 260
+  },
+  "hollow_keepers:3,2": {
+   "item": "lamp_oil",
+   "n": 4
+  },
+  "hollow_keepers:6,2": {
+   "gil": 400
+  },
+  "hollow_marrow:5,2": {
+   "item": "lamp_oil",
+   "n": 3
+  },
+  "hollow_pip:5,2": {
+   "item": "potion",
+   "n": 3
+  },
+  "hollow_watch:6,2": {
+   "item": "phoenix",
+   "n": 1
+  },
   "inn:11,2": {
    "gil": 120
   },
@@ -87,6 +109,14 @@
    "n": 1
   },
   "town:4,5": {
+   "item": "potion",
+   "n": 2
+  },
+  "town_halvard:6,2": {
+   "item": "ether",
+   "n": 2
+  },
+  "town_pell:6,2": {
    "item": "potion",
    "n": 2
   },
@@ -1450,7 +1480,19 @@
   }
  ],
  "gear_stock": {
-  "amber": [
+  "fenn": [
+   "iron_halberd",
+   "warden_staff",
+   "mere_wand",
+   "rimeblade",
+   "lake_mail",
+   "warden_coat",
+   "furs",
+   "ice_charm",
+   "lantern_stone",
+   "swift_boots"
+  ],
+  "forge": [
    "bronze_sword",
    "iron_sword",
    "oak_staff",
@@ -1461,18 +1503,6 @@
    "silk_robe",
    "copper_ring",
    "sage_pendant",
-   "swift_boots"
-  ],
-  "hollow": [
-   "iron_halberd",
-   "warden_staff",
-   "mere_wand",
-   "rimeblade",
-   "lake_mail",
-   "warden_coat",
-   "furs",
-   "ice_charm",
-   "lantern_stone",
    "swift_boots"
   ]
  },
@@ -2105,31 +2135,6 @@
     "y": 9
    },
    {
-    "dir": "down",
-    "lines": [
-     "Beds are warm. The mere is not. Fifty gil."
-    ],
-    "name": "Keeper Ilse",
-    "service": "inn",
-    "sprite": "merchant",
-    "wander": false,
-    "x": 27,
-    "y": 16
-   },
-   {
-    "dir": "up",
-    "lines": [
-     "Cold-country work. It weighs more and it is worth it."
-    ],
-    "name": "Armourer Fenn",
-    "service": "shop",
-    "shelf": "hollow",
-    "sprite": "villager",
-    "wander": false,
-    "x": 21,
-    "y": 24
-   },
-   {
     "dir": "right",
     "lines": [
      "Lamps at noon, lad. Lamps at noon.",
@@ -2198,6 +2203,87 @@
     "y": 22
    }
   ],
+  "hollow_armourer": [
+   {
+    "dir": "down",
+    "lines": [
+     "Cold-country work. It weighs more and it is worth it.",
+     "Everything on this shelf has been under the ice at least once. So have I."
+    ],
+    "name": "Armourer Fenn",
+    "service": "shop",
+    "shelf": "fenn",
+    "sprite": "villager",
+    "wander": false,
+    "x": 4,
+    "y": 4
+   }
+  ],
+  "hollow_inn": [
+   {
+    "dir": "down",
+    "lines": [
+     "Beds are warm. The mere is not. Fifty gil."
+    ],
+    "name": "Keeper Ilse",
+    "service": "inn",
+    "sprite": "merchant",
+    "stages": [
+     {
+      "lines": [
+       "Beds are warm. Fifty gil. The mere is warmer, and that is not a thing I ever thought I would say."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
+    "wander": false,
+    "x": 4,
+    "y": 4
+   },
+   {
+    "dir": "down",
+    "lines": [
+     "Oil, potions, and whatever the carts bring up from the south. Which is less each month."
+    ],
+    "name": "Grocer Wen",
+    "service": "shop",
+    "shelf": "hollow",
+    "sprite": "villager",
+    "wander": false,
+    "x": 8,
+    "y": 4
+   }
+  ],
+  "hollow_keepers": [],
+  "hollow_marrow": [],
+  "hollow_pip": [
+   {
+    "dir": "down",
+    "lines": [
+     "The boy went through the ice last winter. Sera Vail went in after him without taking her coat off.",
+     "I light the two lamps outside this door every dusk. It is the least I owe her."
+    ],
+    "name": "Pip's Father",
+    "sprite": "villager",
+    "stages": [
+     {
+      "lines": [
+       "The lamps went out on their own. Both of mine, at once, at noon.",
+       "I lit them again. My hands were shaking and I lit them again."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
+    "wander": false,
+    "x": 5,
+    "y": 3
+   }
+  ],
+  "hollow_watch": [],
   "inn": [
    {
     "after": [
@@ -2472,7 +2558,9 @@
     "wander": false,
     "x": 21,
     "y": 26
-   },
+   }
+  ],
+  "town_forge": [
    {
     "dir": "down",
     "lines": [
@@ -2480,6 +2568,8 @@
      "Pell's boy keeps bringing me monster teeth. They are river stones. I keep every one."
     ],
     "name": "Smith Orla",
+    "service": "shop",
+    "shelf": "forge",
     "sprite": "villager",
     "stages": [
      {
@@ -2501,10 +2591,57 @@
       ]
      }
     ],
-    "wander": true,
-    "x": 9,
-    "y": 12
-   },
+    "wander": false,
+    "x": 4,
+    "y": 4
+   }
+  ],
+  "town_halvard": [],
+  "town_pell": [
+   {
+    "dir": "down",
+    "lines": [
+     "He is out at the fence again. He says he is guarding it.",
+     "Pell says the south row is cold. I say the whole south end is, and nobody listens to me either."
+    ],
+    "name": "Tam's Mother",
+    "sprite": "villager",
+    "stages": [
+     {
+      "lines": [
+       "He shivers in his sleep now. He never used to.",
+       "Pell will not say it, so I will: something came up out of that barrow and it came here."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "Your healer sat up with him all night and would not take a copper for it.",
+       "He slept. First time since the barrow. You tell her that from me."
+      ],
+      "when": [
+       "bossDown",
+       "miraTended"
+      ]
+     },
+     {
+      "lines": [
+       "He is himself again. Loud. Filthy. Thank God.",
+       "The lamps on the wall went out last night and he saw them come back. He will tell you. At length."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
+    "wander": false,
+    "x": 5,
+    "y": 3
+   }
+  ],
+  "town_store": [
    {
     "dir": "left",
     "lines": [
@@ -2512,6 +2649,8 @@
      "Too many bandits on the south road for an honest cart."
     ],
     "name": "Pedlar Voss",
+    "service": "shop",
+    "shelf": "store",
     "sprite": "merchant",
     "stages": [
      {
@@ -2533,9 +2672,9 @@
       ]
      }
     ],
-    "wander": true,
-    "x": 33,
-    "y": 16
+    "wander": false,
+    "x": 9,
+    "y": 4
    }
   ],
   "wild": []
@@ -2556,7 +2695,6 @@
    "hipotion",
    "ether",
    "phoenix",
-   "bomb",
    "lamp_oil"
   ],
   "hollow": [
@@ -2564,6 +2702,13 @@
    "hipotion",
    "ether",
    "phoenix",
+   "bomb",
+   "lamp_oil"
+  ],
+  "store": [
+   "potion",
+   "hipotion",
+   "ether",
    "bomb",
    "lamp_oil"
   ]
@@ -2575,6 +2720,7 @@
  "sign_text": {
   "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
   "hollow": "HOLLOWMERE - Keep the lanterns lit. Keep off the ice.",
+  "hollow_keepers": "KEEPERS OF THE MERE - Never let one go out. (The rest is worn away.)",
   "mere1": "Cut over the stair, in the keepers' hand: WE GO DOWN SO IT DOES NOT COME UP.",
   "shore": "THE MERE ROAD - Do not stop between the lamps.",
   "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",

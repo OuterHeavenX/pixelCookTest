@@ -244,11 +244,29 @@ async function launch() {
 
   // --- shop ---------------------------------------------------------------
   section('shop');
-  await ev(() => { G.gil = 5000; openShop('amber'); });
+  /* Every door in both towns opens onto a room, and every room leads back. */
+  const doors = await ev(() => {
+    const out = [];
+    for (const town of ['town', 'hollow']) {
+      for (const w of MAPS[town].warps) {
+        const room = MAPS[w.to];
+        if (!room || !room.rows) { out.push(w.to + ' is not a map'); continue; }
+        if (w.to.indexOf('_') < 0 && w.to !== 'inn') continue;
+        if (!room.warps.some(b => b.to === town)) out.push(w.to + ' has no way back');
+      }
+    }
+    return out;
+  });
+  expect(doors.length === 0, 'every house door in both towns opens on a room with a way back', doors.join('; '));
+  expect(await ev(() => NPCS.town_forge.some(n => n.name === 'Smith Orla' && n.service === 'shop' && n.shelf === 'forge')),
+    'the smith sells from her forge');
+  expect(await ev(() => NPCS.hollow_armourer.some(n => n.name === 'Armourer Fenn' && n.shelf === 'fenn')),
+    'and Fenn from his own shop in Hollowmere');
+  await ev(() => { G.gil = 5000; openShop('forge'); });
   await p.waitForTimeout(350);
   expect(await mode() === 'shop', 'the shop opens');
-  const shelf = await ev(() => { Shop.tab = 1; return shopStock().length; });
-  expect(shelf === (await ev(() => GEAR_STOCK.amber.length)),
+  const shelf = await ev(() => { Shop.tab = shopTabs().findIndex(t => t.id === 'armoury'); return shopStock().length; });
+  expect(shelf === (await ev(() => GEAR_STOCK.forge.length)),
     'the armoury lists every piece on its shelf (' + shelf + ')');
   await shot('shop');
   const bought = await ev(() => {
@@ -438,8 +456,8 @@ async function launch() {
   expect(await ev(() => G.bench.length) === 1, 'the fifth waits on the bench');
   expect(await ev(() => !Field.npcs.find(n => n.name === 'Bram')),
     'and they stop standing in the street');
-  const hollowShelf = await ev(() => { openShop('hollow'); Shop.tab = 1; return shopStock().length; });
-  expect(hollowShelf === await ev(() => GEAR_STOCK.hollow.length),
+  const hollowShelf = await ev(() => { openShop('fenn'); Shop.tab = shopTabs().findIndex(t => t.id === 'armoury'); return shopStock().length; });
+  expect(hollowShelf === await ev(() => GEAR_STOCK.fenn.length),
     'the armourer stocks cold-country work (' + hollowShelf + ')');
   await ev(() => { G.mode = 'field'; });
 

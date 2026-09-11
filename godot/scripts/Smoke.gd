@@ -242,8 +242,30 @@ func _run() -> void:
 		"the menu closes back to the field")
 
 	_say("shop")
+	# Every door in both towns opens onto a room, and every room leads back.
+	var doors_ok := true
+	for town_id in ["town", "hollow"]:
+		for w in Dat.maps[town_id]["warps"]:
+			var to: String = str(w["to"])
+			if not Dat.maps.has(to):
+				doors_ok = false
+				continue
+			if to.find("_") < 0 and to != "inn":
+				continue
+			var back := false
+			for b in Dat.maps[to]["warps"]:
+				if str(b["to"]) == town_id:
+					back = true
+			if not back:
+				doors_ok = false
+	_expect(doors_ok, "every house door in both towns opens on a room with a way back")
+	var orla_home := false
+	for n in Dat.npcs.get("town_forge", []):
+		if n["name"] == "Smith Orla" and str(n.get("shelf", "")) == "forge":
+			orla_home = true
+	_expect(orla_home, "the smith sells from her forge")
 	Gs.gil = 5000
-	main.open_shop("amber")
+	main.open_shop("forge")
 	_expect(await _until(func(): return main.mode == "shop"), "the shop opens")
 	await _shot("shop_wares")
 	main.shop.set_tab(1)
@@ -251,7 +273,7 @@ func _run() -> void:
 	var stock: Array = main.shop.shop_stock()
 	# gear_stock is keyed by shelf now, so this has to compare against the
 	# shelf this counter sells, not against the number of shelves.
-	_expect(stock.size() == Dat.gear_stock["amber"].size(),
+	_expect(stock.size() == Dat.gear_stock["forge"].size(),
 		"the armoury lists every piece on its shelf (%d)" % stock.size())
 	await _shot("shop_armoury")
 	var gil_before := Gs.gil
@@ -530,13 +552,13 @@ func _run() -> void:
 	_expect(not still_there, "and stop standing in the street")
 
 	# The Hollowmere counter sells its own shelf.
-	main.open_shop("hollow")
+	main.open_shop("fenn")
 	await _step(6)
 	_expect(main.mode == "shop", "the armourer opens")
 	main.shop.set_tab(1)
 	await _step(4)
 	var shelf: Array = main.shop.shop_stock()
-	_expect(shelf.size() == Dat.gear_stock["hollow"].size(),
+	_expect(shelf.size() == Dat.gear_stock["fenn"].size(),
 		"stocking cold-country work (%d pieces)" % shelf.size())
 	await _shot("ch2_shop")
 	main.close_shop()

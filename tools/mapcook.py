@@ -167,6 +167,10 @@ def town():
             {"x": 20, "y": 29, "to": "wild", "tx": 28, "ty": 3, "dir": "down"},
             {"x": 21, "y": 29, "to": "wild", "tx": 28, "ty": 3, "dir": "down"},
             {"x": 30, "y": 10, "to": "inn", "tx": 9, "ty": 12, "dir": "up"},
+            {"x": 7, "y": 10, "to": "town_forge", "tx": 6, "ty": 8, "dir": "up"},
+            {"x": 14, "y": 9, "to": "town_store", "tx": 6, "ty": 8, "dir": "up"},
+            {"x": 8, "y": 22, "to": "town_pell", "tx": 5, "ty": 8, "dir": "up"},
+            {"x": 31, "y": 22, "to": "town_halvard", "tx": 5, "ty": 8, "dir": "up"},
         ],
     }
 
@@ -210,6 +214,176 @@ def inn():
             {"x": 9, "y": 12, "to": "town", "tx": 30, "ty": 11, "dir": "down"},
         ],
     }
+
+
+def interior(map_id, name, w, h, door_x, back, back_x, back_y, furnish):
+    """A room behind a door: plank floor, a wall two tiles thick at the back,
+    a door in the south wall that leads back out to where you came in, and
+    whatever `furnish` puts in it. Every house in both towns is one of these,
+    so walking into a home is the same act everywhere."""
+    g = Grid(w, h, "F")
+    g.border(1, "W")
+    g.rect(1, 1, w - 2, 1, "W")
+    g.set(door_x, h - 1, "D")
+    furnish(g)
+    return {
+        "id": map_id,
+        "name": name,
+        "rows": g.out(),
+        "encounter": 0,
+        "music": "inn",
+        "ground": "t_plank",
+        "spawn": [door_x, h - 2],
+        "warps": [
+            {"x": door_x, "y": h - 1, "to": back, "tx": back_x, "ty": back_y, "dir": "down"},
+        ],
+    }
+
+
+def town_forge():
+    def furnish(g):
+        g.rect(2, 3, 5, 1, "K")      # the counter
+        g.set(2, 4, "K")
+        g.set(1, 2, "H")
+        g.set(2, 2, "H")
+        g.set(9, 3, "A")             # barrels of quench water
+        g.set(10, 3, "A")
+        g.set(10, 6, "A")
+        g.set(1, 7, "l")
+        g.set(11, 7, "l")
+    return interior("town_forge", "Orla's Forge", 13, 9, 6, "town", 7, 11, furnish)
+
+
+def town_store():
+    def furnish(g):
+        g.rect(7, 3, 5, 1, "K")
+        g.set(11, 4, "K")
+        g.set(9, 2, "H")
+        g.set(10, 2, "H")
+        g.set(11, 2, "H")
+        g.set(2, 3, "A")
+        g.set(2, 4, "A")
+        g.set(3, 3, "A")
+        g.rect(4, 5, 4, 2, "U")
+        g.set(1, 7, "l")
+    return interior("town_store", "Voss's Goods", 13, 9, 6, "town", 14, 10, furnish)
+
+
+def town_pell():
+    def furnish(g):
+        g.set(2, 3, "1")             # two beds: hers and the boy's
+        g.set(2, 4, "2")
+        g.set(9, 3, "1")
+        g.set(9, 4, "2")
+        g.rect(4, 4, 3, 2, "U")
+        g.set(6, 2, "c")
+        g.set(10, 6, "l")
+    return interior("town_pell", "Pell's Cottage", 12, 9, 5, "town", 8, 23, furnish)
+
+
+def town_halvard():
+    def furnish(g):
+        g.set(1, 2, "H")
+        g.set(2, 2, "H")
+        g.set(3, 2, "H")
+        g.set(4, 2, "H")
+        g.set(9, 3, "1")
+        g.set(9, 4, "2")
+        g.rect(3, 4, 4, 3, "U")
+        g.set(6, 2, "c")
+        g.set(1, 7, "l")
+        g.set(10, 7, "l")
+    return interior("town_halvard", "Halvard's House", 12, 9, 5, "town", 31, 23, furnish)
+
+
+def hollow_inn():
+    def furnish(g):
+        g.rect(2, 3, 5, 1, "K")
+        g.set(2, 4, "K")
+        g.set(1, 2, "H")
+        g.set(2, 2, "H")
+        g.set(8, 3, "K")             # the grocer's small counter
+        for by in (4, 8):
+            g.set(14, by, "1")
+            g.set(14, by + 1, "2")
+            g.set(12, by, "1")
+            g.set(12, by + 1, "2")
+        g.rect(4, 6, 4, 4, "U")
+        g.set(1, 11, "l")
+        g.set(15, 11, "l")
+        g.set(10, 2, "c")
+    return interior("hollow_inn", "The Lamplit Bed", 17, 13, 8, "hollow", 28, 17, furnish)
+
+
+def hollow_armourer():
+    def furnish(g):
+        g.rect(2, 3, 6, 1, "K")
+        g.set(7, 4, "K")
+        g.set(1, 2, "H")
+        g.set(2, 2, "H")
+        g.set(3, 2, "H")
+        g.set(4, 2, "H")
+        g.set(11, 3, "A")
+        g.set(11, 4, "A")
+        g.set(1, 7, "l")
+        g.set(11, 7, "l")
+    return interior("hollow_armourer", "Fenn's Cold-Country Work", 13, 9, 6, "hollow", 16, 17, furnish)
+
+
+def hollow_marrow():
+    def furnish(g):
+        g.set(2, 3, "1")
+        g.set(2, 4, "2")
+        g.set(8, 2, "H")
+        g.set(9, 2, "H")
+        g.rect(4, 4, 3, 2, "U")
+        g.set(5, 2, "c")
+        g.set(1, 7, "l")
+        g.set(9, 7, "l")
+        g.set(9, 5, "A")
+    return interior("hollow_marrow", "Old Marrow's House", 11, 9, 5, "hollow", 7, 17, furnish)
+
+
+def hollow_keepers():
+    def furnish(g):
+        # A keeper's house: lamps in every corner, and two chests of what a
+        # keeper keeps.
+        g.set(1, 2, "l")
+        g.set(11, 2, "l")
+        g.set(1, 7, "l")
+        g.set(11, 7, "l")
+        g.set(9, 3, "1")
+        g.set(9, 4, "2")
+        g.set(3, 2, "c")
+        g.set(6, 2, "c")
+        g.set(5, 2, "s")
+        g.rect(3, 4, 4, 3, "U")
+    return interior("hollow_keepers", "The Keepers' House", 13, 9, 6, "hollow", 38, 17, furnish)
+
+
+def hollow_pip():
+    def furnish(g):
+        g.set(2, 3, "1")
+        g.set(2, 4, "2")
+        g.set(8, 3, "1")
+        g.set(8, 4, "2")
+        g.rect(4, 4, 3, 2, "U")
+        g.set(5, 2, "c")
+        g.set(9, 7, "l")
+    return interior("hollow_pip", "Pip's House", 11, 9, 5, "hollow", 9, 29, furnish)
+
+
+def hollow_watch():
+    def furnish(g):
+        g.rect(2, 3, 4, 1, "K")
+        g.set(8, 2, "H")
+        g.set(9, 2, "H")
+        g.set(9, 4, "A")
+        g.set(9, 5, "A")
+        g.set(6, 2, "c")
+        g.set(1, 7, "l")
+        g.set(9, 7, "l")
+    return interior("hollow_watch", "The Watch House", 11, 9, 5, "hollow", 35, 29, furnish)
 
 
 def wilds():
@@ -453,6 +627,12 @@ def hollowmere():
             {"x": 21, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
             {"x": 22, "y": 33, "to": "shore", "tx": 45, "ty": 14, "dir": "right"},
             {"x": 20, "y": 7, "to": "mere1", "tx": 20, "ty": 25, "dir": "up"},
+            {"x": 7, "y": 16, "to": "hollow_marrow", "tx": 5, "ty": 8, "dir": "up"},
+            {"x": 16, "y": 16, "to": "hollow_armourer", "tx": 6, "ty": 8, "dir": "up"},
+            {"x": 28, "y": 16, "to": "hollow_inn", "tx": 8, "ty": 12, "dir": "up"},
+            {"x": 38, "y": 16, "to": "hollow_keepers", "tx": 6, "ty": 8, "dir": "up"},
+            {"x": 9, "y": 28, "to": "hollow_pip", "tx": 5, "ty": 8, "dir": "up"},
+            {"x": 35, "y": 28, "to": "hollow_watch", "tx": 5, "ty": 8, "dir": "up"},
         ],
     }
 
@@ -671,7 +851,10 @@ def validate(maps):
 def build():
     maps = {m["id"]: m for m in (town(), inn(), wilds(), barrow_upper(),
                                  barrow_deep(), hollowmere(), mere_road(),
-                                 under_mere(), cold_below())}
+                                 under_mere(), cold_below(),
+                                 town_forge(), town_store(), town_pell(), town_halvard(),
+                                 hollow_inn(), hollow_armourer(), hollow_marrow(),
+                                 hollow_keepers(), hollow_pip(), hollow_watch())}
     for m in maps.values():
         widths = {len(r) for r in m["rows"]}
         assert len(widths) == 1, "%s has ragged rows: %s" % (m["id"], widths)

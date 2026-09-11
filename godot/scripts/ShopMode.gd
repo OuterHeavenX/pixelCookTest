@@ -28,12 +28,12 @@ func open(from_shelf := "amber") -> void:
 	Snd.sfx("confirm")
 
 
-## What is on the shelf under the open tab, flattened into one shape.
-func shop_stock() -> Array:
+## Each counter names its own shelf: the forge sells steel and nothing to
+## drink, the inn the other way round. A shop only shows the tabs its shelf
+## has something on, so a smith is not a smith with an empty pantry beside.
+func shelf_stock(tab_id: String) -> Array:
 	var out := []
-	# Each counter names its own shelf, so Hollowmere sells cold-country work
-	# and the Amber Lantern goes on selling what it always did.
-	if TABS[tab]["id"] == "armoury":
+	if tab_id == "armoury":
 		for id in Dat.gear_stock.get(shelf, []):
 			var g: Dictionary = Dat.gear[id]
 			out.append({"id": id, "gear": true, "name": g["name"], "icon": g["icon"],
@@ -44,6 +44,20 @@ func shop_stock() -> Array:
 			out.append({"id": id, "gear": false, "name": it["name"], "icon": it["icon"],
 				"price": int(it["price"]), "desc": it["desc"]})
 	return out
+
+
+func shop_tabs() -> Array:
+	var tabs := []
+	for tb in TABS:
+		if not shelf_stock(tb["id"]).is_empty():
+			tabs.append(tb)
+	return tabs if not tabs.is_empty() else [TABS[0]]
+
+
+## What is on the shelf under the open tab, flattened into one shape.
+func shop_stock() -> Array:
+	var tabs := shop_tabs()
+	return shelf_stock(tabs[mini(tab, tabs.size() - 1)]["id"])
 
 
 func set_tab(i: int) -> void:
@@ -62,9 +76,9 @@ func update(dt: float) -> void:
 		Snd.sfx("cancel")
 		return
 	if Inp.nav("left", dt):
-		set_tab((tab + TABS.size() - 1) % TABS.size())
+		set_tab((tab + shop_tabs().size() - 1) % shop_tabs().size())
 	if Inp.nav("right", dt):
-		set_tab((tab + 1) % TABS.size())
+		set_tab((tab + 1) % shop_tabs().size())
 	var stock := shop_stock()
 	if Inp.nav("up", dt):
 		index = (index + stock.size() - 1) % stock.size()
@@ -106,10 +120,14 @@ func _draw_panel(c: CanvasItem, anim: float) -> void:
 	Art.draw_text(c, "QUARTERMASTER", Vector2(30, 20), Color("#f6e2a8"))
 
 	# Two shelves: consumables and gear. The armoury is where gil finally goes.
-	for i in TABS.size():
-		Art.draw_button(c, Rect2(30 + i * 60, 32, 56, 13), TABS[i]["label"], i == tab)
+	var tabs := shop_tabs()
+	for i in tabs.size():
+		Art.draw_button(c, Rect2(30 + i * 60, 32, 56, 13), tabs[i]["label"], i == tab)
 
 	var stock := shop_stock()
+	if stock.is_empty():
+		Art.draw_text(c, "Nothing on this shelf today.", Vector2(30, 56), Color("#9aa4c8"))
+		return
 	var rows := 5
 	var start: int = clampi(index - rows + 1, 0, maxi(0, stock.size() - rows))
 	for i in range(start, mini(stock.size(), start + rows)):

@@ -2961,7 +2961,15 @@ function drawMenu() {
   }
 }
 
+/* Rows of party members share the pane's height: three fit at the full
+   48 pixels, four on a 180-tall screen do not, so the pitch shrinks and the
+   row drops its title line rather than running off the bottom. */
+function partyRowPitch() {
+  return Math.min(48, Math.floor((VH - 34) / Math.max(1, G.party.length)));
+}
 function drawPartyRow(h, x, y, highlight) {
+  const pitch = partyRowPitch();
+  if (pitch < 44) { drawPartyRowCompact(h, x, y, highlight, pitch); return; }
   if (highlight) {
     ctx.fillStyle = 'rgba(120,160,255,0.14)';
     ctx.fillRect(x - 4, y - 4, 202, 46);
@@ -2983,9 +2991,30 @@ function drawPartyRow(h, x, y, highlight) {
   }
 }
 
+function drawPartyRowCompact(h, x, y, highlight, pitch) {
+  if (highlight) {
+    ctx.fillStyle = 'rgba(120,160,255,0.14)';
+    ctx.fillRect(x - 4, y - 3, 202, pitch - 2);
+  }
+  sprFoot(h.sprite + '_down0', x + 12, y + 22, { scale: scaleFor(h.sprite + '_down0', 24) });
+  spr(classIcon(h), x + 30, y - 1);
+  drawText(h.name, x + 40, y, h.alive ? '#f2f4ff' : '#c08090');
+  drawText('Lv ' + h.lv, x + 132, y, '#f6e2a8');
+  drawText('HP', x + 30, y + 12, '#9aa4c8');
+  drawText(h.hp + '/' + h.maxhp, x + 108, y + 12, hpColor(h), { align: 'right' });
+  drawBar(x + 30, y + 22, 78, 3, h.hp / h.maxhp, '#9fffb0', '#3f9a54');
+  if (h.maxmp) {
+    drawText('MP', x + 120, y + 12, '#9aa4c8');
+    drawText(h.mp + '/' + h.maxmp, x + 196, y + 12, '#9fd0ff', { align: 'right' });
+    drawBar(x + 120, y + 22, 76, 3, h.mp / h.maxmp, '#bfe4ff', '#3a72c8');
+  } else {
+    drawText('No magic', x + 120, y + 12, '#7a82a8');
+  }
+}
+
 function drawPartyPane() {
   drawText('PARTY', 106, 12, '#f6e2a8');
-  G.party.forEach((h, i) => drawPartyRow(h, 110, 30 + i * 48, false));
+  G.party.forEach((h, i) => drawPartyRow(h, 110, 30 + i * partyRowPitch(), false));
 }
 
 function drawItemPane() {
@@ -3061,7 +3090,7 @@ function drawEquipPane() {
     if (picking) Taps.add(id, 112, by, 96, 13, () => openEquipSlots(i));
   });
   if (picking) {
-    drawText('Choose who to outfit.', 112, 76, '#9aa4c8');
+    drawText('Choose who to outfit.', 112, 24 + G.party.length * 15 + 6, '#9aa4c8');
     return;
   }
 
@@ -3184,14 +3213,23 @@ const SHOP_TABS = [
 ];
 
 /* What is on the shelf under the open tab, as {id, name, price, icon, desc}. */
-function shopStock() {
-  // Each counter names its own shelf, so Hollowmere sells cold-country work
-  // and the Amber Lantern goes on selling what it always did.
+/* Each counter names its own shelf: the forge sells steel and nothing to
+   drink, the inn the other way round. A shop only shows the tabs its shelf
+   has something on, so a smith is not a smith with an empty pantry beside. */
+function shelfStock(tabId) {
   const shelf = Shop.shelf || 'amber';
-  if (SHOP_TABS[Shop.tab].id === 'armoury') {
+  if (tabId === 'armoury') {
     return (GEAR_STOCK[shelf] || []).map(id => Object.assign({ id: id, gear: true }, GEAR[id]));
   }
   return (SHOP_STOCK[shelf] || []).map(id => Object.assign({ id: id, gear: false }, ITEMS[id]));
+}
+function shopTabs() {
+  const tabs = SHOP_TABS.filter(tb => shelfStock(tb.id).length);
+  return tabs.length ? tabs : SHOP_TABS.slice(0, 1);
+}
+function shopStock() {
+  const tabs = shopTabs();
+  return shelfStock(tabs[Math.min(Shop.tab, tabs.length - 1)].id);
 }
 
 /* Buying, from the confirm key or a tap on the row. */
@@ -3233,8 +3271,9 @@ function updateShop(dt) {
   Shop.noteT = Math.max(0, Shop.noteT - dt);
   if (Input.tap('cancel') || Input.tap('menu')) { G.mode = 'field'; Audio_.sfx('cancel'); return; }
   const stock = shopStock();
-  if (Input.nav('left', dt)) shopTab((Shop.tab + SHOP_TABS.length - 1) % SHOP_TABS.length);
-  if (Input.nav('right', dt)) shopTab((Shop.tab + 1) % SHOP_TABS.length);
+  const nTabs = shopTabs().length;
+  if (Input.nav('left', dt)) shopTab((Shop.tab + nTabs - 1) % nTabs);
+  if (Input.nav('right', dt)) shopTab((Shop.tab + 1) % nTabs);
   if (Input.nav('up', dt)) { Shop.index = (Shop.index + stock.length - 1) % stock.length; Audio_.sfx('cursor'); }
   if (Input.nav('down', dt)) { Shop.index = (Shop.index + 1) % stock.length; Audio_.sfx('cursor'); }
   if (Input.tap('confirm')) buyStock(Shop.index);
@@ -3265,7 +3304,7 @@ function drawShopPanel() {
   drawText('QUARTERMASTER', 30, 20, '#f6e2a8');
 
   // Two shelves: consumables and gear. The armoury is where gil finally goes.
-  SHOP_TABS.forEach((tb, i) => {
+  shopTabs().forEach((tb, i) => {
     const bx = 30 + i * 60, by = 32;
     const id = 'shoptab:' + i;
     drawButton(bx, by, 56, 13, tb.label,
@@ -3274,6 +3313,7 @@ function drawShopPanel() {
   });
 
   const stock = shopStock();
+  if (!stock.length) { drawText('Nothing on this shelf today.', 30, 56, '#9aa4c8'); return; }
   const rows = 5;
   const start = clamp(Shop.index - rows + 1, 0, Math.max(0, stock.length - rows));
   for (let i = start; i < Math.min(stock.length, start + rows); i++) {

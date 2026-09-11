@@ -196,6 +196,262 @@
     "ty": 25,
     "x": 20,
     "y": 7
+   },
+   {
+    "dir": "up",
+    "to": "hollow_marrow",
+    "tx": 5,
+    "ty": 8,
+    "x": 7,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "to": "hollow_armourer",
+    "tx": 6,
+    "ty": 8,
+    "x": 16,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "to": "hollow_inn",
+    "tx": 8,
+    "ty": 12,
+    "x": 28,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "to": "hollow_keepers",
+    "tx": 6,
+    "ty": 8,
+    "x": 38,
+    "y": 16
+   },
+   {
+    "dir": "up",
+    "to": "hollow_pip",
+    "tx": 5,
+    "ty": 8,
+    "x": 9,
+    "y": 28
+   },
+   {
+    "dir": "up",
+    "to": "hollow_watch",
+    "tx": 5,
+    "ty": 8,
+    "x": 35,
+    "y": 28
+   }
+  ]
+ },
+ "hollow_armourer": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "hollow_armourer",
+  "music": "inn",
+  "name": "Fenn's Cold-Country Work",
+  "rows": [
+   "WWWWWWWWWWWWW",
+   "WWWWWWWWWWWWW",
+   "WHHHHFFFFFFFW",
+   "WFKKKKKKFFFAW",
+   "WFFFFFFKFFFAW",
+   "WFFFFFFFFFFFW",
+   "WFFFFFFFFFFFW",
+   "WlFFFFFFFFFlW",
+   "WWWWWWDWWWWWW"
+  ],
+  "spawn": [
+   6,
+   7
+  ],
+  "w": 13,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 16,
+    "ty": 17,
+    "x": 6,
+    "y": 8
+   }
+  ]
+ },
+ "hollow_inn": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 13,
+  "id": "hollow_inn",
+  "music": "inn",
+  "name": "The Lamplit Bed",
+  "rows": [
+   "WWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWW",
+   "WHHFFFFFFFcFFFFFW",
+   "WFKKKKKFKFFFFFFFW",
+   "WFKFFFFFFFFF1F1FW",
+   "WFFFFFFFFFFF2F2FW",
+   "WFFFUUUUFFFFFFFFW",
+   "WFFFUUUUFFFFFFFFW",
+   "WFFFUUUUFFFF1F1FW",
+   "WFFFUUUUFFFF2F2FW",
+   "WFFFFFFFFFFFFFFFW",
+   "WlFFFFFFFFFFFFFlW",
+   "WWWWWWWWDWWWWWWWW"
+  ],
+  "spawn": [
+   8,
+   11
+  ],
+  "w": 17,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 28,
+    "ty": 17,
+    "x": 8,
+    "y": 12
+   }
+  ]
+ },
+ "hollow_keepers": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "hollow_keepers",
+  "music": "inn",
+  "name": "The Keepers' House",
+  "rows": [
+   "WWWWWWWWWWWWW",
+   "WWWWWWWWWWWWW",
+   "WlFcFscFFFFlW",
+   "WFFFFFFFF1FFW",
+   "WFFUUUUFF2FFW",
+   "WFFUUUUFFFFFW",
+   "WFFUUUUFFFFFW",
+   "WlFFFFFFFFFlW",
+   "WWWWWWDWWWWWW"
+  ],
+  "spawn": [
+   6,
+   7
+  ],
+  "w": 13,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 38,
+    "ty": 17,
+    "x": 6,
+    "y": 8
+   }
+  ]
+ },
+ "hollow_marrow": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "hollow_marrow",
+  "music": "inn",
+  "name": "Old Marrow's House",
+  "rows": [
+   "WWWWWWWWWWW",
+   "WWWWWWWWWWW",
+   "WFFFFcFFHHW",
+   "WF1FFFFFFFW",
+   "WF2FUUUFFFW",
+   "WFFFUUUFFAW",
+   "WFFFFFFFFFW",
+   "WlFFFFFFFlW",
+   "WWWWWDWWWWW"
+  ],
+  "spawn": [
+   5,
+   7
+  ],
+  "w": 11,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 7,
+    "ty": 17,
+    "x": 5,
+    "y": 8
+   }
+  ]
+ },
+ "hollow_pip": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "hollow_pip",
+  "music": "inn",
+  "name": "Pip's House",
+  "rows": [
+   "WWWWWWWWWWW",
+   "WWWWWWWWWWW",
+   "WFFFFcFFFFW",
+   "WF1FFFFF1FW",
+   "WF2FUUUF2FW",
+   "WFFFUUUFFFW",
+   "WFFFFFFFFFW",
+   "WFFFFFFFFlW",
+   "WWWWWDWWWWW"
+  ],
+  "spawn": [
+   5,
+   7
+  ],
+  "w": 11,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 9,
+    "ty": 29,
+    "x": 5,
+    "y": 8
+   }
+  ]
+ },
+ "hollow_watch": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "hollow_watch",
+  "music": "inn",
+  "name": "The Watch House",
+  "rows": [
+   "WWWWWWWWWWW",
+   "WWWWWWWWWWW",
+   "WFFFFFcFHHW",
+   "WFKKKKFFFFW",
+   "WFFFFFFFFAW",
+   "WFFFFFFFFAW",
+   "WFFFFFFFFFW",
+   "WlFFFFFFFlW",
+   "WWWWWDWWWWW"
+  ],
+  "spawn": [
+   5,
+   7
+  ],
+  "w": 11,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "hollow",
+    "tx": 35,
+    "ty": 29,
+    "x": 5,
+    "y": 8
    }
   ]
  },
@@ -497,6 +753,174 @@
     "ty": 12,
     "x": 30,
     "y": 10
+   },
+   {
+    "dir": "up",
+    "to": "town_forge",
+    "tx": 6,
+    "ty": 8,
+    "x": 7,
+    "y": 10
+   },
+   {
+    "dir": "up",
+    "to": "town_store",
+    "tx": 6,
+    "ty": 8,
+    "x": 14,
+    "y": 9
+   },
+   {
+    "dir": "up",
+    "to": "town_pell",
+    "tx": 5,
+    "ty": 8,
+    "x": 8,
+    "y": 22
+   },
+   {
+    "dir": "up",
+    "to": "town_halvard",
+    "tx": 5,
+    "ty": 8,
+    "x": 31,
+    "y": 22
+   }
+  ]
+ },
+ "town_forge": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "town_forge",
+  "music": "inn",
+  "name": "Orla's Forge",
+  "rows": [
+   "WWWWWWWWWWWWW",
+   "WWWWWWWWWWWWW",
+   "WHHFFFFFFFFFW",
+   "WFKKKKKFFAAFW",
+   "WFKFFFFFFFFFW",
+   "WFFFFFFFFFFFW",
+   "WFFFFFFFFFAFW",
+   "WlFFFFFFFFFlW",
+   "WWWWWWDWWWWWW"
+  ],
+  "spawn": [
+   6,
+   7
+  ],
+  "w": 13,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "town",
+    "tx": 7,
+    "ty": 11,
+    "x": 6,
+    "y": 8
+   }
+  ]
+ },
+ "town_halvard": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "town_halvard",
+  "music": "inn",
+  "name": "Halvard's House",
+  "rows": [
+   "WWWWWWWWWWWW",
+   "WWWWWWWWWWWW",
+   "WHHHHFcFFFFW",
+   "WFFFFFFFF1FW",
+   "WFFUUUUFF2FW",
+   "WFFUUUUFFFFW",
+   "WFFUUUUFFFFW",
+   "WlFFFFFFFFlW",
+   "WWWWWDWWWWWW"
+  ],
+  "spawn": [
+   5,
+   7
+  ],
+  "w": 12,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "town",
+    "tx": 31,
+    "ty": 23,
+    "x": 5,
+    "y": 8
+   }
+  ]
+ },
+ "town_pell": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "town_pell",
+  "music": "inn",
+  "name": "Pell's Cottage",
+  "rows": [
+   "WWWWWWWWWWWW",
+   "WWWWWWWWWWWW",
+   "WFFFFFcFFFFW",
+   "WF1FFFFFF1FW",
+   "WF2FUUUFF2FW",
+   "WFFFUUUFFFFW",
+   "WFFFFFFFFFlW",
+   "WFFFFFFFFFFW",
+   "WWWWWDWWWWWW"
+  ],
+  "spawn": [
+   5,
+   7
+  ],
+  "w": 12,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "town",
+    "tx": 8,
+    "ty": 23,
+    "x": 5,
+    "y": 8
+   }
+  ]
+ },
+ "town_store": {
+  "encounter": 0,
+  "ground": "t_plank",
+  "h": 9,
+  "id": "town_store",
+  "music": "inn",
+  "name": "Voss's Goods",
+  "rows": [
+   "WWWWWWWWWWWWW",
+   "WWWWWWWWWWWWW",
+   "WFFFFFFFFHHHW",
+   "WFAAFFFKKKKKW",
+   "WFAFFFFFFFFKW",
+   "WFFFUUUUFFFFW",
+   "WFFFUUUUFFFFW",
+   "WlFFFFFFFFFFW",
+   "WWWWWWDWWWWWW"
+  ],
+  "spawn": [
+   6,
+   7
+  ],
+  "w": 13,
+  "warps": [
+   {
+    "dir": "down",
+    "to": "town",
+    "tx": 14,
+    "ty": 10,
+    "x": 6,
+    "y": 8
    }
   ]
  },

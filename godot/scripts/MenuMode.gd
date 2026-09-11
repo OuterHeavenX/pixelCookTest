@@ -446,17 +446,45 @@ func draw(c: CanvasItem, anim: float) -> void:
 		Art.draw_text(c, note, Vector2(Art.VW / 2.0, Art.VH - 21), Color("#f6e2a8"), "center")
 
 
+## Rows of party members share the pane's height: three fit at the full 48
+## pixels, four on a 180-tall view do not, so the pitch shrinks and the row
+## drops its title line rather than running off the bottom.
+func party_row_pitch() -> int:
+	return mini(48, int((Art.VH - 34) / max(1, Gs.party.size())))
+
+
 func _draw_party(c: CanvasItem) -> void:
 	Art.draw_text(c, "PARTY", Vector2(106, 12), Color("#f6e2a8"))
+	var pitch := party_row_pitch()
 	for i in Gs.party.size():
 		var h: Dictionary = Gs.party[i]
 		var x := 110
-		var y := 30 + i * 48
+		var y := 30 + i * pitch
+		var alive_color := Color("#f2f4ff") if bool(h["alive"]) else Color("#c08090")
+		if pitch < 44:
+			Art.spr_foot(c, "%s_down0" % h["sprite"], Vector2(x + 12, y + 22),
+				Art.scale_for("%s_down0" % h["sprite"], 24.0))
+			Art.spr(c, class_icon(h), Vector2(x + 30, y - 1))
+			Art.draw_text(c, h["name"], Vector2(x + 40, y), alive_color)
+			Art.draw_text(c, "Lv %d" % int(h["lv"]), Vector2(x + 132, y), Color("#f6e2a8"))
+			Art.draw_text(c, "HP", Vector2(x + 30, y + 12), Color("#9aa4c8"))
+			Art.draw_text(c, "%d/%d" % [int(h["hp"]), int(h["maxhp"])],
+				Vector2(x + 108, y + 12), hp_color(h), "right")
+			Art.draw_bar(c, Vector2(x + 30, y + 22), Vector2(78, 3),
+				float(h["hp"]) / float(h["maxhp"]), Color("#9fffb0"), Color("#3f9a54"))
+			if int(h["maxmp"]) > 0:
+				Art.draw_text(c, "MP", Vector2(x + 120, y + 12), Color("#9aa4c8"))
+				Art.draw_text(c, "%d/%d" % [int(h["mp"]), int(h["maxmp"])],
+					Vector2(x + 196, y + 12), Color("#9fd0ff"), "right")
+				Art.draw_bar(c, Vector2(x + 120, y + 22), Vector2(76, 3),
+					float(h["mp"]) / float(h["maxmp"]), Color("#bfe4ff"), Color("#3a72c8"))
+			else:
+				Art.draw_text(c, "No magic", Vector2(x + 120, y + 12), Color("#7a82a8"))
+			continue
 		Art.spr_foot(c, "%s_down0" % h["sprite"], Vector2(x + 12, y + 30),
 			Art.scale_for("%s_down0" % h["sprite"], 36.0))
 		Art.spr(c, class_icon(h), Vector2(x + 30, y - 1))
-		Art.draw_text(c, h["name"], Vector2(x + 40, y),
-			Color("#f2f4ff") if bool(h["alive"]) else Color("#c08090"))
+		Art.draw_text(c, h["name"], Vector2(x + 40, y), alive_color)
 		Art.draw_text(c, h["title"], Vector2(x + 40, y + 11), Color("#9aa4c8"))
 		Art.draw_text(c, "Lv %d" % int(h["lv"]), Vector2(x + 132, y), Color("#f6e2a8"))
 		Art.draw_text(c, "HP", Vector2(x + 30, y + 24), Color("#9aa4c8"))
@@ -598,7 +626,7 @@ func _draw_equip(c: CanvasItem) -> void:
 		Art.draw_button(c, Rect2(112, 24 + i * 15, 96, 13), h["name"], i == who)
 		Art.draw_text(c, h["title"], Vector2(214, 27 + i * 15), Color("#7a82a8"))
 	if picking:
-		Art.draw_text(c, "Choose who to outfit.", Vector2(112, 76), Color("#9aa4c8"))
+		Art.draw_text(c, "Choose who to outfit.", Vector2(112, 24 + Gs.party.size() * 15 + 6), Color("#9aa4c8"))
 		return
 
 	var hero: Dictionary = Gs.party[who]

@@ -989,6 +989,18 @@ MAP_LIGHT = {
     "mere1":   dict(energy=1.4, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
     "mere2":   dict(energy=1.2, fill=1.1, sky=(84, 136, 158),  haze=0.0, grade=False),
     "inn":     dict(energy=2.2, fill=0.7,  sky=(220, 190, 150), haze=0.0, grade=False),
+    # Every house behind a door is lit like the inn: lamplight and a warm
+    # sky through the doorway.
+    "town_forge": dict(energy=2.2, fill=0.7, sky=(220, 190, 150), haze=0.0, grade=False),
+    "town_store": dict(energy=2.2, fill=0.7, sky=(220, 190, 150), haze=0.0, grade=False),
+    "town_pell": dict(energy=2.2, fill=0.7, sky=(220, 190, 150), haze=0.0, grade=False),
+    "town_halvard": dict(energy=2.2, fill=0.7, sky=(220, 190, 150), haze=0.0, grade=False),
+    "hollow_inn": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
+    "hollow_armourer": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
+    "hollow_marrow": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
+    "hollow_keepers": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
+    "hollow_pip": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
+    "hollow_watch": dict(energy=1.8, fill=0.8, sky=(200, 190, 170), haze=0.0, grade=False),
     # Hollowmere is where they light the lamps at noon: the sun low and
     # orange behind the ridge, a violet sky, every lantern lit, and none of
     # the reference grade, which would wash the dusk back to noon.
