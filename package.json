@@ -1,0 +1,13 @@
+{
+  "name": "rivenbrook",
+  "private": true,
+  "description": "Rivenbrook's browser build and the Playwright harness that smoke-tests it.",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "smoke": "python3 tools/websmoke.py",
+    "lint": "python3 tools/gdlint.py"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

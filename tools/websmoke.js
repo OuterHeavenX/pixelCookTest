@@ -346,7 +346,8 @@ async function launch() {
   expect(await until(() => G.mode === 'ending', 60), 'the chapter closes');
   expect(await ev(() => Ending.which) === 'one', "on chapter one's ending");
   expect(await ev(() => G.mapId) === 'town', 'and leaves the party in Rivenbrook');
-  expect(await ev(() => hasSave()), 'with the journal already written');
+  expect(await ev(() => hasSave()), 'with the journal already written',
+    await ev(() => saveProblem() || 'no problem'));
   await ev(() => { Ending.chars = 9999; });
   await p.waitForTimeout(220);
   await shot('ending');
@@ -493,6 +494,28 @@ async function launch() {
   expect(await ev(() => !inRoster('bram')), 'and Bram still up on the road');
   expect(await ev(() => JSON.stringify(G.party[1].gear)) === before[2],
     'equipment survives the round trip');
+  /* The game writes its own save at the milestones, in a slot of its own. */
+  expect(await ev(() => !!localStorage.getItem(AUTOSAVE_KEY)), 'the game has been autosaving');
+  expect(await ev(() => JSON.parse(localStorage.getItem(SAVE_KEY)).version) === 2,
+    'the journal carries a version');
+  /* A save that cannot be trusted is refused with a reason, not loaded and
+   * left to misbehave later. Both slots are broken so nothing sound is left. */
+  await ev(() => { window.__kept = [localStorage.getItem(SAVE_KEY), localStorage.getItem(AUTOSAVE_KEY)]; });
+  await ev(() => {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 2, party: [{ id: 'nobody', lv: 1, exp: 0, hp: 1, mp: 0 }], gil: 0, mapId: 'town', px: 1, py: 1 }));
+    localStorage.setItem(AUTOSAVE_KEY, 'not json at all');
+  });
+  expect(await ev(() => !hasSave()), 'a broken journal is not offered');
+  const why = await ev(() => saveProblem());
+  expect(!!why && why.indexOf('nobody we know') >= 0, 'and the title says why', why);
+  expect(await ev(() => !loadGame()), 'and cannot be loaded');
+  await ev(() => {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ party: [{ id: 'aldric', lv: 3, exp: 10, hp: 20, mp: 5 }], gil: 5, mapId: 'town', px: 2, py: 2, bag: { potion: 2, gone_item: 1 } }));
+    localStorage.removeItem(AUTOSAVE_KEY);
+  });
+  expect(await ev(() => hasSave() && loadGame() && G.party.length === 1 && G.bag.potion === 2 && !G.bag.gone_item),
+    'an old journal without a version still loads, minus what the game no longer has');
+  await ev(() => { const k = window.__kept; localStorage.setItem(SAVE_KEY, k[0]); if (k[1]) localStorage.setItem(AUTOSAVE_KEY, k[1]); loadGame(); });
 
   // --- the screen ---------------------------------------------------------
   /* The view takes the shape of the window now, so a run at one shape proves

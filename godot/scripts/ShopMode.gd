@@ -88,6 +88,7 @@ func update(dt: float) -> void:
 	note = "Bought %s." % it["name"]
 	note_t = 1.6
 	Snd.sfx("item")
+	Gs.autosave()
 
 
 func draw(c: CanvasItem, anim: float) -> void:

@@ -182,6 +182,7 @@ func do_warp(w: Dictionary) -> void:
 	var facing: String = w.get("dir", Gs.dir)
 	var arrive := func() -> void:
 		enter_map(to, tx, ty, facing)
+		Gs.autosave()
 		if to == "wild" and not bool(Gs.flags.get("visitedWild", false)):
 			Gs.flags["visitedWild"] = true
 			msg = make_message(["THE THORNWILDS",
@@ -303,6 +304,7 @@ func recruit(id: String) -> void:
 	Snd.sfx("levelup")
 	var where := "joins the party!" if Gs.party.has(h) else "is waiting with the others."
 	msg = make_message(["%s, the %s, %s" % [h["name"], h["title"], where]])
+	Gs.autosave()
 
 
 ## Story that fires the first time you set foot somewhere, once each. Kept in
@@ -392,6 +394,7 @@ func open_chest(tx: int, ty: int) -> void:
 		line = "Found %s x%d!" % [Dat.items[loot["item"]]["name"], int(loot["n"])]
 	Snd.sfx("item")
 	msg = make_message([line])
+	Gs.autosave()
 
 
 func challenge_boss(id: String) -> void:

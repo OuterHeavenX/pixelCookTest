@@ -867,7 +867,10 @@ function newGame() {
   enterMap('town', MAPS.town.spawn[0], MAPS.town.spawn[1], 'down');
 }
 
-const SAVE_KEY = 'rivenbrook.save.v1';
+const SAVE_KEY = 'rivenbrook.save.v1';      // the journal the player writes
+const AUTOSAVE_KEY = 'rivenbrook.auto.v1';  // the game's own, written at milestones
+const SAVE_VERSION = 2;
+const DIRS = ['up', 'down', 'left', 'right'];
 
 function slimHero(h) {
   return { id: h.id, lv: h.lv, exp: h.exp, hp: h.hp, mp: h.mp,
@@ -881,27 +884,127 @@ function fatHero(p) {
   h.exp = p.exp; h.hp = p.hp; h.mp = p.mp; h.alive = p.alive !== false;
   return h;
 }
-function saveGame() {
-  const data = {
+
+function saveData() {
+  return {
+    version: SAVE_VERSION, savedAt: Date.now(),
     party: G.party.map(slimHero), bench: G.bench.map(slimHero),
     gil: G.gil, bag: G.bag, gear: G.gear, mapId: G.mapId, px: G.px, py: G.py, dir: G.dir,
     flags: G.flags, playtime: G.playtime
   };
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; }
+}
+function writeSlot(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); return true; }
   catch (e) { return false; }
 }
-function hasSave() {
-  try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
+function saveGame() { return writeSlot(SAVE_KEY, saveData()); }
+/* Written by the game at the moments a player would hate to lose: a map
+   change, a purchase, someone joining, a chest, a boss. Its own slot, so the
+   journal the player wrote on purpose is never overwritten by accident;
+   Continue takes whichever of the two is newer. */
+function autosave() { return writeSlot(AUTOSAVE_KEY, saveData()); }
+
+/* Nothing is read out of a save until the whole thing has been checked. A
+   field that is missing, the wrong type, or names something the game does
+   not have (a hero, a map, a piece of gear) is a reason, and a save with a
+   reason is not loaded: the title says why instead of the game misbehaving
+   later. Returns the reason, or null for a save that is sound. */
+function checkSave(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return 'it is not a journal';
+  const version = d.version === undefined ? 1 : d.version;
+  if (!Number.isInteger(version) || version < 1) return 'its version makes no sense';
+  if (version > SAVE_VERSION) return 'it was written by a newer game';
+  const int = v => Number.isInteger(v);
+  const num = v => typeof v === 'number' && isFinite(v);
+  const plain = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const hero = (p, where) => {
+    if (!plain(p)) return where + ' is not a hero';
+    if (!CLASSES[p.id]) return where + ' is nobody we know';
+    if (!int(p.lv) || p.lv < 1 || p.lv > 99) return where + ' has an impossible level';
+    if (!num(p.exp) || p.exp < 0) return where + ' has impossible experience';
+    if (!num(p.hp) || !num(p.mp) || p.hp < 0 || p.mp < 0) return where + ' has impossible health';
+    if (p.gear !== undefined) {
+      if (!plain(p.gear)) return where + ' wears nonsense';
+      for (const slot in p.gear) {
+        if (!GEAR_SLOTS.some(g => g.id === slot)) return where + ' wears something on a limb nobody has';
+        if (p.gear[slot] !== null && !GEAR[p.gear[slot]]) return where + ' wears something that does not exist';
+      }
+    }
+    return null;
+  };
+  if (!Array.isArray(d.party) || d.party.length < 1 || d.party.length > PARTY_MAX) return 'the party is missing';
+  for (let i = 0; i < d.party.length; i++) {
+    const r = hero(d.party[i], 'party member ' + (i + 1)); if (r) return r;
+  }
+  if (d.bench !== undefined) {
+    if (!Array.isArray(d.bench)) return 'the bench is not a bench';
+    for (let i = 0; i < d.bench.length; i++) {
+      const r = hero(d.bench[i], 'bench member ' + (i + 1)); if (r) return r;
+    }
+  }
+  if (!num(d.gil) || d.gil < 0) return 'the purse is not a number';
+  if (d.bag !== undefined && !plain(d.bag)) return 'the bag is not a bag';
+  if (d.gear !== undefined && !plain(d.gear)) return 'the spare gear is not a list';
+  if (!MAPS[d.mapId]) return 'it is set on a map we do not have';
+  const m = MAPS[d.mapId];
+  if (!int(d.px) || !int(d.py) || d.px < 0 || d.py < 0 || d.px >= m.w || d.py >= m.h) return 'the party is standing off the map';
+  if (d.dir !== undefined && DIRS.indexOf(d.dir) < 0) return 'the party is facing nowhere';
+  if (d.flags !== undefined && !plain(d.flags)) return 'its flags are not flags';
+  if (d.playtime !== undefined && typeof d.playtime !== 'number') return 'its clock is broken';
+  return null;
+}
+
+/* A sound save from any version, brought up to this one: everything optional
+   gets its default, and items or gear the game no longer has fall out of the
+   bag rather than sitting there as names nothing can draw. */
+function migrateSave(d) {
+  const out = Object.assign({ bench: [], bag: {}, gear: {}, flags: {}, playtime: 0, dir: 'down', savedAt: 0 }, d);
+  const keep = (obj, table) => {
+    const o = {};
+    for (const id in obj) if (table[id] && Number.isInteger(obj[id]) && obj[id] > 0) o[id] = obj[id];
+    return o;
+  };
+  out.bag = keep(out.bag, ITEMS);
+  out.gear = keep(out.gear, GEAR);
+  out.flags = Object.assign({ chests: {} }, out.flags);
+  if (!out.flags.chests || typeof out.flags.chests !== 'object') out.flags.chests = {};
+  out.version = SAVE_VERSION;
+  return out;
+}
+
+/* One slot, read and checked: null when empty, {data} when sound, {problem}
+   when it is there but cannot be trusted. */
+function readSlot(key) {
+  let raw;
+  try { raw = localStorage.getItem(key); } catch (e) { return null; }
+  if (!raw) return null;
+  let d;
+  try { d = JSON.parse(raw); } catch (e) { return { problem: 'it is not even text we can read' }; }
+  const problem = checkSave(d);
+  return problem ? { problem } : { data: migrateSave(d) };
+}
+function saveSlots() { return [readSlot(SAVE_KEY), readSlot(AUTOSAVE_KEY)].filter(Boolean); }
+function newestSave() {
+  const good = saveSlots().filter(s => s.data).sort((a, b) => b.data.savedAt - a.data.savedAt);
+  return good.length ? good[0].data : null;
+}
+function hasSave() { return !!newestSave(); }
+/* Why Continue is missing when there is something in storage: the first
+   slot's reason, or null when there is nothing wrong (or nothing at all). */
+function saveProblem() {
+  const slots = saveSlots();
+  if (!slots.length || slots.some(s => s.data)) return null;
+  return slots[0].problem;
 }
 function loadGame() {
+  const d = newestSave();
+  if (!d) return false;
   try {
-    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (!d) return false;
     G.party = d.party.map(fatHero);
-    G.bench = (d.bench || []).map(fatHero);
-    G.gil = d.gil; G.bag = d.bag || {}; G.gear = d.gear || {};
-    G.flags = d.flags || { chests: {} };
-    G.playtime = d.playtime || 0;
+    G.bench = d.bench.map(fatHero);
+    G.gil = d.gil; G.bag = d.bag; G.gear = d.gear;
+    G.flags = d.flags;
+    G.playtime = d.playtime;
     enterMap(d.mapId, d.px, d.py, d.dir);
     return true;
   } catch (e) { return false; }
@@ -1081,6 +1184,7 @@ function onStepComplete() {
 function doWarp(w) {
   fadeTo(() => {
     enterMap(w.to, w.tx, w.ty, w.dir || G.dir);
+    autosave();
     if (w.to === 'wild' && !G.flags.visitedWild) {
       G.flags.visitedWild = true;
       Field.msg = makeMessage([
@@ -1208,6 +1312,7 @@ function recruit(id) {
   Audio_.sfx('levelup');
   const where = G.party.indexOf(h) >= 0 ? 'joins the party!' : 'is waiting with the others.';
   Field.msg = makeMessage([h.name + ', the ' + h.title + ', ' + where]);
+  autosave();
 }
 
 function fillTokens(line) {
@@ -1235,6 +1340,7 @@ function openChest(tx, ty) {
   }
   Audio_.sfx('item');
   Field.msg = makeMessage([line]);
+  autosave();
 }
 
 function updateField(dt) {
@@ -2075,6 +2181,7 @@ function beginVictory() {
     G.flags[won.flag] = true;
     (won.sets || []).forEach(f => { G.flags[f] = true; });
     won.victory.forEach(l => lines.push(l));
+    autosave();
   }
   Battle.resultLines = lines;
   Battle.resultPage = 0;
@@ -2985,6 +3092,7 @@ function buyStock(i) {
   else G.bag[it.id] = (G.bag[it.id] || 0) + 1;
   shopNote('Bought ' + it.name + '.');
   Audio_.sfx('item');
+  autosave();
 }
 
 function shopTab(i) {
@@ -3145,7 +3253,7 @@ function drawTitle() {
   // under the hint on anything taller.
   const titleOpts = ['New Game'].concat(hasSave() ? ['Continue'] : []);
   const boxH = 16 + titleOpts.length * 14;
-  const boxY = VH - 16 - boxH;
+  const boxY = VH - 24 - boxH;
   const horizon = boxY - 10;
   for (let i = 0; i < 60; i++) {
     const x = (i * 71) % VW, y = (i * 37) % 90;
@@ -3185,10 +3293,18 @@ function drawTitle() {
     drawText(o, VW / 2 - 22, y, i === Title.index ? '#ffe9a0' : '#f2f4ff');
     if (i === Title.index) drawCursor(VW / 2 - 36, y - 1, Title.t);
   });
-  drawText(document.body.classList.contains('touch')
+  // Two lines: the four keys everyone needs, then the two everyone misses.
+  const touch = document.body.classList.contains('touch');
+  drawText(touch
     ? 'Drag the left of the screen to walk   A confirm   B cancel'
     : 'Arrows move   Z confirm   X cancel   C menu',
+    VW / 2, VH - 16, '#8f97c0', { align: 'center' });
+  drawText(touch ? 'Hold B to run' : 'Hold X to run   M mute',
     VW / 2, VH - 8, '#8f97c0', { align: 'center' });
+  const problem = saveProblem();
+  if (problem) {
+    drawText('The journal could not be read: ' + problem + '.', VW / 2, 72, '#e07a8a', { align: 'center' });
+  }
 }
 
 function updateTitle(dt) {
@@ -3231,6 +3347,8 @@ function drawGameOver() {
   ctx.fillRect(0, 60, VW, 60);
   drawTextBig('GAME OVER', VW / 2, 44, '#e07a8a', 3, { align: 'center' });
   drawText('The Thornwilds claim another party.', VW / 2, 84, '#a8899a', { align: 'center' });
+  const problem = saveProblem();
+  if (problem) drawText('The journal could not be read: ' + problem + '.', VW / 2, 96, '#e07a8a', { align: 'center' });
   const opts = hasSave() ? ['Load Journal', 'Title Screen'] : ['Title Screen'];
   drawWindow(VW / 2 - 56, 108, 112, 16 + opts.length * 14, { tone: 'red' });
   opts.forEach((o, i) => {

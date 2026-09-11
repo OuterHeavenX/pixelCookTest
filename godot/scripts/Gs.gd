@@ -1,7 +1,10 @@
 extends Node
 ## Game state: the party, the purse, the bag, world flags, and saving.
 
-const SAVE_PATH := "user://rivenbrook_save.json"
+const SAVE_PATH := "user://rivenbrook_save.json"      ## the journal the player writes
+const AUTOSAVE_PATH := "user://rivenbrook_auto.json"  ## the game's own, at milestones
+const SAVE_VERSION := 2
+const DIRS := ["up", "down", "left", "right"]
 
 const PARTY_MAX := 4
 
@@ -273,8 +276,34 @@ func spend_item(id: String) -> void:
 		bag.erase(id)
 
 
-func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH)
+func _payload() -> Dictionary:
+	return {
+		"version": SAVE_VERSION, "saved_at": int(Time.get_unix_time_from_system()),
+		"party": _slim(party), "bench": _slim(bench),
+		"gil": gil, "bag": bag, "gear": gear, "map_id": map_id,
+		"px": px, "py": py, "dir": dir, "flags": flags, "playtime": playtime,
+	}
+
+
+func _write(path: String) -> bool:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(JSON.stringify(_payload()))
+	f.close()
+	return true
+
+
+func save_game() -> bool:
+	return _write(SAVE_PATH)
+
+
+## Written by the game at the moments a player would hate to lose: a map
+## change, a purchase, someone joining, a chest, a boss. Its own file, so the
+## journal the player wrote on purpose is never overwritten by accident;
+## Continue takes whichever of the two is newer.
+func autosave() -> bool:
+	return _write(AUTOSAVE_PATH)
 
 
 func _slim(who: Array) -> Array:
@@ -289,7 +318,6 @@ func _fat(rows) -> Array:
 	var out := []
 	for p in rows:
 		var h := make_hero(p["id"], int(p["lv"]))
-		# Saves from before equipment existed just keep their starting kit.
 		if p.has("gear"):
 			for slot in p["gear"]:
 				h["gear"][slot] = p["gear"][slot]
@@ -302,38 +330,179 @@ func _fat(rows) -> Array:
 	return out
 
 
-func save_game() -> bool:
-	var payload := {
-		"party": _slim(party), "bench": _slim(bench),
-		"gil": gil, "bag": bag, "gear": gear, "map_id": map_id,
-		"px": px, "py": py, "dir": dir, "flags": flags, "playtime": playtime,
-	}
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if f == null:
-		return false
-	f.store_string(JSON.stringify(payload))
-	f.close()
-	return true
+func _is_int(v) -> bool:
+	return typeof(v) == TYPE_INT or (typeof(v) == TYPE_FLOAT and v == floor(v))
+
+
+func _is_plain(v) -> bool:
+	return typeof(v) == TYPE_DICTIONARY
+
+
+func _check_hero(p, where: String) -> String:
+	if not _is_plain(p):
+		return where + " is not a hero"
+	if not Dat.classes.has(p.get("id", "")):
+		return where + " is nobody we know"
+	if not _is_int(p.get("lv")) or int(p["lv"]) < 1 or int(p["lv"]) > 99:
+		return where + " has an impossible level"
+	if not _is_int(p.get("exp")) or int(p["exp"]) < 0:
+		return where + " has impossible experience"
+	if not _is_int(p.get("hp")) or not _is_int(p.get("mp")) or int(p["hp"]) < 0 or int(p["mp"]) < 0:
+		return where + " has impossible health"
+	if p.has("gear"):
+		if not _is_plain(p["gear"]):
+			return where + " wears nonsense"
+		var slot_ids := []
+		for g in Dat.gear_slots:
+			slot_ids.append(g["id"])
+		for slot in p["gear"]:
+			if not slot_ids.has(slot):
+				return where + " wears something on a limb nobody has"
+			var id = p["gear"][slot]
+			if id != null and not Dat.gear.has(id):
+				return where + " wears something that does not exist"
+	return ""
+
+
+## Nothing is read out of a save until the whole thing has been checked. A
+## field that is missing, the wrong type, or names something the game does
+## not have is a reason, and a save with a reason is not loaded: the title
+## says why instead of the game misbehaving later. Returns the reason, or "".
+func check_save(d) -> String:
+	if not _is_plain(d):
+		return "it is not a journal"
+	var version = d.get("version", 1)
+	if not _is_int(version) or int(version) < 1:
+		return "its version makes no sense"
+	if int(version) > SAVE_VERSION:
+		return "it was written by a newer game"
+	var party_rows = d.get("party")
+	if typeof(party_rows) != TYPE_ARRAY or party_rows.size() < 1 or party_rows.size() > PARTY_MAX:
+		return "the party is missing"
+	for i in party_rows.size():
+		var r := _check_hero(party_rows[i], "party member %d" % (i + 1))
+		if r != "":
+			return r
+	if d.has("bench"):
+		if typeof(d["bench"]) != TYPE_ARRAY:
+			return "the bench is not a bench"
+		for i in (d["bench"] as Array).size():
+			var r := _check_hero(d["bench"][i], "bench member %d" % (i + 1))
+			if r != "":
+				return r
+	if not _is_int(d.get("gil")) or int(d["gil"]) < 0:
+		return "the purse is not a number"
+	if d.has("bag") and not _is_plain(d["bag"]):
+		return "the bag is not a bag"
+	if d.has("gear") and not _is_plain(d["gear"]):
+		return "the spare gear is not a list"
+	if not Dat.maps.has(d.get("map_id", "")):
+		return "it is set on a map we do not have"
+	var m: Dictionary = Dat.maps[d["map_id"]]
+	if not _is_int(d.get("px")) or not _is_int(d.get("py")) \
+			or int(d["px"]) < 0 or int(d["py"]) < 0 \
+			or int(d["px"]) >= int(m["w"]) or int(d["py"]) >= int(m["h"]):
+		return "the party is standing off the map"
+	if d.has("dir") and not DIRS.has(d["dir"]):
+		return "the party is facing nowhere"
+	if d.has("flags") and not _is_plain(d["flags"]):
+		return "its flags are not flags"
+	if d.has("playtime") and typeof(d["playtime"]) != TYPE_FLOAT and typeof(d["playtime"]) != TYPE_INT:
+		return "its clock is broken"
+	return ""
+
+
+## A sound save from any version, brought up to this one: everything optional
+## gets its default, and items or gear the game no longer has fall out of the
+## bag rather than sitting there as names nothing can draw.
+func migrate_save(d: Dictionary) -> Dictionary:
+	var out := {"bench": [], "bag": {}, "gear": {}, "flags": {}, "playtime": 0.0,
+		"dir": "down", "saved_at": 0}
+	out.merge(d, true)
+	var bag_out := {}
+	for id in out["bag"]:
+		if Dat.items.has(id) and _is_int(out["bag"][id]) and int(out["bag"][id]) > 0:
+			bag_out[id] = int(out["bag"][id])
+	out["bag"] = bag_out
+	var gear_out := {}
+	for id in out["gear"]:
+		if Dat.gear.has(id) and _is_int(out["gear"][id]) and int(out["gear"][id]) > 0:
+			gear_out[id] = int(out["gear"][id])
+	out["gear"] = gear_out
+	var flags_out := {"chests": {}}
+	flags_out.merge(out["flags"], true)
+	if typeof(flags_out["chests"]) != TYPE_DICTIONARY:
+		flags_out["chests"] = {}
+	out["flags"] = flags_out
+	out["version"] = SAVE_VERSION
+	return out
+
+
+## One slot, read and checked: {} when empty, {"data": ...} when sound,
+## {"problem": ...} when it is there but cannot be trusted.
+func read_slot(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	# A JSON instance rather than parse_string, so a file that is not JSON is
+	# a reason on the title and not an error in the engine log.
+	var json := JSON.new()
+	if json.parse(FileAccess.get_file_as_string(path)) != OK:
+		return {"problem": "it is not even text we can read"}
+	var parsed = json.data
+	var problem := check_save(parsed)
+	if problem != "":
+		return {"problem": problem}
+	return {"data": migrate_save(parsed)}
+
+
+func _slots() -> Array:
+	var out := []
+	for path in [SAVE_PATH, AUTOSAVE_PATH]:
+		var slot := read_slot(path)
+		if not slot.is_empty():
+			out.append(slot)
+	return out
+
+
+func newest_save() -> Dictionary:
+	var best := {}
+	for slot in _slots():
+		if slot.has("data") and (best.is_empty() or int(slot["data"]["saved_at"]) > int(best["saved_at"])):
+			best = slot["data"]
+	return best
+
+
+func has_save() -> bool:
+	return not newest_save().is_empty()
+
+
+## Why Continue is missing when there is something on disk: the first slot's
+## reason, or "" when nothing is wrong (or nothing is there).
+func save_problem() -> String:
+	var slots := _slots()
+	if slots.is_empty():
+		return ""
+	for slot in slots:
+		if slot.has("data"):
+			return ""
+	return slots[0]["problem"]
 
 
 func load_game() -> bool:
-	if not has_save():
+	var d := newest_save()
+	if d.is_empty():
 		return false
-	var parsed = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return false
-	var d: Dictionary = parsed
-	party = _fat(d.get("party", []))
-	bench = _fat(d.get("bench", []))
-	gil = int(d.get("gil", 200))
-	bag = d.get("bag", {})
-	gear = d.get("gear", {})
-	flags = d.get("flags", {"chests": {}, "bossDown": false, "visitedWild": false})
-	playtime = float(d.get("playtime", 0.0))
-	map_id = d.get("map_id", "town")
-	px = int(d.get("px", 0))
-	py = int(d.get("py", 0))
-	dir = d.get("dir", "down")
+	party = _fat(d["party"])
+	bench = _fat(d["bench"])
+	gil = int(d["gil"])
+	bag = d["bag"]
+	gear = d["gear"]
+	flags = d["flags"]
+	playtime = float(d["playtime"])
+	map_id = d["map_id"]
+	px = int(d["px"])
+	py = int(d["py"])
+	dir = d["dir"]
 	return true
 
 

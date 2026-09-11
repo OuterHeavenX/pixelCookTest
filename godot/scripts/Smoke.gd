@@ -635,6 +635,41 @@ func _run() -> void:
 	_expect(Gs.find_hero("sera") != null, "with Sera still on it")
 	_expect(Gs.find_hero("bram") == null, "and Bram still up on the road")
 	_expect((Gs.party[1]["gear"] as Dictionary) == gear_before, "equipment survives the round trip")
+	# The game writes its own save at the milestones, in a file of its own.
+	_expect(FileAccess.file_exists(Gs.AUTOSAVE_PATH), "the game has been autosaving")
+	var written = JSON.parse_string(FileAccess.get_file_as_string(Gs.SAVE_PATH))
+	_expect(typeof(written) == TYPE_DICTIONARY and int(written.get("version", 0)) == 2,
+		"the journal carries a version")
+	# A save that cannot be trusted is refused with a reason, not loaded and
+	# left to misbehave later. Both files are broken so nothing sound is left.
+	var kept_save := FileAccess.get_file_as_string(Gs.SAVE_PATH)
+	var kept_auto := FileAccess.get_file_as_string(Gs.AUTOSAVE_PATH)
+	var jf := FileAccess.open(Gs.SAVE_PATH, FileAccess.WRITE)
+	jf.store_string(JSON.stringify({"version": 2, "party": [{"id": "nobody", "lv": 1, "exp": 0, "hp": 1, "mp": 0}],
+		"gil": 0, "map_id": "town", "px": 1, "py": 1}))
+	jf.close()
+	jf = FileAccess.open(Gs.AUTOSAVE_PATH, FileAccess.WRITE)
+	jf.store_string("not json at all")
+	jf.close()
+	_expect(not Gs.has_save(), "a broken journal is not offered")
+	var why := Gs.save_problem()
+	_expect(why.contains("nobody we know"), "and the title says why")
+	_expect(not Gs.load_game(), "and cannot be loaded")
+	jf = FileAccess.open(Gs.SAVE_PATH, FileAccess.WRITE)
+	jf.store_string(JSON.stringify({"party": [{"id": "aldric", "lv": 3, "exp": 10, "hp": 20, "mp": 5}],
+		"gil": 5, "map_id": "town", "px": 2, "py": 2, "bag": {"potion": 2, "gone_item": 1}}))
+	jf.close()
+	DirAccess.remove_absolute(Gs.AUTOSAVE_PATH)
+	_expect(Gs.has_save() and Gs.load_game() and Gs.party.size() == 1 \
+		and int(Gs.bag.get("potion", 0)) == 2 and not Gs.bag.has("gone_item"),
+		"an old journal without a version still loads, minus what the game no longer has")
+	jf = FileAccess.open(Gs.SAVE_PATH, FileAccess.WRITE)
+	jf.store_string(kept_save)
+	jf.close()
+	jf = FileAccess.open(Gs.AUTOSAVE_PATH, FileAccess.WRITE)
+	jf.store_string(kept_auto)
+	jf.close()
+	Gs.load_game()
 
 	if failures.is_empty():
 		_say("SMOKE OK  (%d screenshots)" % shots)

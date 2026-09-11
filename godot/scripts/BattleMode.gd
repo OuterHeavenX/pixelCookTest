@@ -779,6 +779,7 @@ func begin_victory() -> void:
 			Gs.flags[str(f)] = true
 		for line in won["victory"]:
 			lines.append(line)
+		Gs.autosave()
 	result_lines = lines
 	result_page = 0
 	result = "win"
