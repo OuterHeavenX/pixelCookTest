@@ -2727,13 +2727,15 @@ function drawBattleUi() {
   }
 
   const panelY = stageFloor(), panelH = HUD_H - 4;
-  // The lantern, top left: the one thing every fight shares.
+  // The lantern, sitting on the stage floor at the left, under the banner's
+  // line and clear of it: the one thing every fight shares.
   const lamp = Battle.lantern ? 'LANTERN LIT' : 'LANTERN OUT';
-  drawWindow(6, 6, textWidth(lamp) + 22, 18, { tone: 'dark' });
+  const ly = panelY - 22, lx = 6 + touchGutter();
+  drawWindow(lx, ly, textWidth(lamp) + 22, 18, { tone: 'dark' });
+  if (Battle.lantern) { ctx.fillStyle = 'rgba(255,215,90,0.35)'; ctx.fillRect(lx + 5, ly + 3, 10, 11); }
   ctx.fillStyle = Battle.lantern ? '#ffd75a' : '#3a3a5a';
-  ctx.fillRect(13, 11, 6, 7);
-  if (Battle.lantern) { ctx.fillStyle = 'rgba(255,215,90,0.35)'; ctx.fillRect(11, 9, 10, 11); }
-  drawText(lamp, 24, 11, Battle.lantern ? '#f6e2a8' : '#8c8cb8');
+  ctx.fillRect(lx + 7, ly + 5, 6, 7);
+  drawText(lamp, lx + 18, ly + 5, Battle.lantern ? '#f6e2a8' : '#8c8cb8');
   // Party status, right - anchored to the right edge, not to a 320 screen.
   const pr = VW - 200 - touchGutter();
   drawWindow(pr, panelY, 196, panelH);

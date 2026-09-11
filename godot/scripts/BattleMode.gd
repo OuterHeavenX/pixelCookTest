@@ -1053,13 +1053,15 @@ func draw_ui(c: CanvasItem) -> void:
 	var panel_y := stage_floor()
 	var panel_h := float(HUD_H - 4)
 
-	# The lantern, top left: the one thing every fight shares.
+	# The lantern, sitting on the stage floor at the left, under the banner's
+	# line and clear of it: the one thing every fight shares.
 	var lamp := "LANTERN LIT" if lantern else "LANTERN OUT"
-	Art.draw_window(c, Rect2(6, 6, Art.text_width(lamp) + 22, 18), "dark")
+	var ly := panel_y - 22.0
+	Art.draw_window(c, Rect2(6, ly, Art.text_width(lamp) + 22, 18), "dark")
 	if lantern:
-		c.draw_rect(Rect2(11, 9, 10, 11), Color(1.0, 0.84, 0.35, 0.35))
-	c.draw_rect(Rect2(13, 11, 6, 7), Color("#ffd75a") if lantern else Color("#3a3a5a"))
-	Art.draw_text(c, lamp, Vector2(24, 11), Color("#f6e2a8") if lantern else Color("#8c8cb8"))
+		c.draw_rect(Rect2(11, ly + 3, 10, 11), Color(1.0, 0.84, 0.35, 0.35))
+	c.draw_rect(Rect2(13, ly + 5, 6, 7), Color("#ffd75a") if lantern else Color("#3a3a5a"))
+	Art.draw_text(c, lamp, Vector2(24, ly + 5), Color("#f6e2a8") if lantern else Color("#8c8cb8"))
 
 	var pr := Art.VW - 200.0
 	Art.draw_window(c, Rect2(pr, panel_y, 196, panel_h))
