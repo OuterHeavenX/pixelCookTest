@@ -1671,6 +1671,13 @@ function startEncounter(group, isBoss) {
     Battle.cmd = 0; Battle.sub = null; Battle.subIndex = 0;
     Battle.banner = isBoss ? BOSSES[isBoss].banner : 'Monsters appear!';
     Battle.bannerT = 2.2;
+    // The lantern: lit unless the fight says otherwise. The keeper's coat
+    // shrugs off the first snuff of every fight for whoever wears it.
+    Battle.lantern = !(isBoss && BOSSES[isBoss].starts_dark);
+    Battle.snuffShield = G.party.reduce((n, h) => {
+      const a = h.alive && h.gear ? equipped(h, 'armour') : null;
+      return n + ((a && a.snuff_shield) || 0);
+    }, 0);
     const counts = {};
     Battle.enemies = group.map((id, i) => {
       const base = ENEMIES[id];
@@ -1744,9 +1751,32 @@ function enemySlot(e, i, n) {
 
 /* ------------------------------------------------------------ mechanics -- */
 
+/* The lantern's two teeth. A cold enemy in the dark takes half damage, and
+   its blows go through armour; lit, it is just a monster. */
+function shrouded(target) { return !!(target.cold && !Battle.lantern); }
+function lightLantern(who, how) {
+  Battle.lantern = true;
+  Battle.lanternFlash = 0.5;
+  flashBanner(how || (who ? who.name + ' lights the lantern.' : 'The lantern takes.'));
+  Audio_.sfx('heal');
+}
+function snuffLantern(e) {
+  if (Battle.snuffShield > 0) {
+    Battle.snuffShield--;
+    flashBanner(e.label + ' reaches for the flame. The coat holds it.');
+    Audio_.sfx('cursor');
+    return;
+  }
+  Battle.lantern = false;
+  flashBanner(e.label + ' snuffs the lantern!');
+  Battle.shake = Math.max(Battle.shake, 3);
+  Audio_.sfx('cancel');
+}
+
 function physDamage(attacker, target, mult) {
   const atk = attacker.atk * (mult || 1);
-  const def = target.def * (target.defending ? 1.9 : 1);
+  const pierce = attacker.cold && !Battle.lantern && GAMEDATA.lantern.pierce;
+  const def = pierce ? 0 : target.def * (target.defending ? 1.9 : 1);
   let dmg = Math.max(1, Math.round((atk * 2.2 - def * 1.1) * rnd(0.9, 1.12)));
   let crit = false;
   if (Math.random() < 0.07) { dmg = Math.round(dmg * 1.9); crit = true; }
@@ -1776,6 +1806,10 @@ function addFx(kind, x, y, opts) {
 
 function applyDamage(target, dmg, isHero, opts) {
   opts = opts || {};
+  if (!isHero && shrouded(target)) {
+    dmg = Math.max(1, Math.ceil(dmg * GAMEDATA.lantern.shroud));
+    opts = Object.assign({}, opts, { shroud: true });
+  }
   target.hp = Math.max(0, target.hp - dmg);
   target.hurt = 0.28;
   const slot = isHero ? heroSlot(G.party.indexOf(target)) : null;
@@ -1784,6 +1818,7 @@ function applyDamage(target, dmg, isHero, opts) {
     opts.crit ? '#ffd75a' : opts.weak ? '#8fe8ff' : '#ffffff');
   if (opts.crit) popup('CRITICAL', pos.x, pos.y - 18, '#ffd75a');
   else if (opts.weak) popup('WEAK', pos.x, pos.y - 18, '#8fe8ff');
+  else if (opts.shroud) popup('SHROUDED', pos.x, pos.y - 18, '#8c8cb8');
   Battle.shake = Math.max(Battle.shake, opts.crit ? 5 : 3);
   if (target.hp <= 0) {
     target.alive = false;
@@ -1877,6 +1912,7 @@ function commandsFor(h) {
   const list = [{ id: 'fight', label: 'Fight' }];
   if (h.spells.length) list.push({ id: 'magic', label: 'Magic' });
   list.push({ id: 'item', label: 'Item' });
+  if (!Battle.lantern) list.push({ id: 'light', label: 'Light' });
   list.push({ id: 'guard', label: 'Guard' });
   list.push({ id: 'run', label: 'Run' });
   return list;
@@ -1923,6 +1959,7 @@ function runCommand(id) {
   Audio_.sfx('confirm');
   if (id === 'fight') { Battle.sub = null; beginTargeting('enemy', { kind: 'fight' }); }
   else if (id === 'guard') { chooseAction({ kind: 'guard' }); }
+  else if (id === 'light') { chooseAction({ kind: 'light' }); }
   else if (id === 'run') { chooseAction({ kind: 'run' }); }
   else { Battle.sub = id; Battle.subIndex = 0; Battle.subScroll = 0; }
 }
@@ -1933,6 +1970,11 @@ function runSubEntry(i) {
   const items = subList(h);
   if (!items[i]) return;
   Battle.subIndex = i;
+  if (Battle.sub === 'item' && ITEMS[items[i].id].kind === 'light') {
+    Audio_.sfx('confirm');
+    chooseAction({ kind: 'item', itemId: items[i].id });
+    return;
+  }
   if (Battle.sub === 'magic') {
     const sp = SPELLS[items[i].id];
     if (h.mp < sp.mp) { Audio_.sfx('cancel'); flashBanner('Not enough MP!'); return; }
@@ -2048,6 +2090,14 @@ function resolveAction(a) {
 }
 
 function resolveHeroAction(a, h, act) {
+  if (act.kind === 'light') {
+    lightLantern(h);
+    a.hold = 0.45;
+    // The lamp key: relighting costs its wearer no turn.
+    const trinket = h.gear ? equipped(h, 'trinket') : null;
+    if (trinket && trinket.relight_free) { h.atb = 100; flashBanner(h.name + ' lights the lantern with the key. No time lost.'); }
+    return;
+  }
   if (act.kind === 'guard') {
     h.defending = true;
     flashBanner(h.name + ' takes a guarded stance.');
@@ -2085,6 +2135,7 @@ function resolveHeroAction(a, h, act) {
     flashBanner(h.name + ' casts ' + sp.name + '!');
     Audio_.sfx(sp.kind === 'heal' || sp.kind === 'healAll' || sp.kind === 'revive' ? 'heal' : 'magic');
     a.hold = 0.75;
+    if (sp.relights && !Battle.lantern) lightLantern(h, 'The lantern takes from ' + sp.name + '.');
     if (sp.kind === 'attack') {
       const targets = sp.target === 'enemies' ? livingEnemies() : [act.target && act.target.alive ? act.target : livingEnemies()[0]];
       targets.filter(Boolean).forEach(t => {
@@ -2134,6 +2185,7 @@ function resolveHeroAction(a, h, act) {
     Audio_.sfx('item');
     a.hold = 0.55;
     const t = act.target;
+    if (it.kind === 'light') { lightLantern(h, h.name + ' relights the lantern with oil.'); return; }
     if (it.kind === 'heal' && t) { healTarget(t, it.power, true); addFx('heal', heroSlot(G.party.indexOf(t)).x + 8, heroSlot(G.party.indexOf(t)).y - 4); }
     else if (it.kind === 'mp' && t) { t.mp = Math.min(t.maxmp, t.mp + it.power); popup('+' + it.power + ' MP', heroSlot(G.party.indexOf(t)).x + 8, heroSlot(G.party.indexOf(t)).y - 6, '#9fd0ff'); }
     else if (it.kind === 'revive' && t) {
@@ -2179,6 +2231,10 @@ function resolveEnemyAction(a, e, act) {
     const c = enemyCenter(e);
     popup('+' + Math.round(r.dmg * 0.6), c.x, c.y - 6, '#8fffa8');
     return;
+  }
+  if (act.kind === 'snuff') {
+    if (Battle.lantern || Battle.snuffShield > 0) { snuffLantern(e); a.hold = 0.6; return; }
+    act = { kind: 'attack' };            // already dark: it just hits you
   }
   if (act.kind === 'rally') {
     flashBanner(e.label + ' howls for reinforcements!');
@@ -2306,6 +2362,11 @@ function drawBattle() {
   ctx.save();
   ctx.translate(sh, 0);
   drawBattleBackdrop();
+  if (!Battle.lantern) {
+    // The dark: the backdrop goes to night-blue, and it reads at once.
+    ctx.fillStyle = 'rgba(6, 8, 30, 0.55)';
+    ctx.fillRect(-8, 0, VW + 16, stageFloor());
+  }
 
   // Enemies.
   Battle.enemies.forEach((e, i) => {
@@ -2464,6 +2525,13 @@ function drawBattleUi() {
   }
 
   const panelY = stageFloor(), panelH = HUD_H - 4;
+  // The lantern, top left: the one thing every fight shares.
+  const lamp = Battle.lantern ? 'LANTERN LIT' : 'LANTERN OUT';
+  drawWindow(6, 6, textWidth(lamp) + 22, 18, { tone: 'dark' });
+  ctx.fillStyle = Battle.lantern ? '#ffd75a' : '#3a3a5a';
+  ctx.fillRect(13, 11, 6, 7);
+  if (Battle.lantern) { ctx.fillStyle = 'rgba(255,215,90,0.35)'; ctx.fillRect(11, 9, 10, 11); }
+  drawText(lamp, 24, 11, Battle.lantern ? '#f6e2a8' : '#8c8cb8');
   // Party status, right - anchored to the right edge, not to a 320 screen.
   const pr = VW - 200 - touchGutter();
   drawWindow(pr, panelY, 196, panelH);

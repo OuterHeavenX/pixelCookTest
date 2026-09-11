@@ -72,12 +72,14 @@ SPELLS = {'fire': {'name': 'Fire',
           'target': 'ally',
           'fx': 'holy'},
  'ward': {'name': 'Ward',
+          'relights': True,   # a keeper's spell: the lantern takes as a side effect
           'mp': 6,
           'power': 0,
           'kind': 'guardAll',
           'target': 'allies',
           'fx': 'holy'},
  'holy': {'name': 'Radiance',
+          'relights': True,
           'mp': 20,
           'power': 58,
           'kind': 'attack',
@@ -115,7 +117,13 @@ ITEMS = {'potion': {'name': 'Potion',
           'price': 120,
           'kind': 'damage',
           'power': 90,
-          'desc': 'Hurls fire at one foe.'}}
+          'desc': 'Hurls fire at one foe.'},
+ 'lamp_oil': {'name': 'Lamp Oil',
+              'icon': 'i_ether',
+              'price': 30,
+              'kind': 'light',
+              'power': 0,
+              'desc': 'Relights the lantern at once.'}}
 
 # Party growth is flat per level and deliberately readable:
 # stat(level) = base + grow * (level - 1).
@@ -240,6 +248,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
             'gil': 45,
             'ai': [{'w': 70, 'act': 'attack'}, {'w': 30, 'act': 'steal'}]},
  'skeleton': {'name': 'Barrow Guard',
+             'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
               'height': 30,   # was a man
               'sprite': 'e_skeleton',
               'hp': 78,
@@ -252,6 +261,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
               'weak': 'quake',
               'ai': [{'w': 75, 'act': 'attack'}, {'w': 25, 'act': 'rally'}]},
  'wight': {'name': 'Barrow Wight',
+          'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
            'height': 34,   # was a man, and stands taller for it
            'sprite': 'e_wight',
            'hp': 96,
@@ -262,10 +272,11 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
            'exp': 34,
            'gil': 30,
            'weak': 'fire',
-           'ai': [{'w': 40, 'act': 'attack'},
+           'ai': [{'w': 20, 'act': 'snuff'}, {'w': 40, 'act': 'attack'},
                   {'w': 35, 'act': 'spell', 'spell': 'ice'},
                   {'w': 25, 'act': 'drain'}]},
  'rimewolf': {'name': 'Rimewolf',
+             'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
               'height': 26,   # leaner than a direwolf, and it does not tire
               'sprite': 'e_wolf_ice',
               'hp': 104,
@@ -278,6 +289,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
               'weak': 'fire',
               'ai': [{'w': 60, 'act': 'attack'}, {'w': 40, 'act': 'pounce'}]},
  'mereling': {'name': 'Mereling',
+             'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
               'height': 26,   # whatever the lake has been growing
               'sprite': 'e_slime_ice',
               'hp': 120,
@@ -291,6 +303,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
               'ai': [{'w': 55, 'act': 'attack'},
                      {'w': 45, 'act': 'spell', 'spell': 'ice'}]},
  'lampwraith': {'name': 'Lamp Wraith',
+               'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
                 'height': 30,   # what a lantern keeps out
                 'sprite': 'e_wight_ice',
                 'hp': 132,
@@ -301,13 +314,14 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
                 'exp': 52,
                 'gil': 46,
                 'weak': 'holy',
-                'ai': [{'w': 35, 'act': 'attack'},
+                'ai': [{'w': 25, 'act': 'snuff'}, {'w': 35, 'act': 'attack'},
                        {'w': 40, 'act': 'spell', 'spell': 'ice'},
                        {'w': 25, 'act': 'drain'}]},
  # Under the mere. A drowned keeper still walking his round, the cold that got
  # into a lamp, and the thing the ward was cut to hold - which does not fight
  # you here, because it is not down there any more.
  'drownkeep': {'name': 'Drowned Keeper',
+              'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
                'height': 30,
                'sprite': 'e_skeleton_ice',
                'hp': 148,
@@ -318,10 +332,11 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
                'exp': 62,
                'gil': 58,
                'weak': 'fire',
-               'ai': [{'w': 55, 'act': 'attack'},
+               'ai': [{'w': 15, 'act': 'snuff'}, {'w': 55, 'act': 'attack'},
                       {'w': 25, 'act': 'spell', 'spell': 'ice'},
                       {'w': 20, 'act': 'defend'}]},
  'coldwisp': {'name': 'Cold Lamp',
+             'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
               'height': 24,
               'sprite': 'e_wisp_ice',
               'hp': 116,
@@ -332,10 +347,11 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
               'exp': 58,
               'gil': 44,
               'weak': 'fire',
-              'ai': [{'w': 30, 'act': 'attack'},
+              'ai': [{'w': 30, 'act': 'snuff'}, {'w': 30, 'act': 'attack'},
                      {'w': 45, 'act': 'spell', 'spell': 'ice'},
                      {'w': 25, 'act': 'drain'}]},
  'warden': {'name': 'Drowned Warden',
+           'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
             'height': 74,
             'sprite': 'e_warden',
             'boss': True,
@@ -347,11 +363,12 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
             'exp': 620,
             'gil': 1200,
             'weak': 'fire',
-            'ai': [{'w': 45, 'act': 'attack'},
+            'ai': [{'w': 25, 'act': 'snuff'}, {'w': 45, 'act': 'attack'},
                    {'w': 25, 'act': 'spell', 'spell': 'ice'},
                    {'w': 18, 'act': 'smash'},
                    {'w': 12, 'act': 'drain'}]},
  'ogre': {'name': 'Ogre Chieftain',
+         'cold': True,   # of the barrow or the mere: shrouded while the lantern is out
          'height': 76,   # the boss, and the only thing here bigger than you
           'sprite': 'e_ogre',
           'boss': True,
@@ -363,7 +380,7 @@ ENEMIES = {'slime': {'name': 'Bog Slime',
           'exp': 260,
           'gil': 500,
           'weak': 'ice',
-          'ai': [{'w': 55, 'act': 'attack'},
+          'ai': [{'w': 20, 'act': 'snuff'}, {'w': 55, 'act': 'attack'},
                  {'w': 25, 'act': 'smash'},
                  {'w': 20, 'act': 'spell', 'spell': 'quake'}]}}
 
@@ -663,8 +680,8 @@ NPCS = { 'mere2': [{'x': 20,
 
 # What each counter sells, keyed by the shelf an NPC names.
 SHOP_STOCK = {
-    'amber': ['potion', 'hipotion', 'ether', 'phoenix', 'bomb'],
-    'hollow': ['potion', 'hipotion', 'ether', 'phoenix', 'bomb'],
+    'amber': ['potion', 'hipotion', 'ether', 'phoenix', 'bomb', 'lamp_oil'],
+    'hollow': ['potion', 'hipotion', 'ether', 'phoenix', 'bomb', 'lamp_oil'],
 }
 
 # Tile legend: map character -> [sprite, solid, tag].
@@ -867,9 +884,11 @@ GEAR = {
     # they were all made for the same job.
     'keeper_coat': {'name': "Keeper's Coat", 'slot': 'armour', 'icon': 'i_armor',
                     'price': 0, 'users': None, 'stats': {'def': 22, 'mag': 8, 'hp': 40},
-                    'desc': 'Waxed against water that is colder than water.'},
+                    'snuff_shield': 1,   # the first snuff of a fight fails against it
+                    'desc': 'Waxed against water that is colder than water. Keeps a flame.'},
     'lamp_key': {'name': "Sera's Lamp Key", 'slot': 'trinket', 'icon': 'i_ring',
                  'price': 0, 'users': ['aldric'], 'stats': {'def': 4, 'mag': 4, 'hp': 20},
+                 'relight_free': True,   # relighting costs its wearer no turn
                  'desc': "Her mother's. It still turns the ones on the bridge."},
 }
 
@@ -916,6 +935,7 @@ BOSSES = {
         'sets': ['sealBroken'],
         'sprite': 'e_ogre',
         'name': 'Ogre Chieftain',
+        'starts_dark': True,   # the fight opens with the lantern out; someone has to light it
         'challenge': [
             "The Ogre Chieftain hauls itself off the bier at the barrow's bottom.",
             'There will be no fleeing from this one. Stand and fight?'],
@@ -1048,6 +1068,17 @@ ENDINGS = {
         'hook': 'Something is walking the Mere Road south. Bram is on it.',
     },
 }
+# The lantern: the one rule every fight shares. The party carries one lamp,
+# lit or dark. Wild things do not care. Anything of the cold - the barrow's
+# dead, the mere's keepers, the two wardens - is shrouded while it is dark:
+# it takes half damage and its blows go through armour. Some of them act to
+# snuff it; any hero can spend a turn to light it, lamp oil lights it at once,
+# and a keeper's spell lights it in passing.
+LANTERN = {
+    'shroud': 0.5,        # damage a cold enemy takes while the lantern is out
+    'pierce': True,       # a cold enemy's blows ignore defence while it is out
+}
+
 # Which picture a map wears, by flag: the last variant whose flags are all set
 # wins, and a map with none listed wears its plain picture. The town frosts
 # from the south end once the seal is broken.
@@ -1300,6 +1331,7 @@ def build():
         "encounters": ENCOUNTERS,
         "npcs": NPCS,
         "picture_variants": PICTURE_VARIANTS,
+        "lantern": LANTERN,
         "shop_stock": SHOP_STOCK,
         "legend": LEGEND,
         "locks": LOCKS,

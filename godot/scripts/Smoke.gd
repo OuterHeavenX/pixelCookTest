@@ -361,6 +361,23 @@ func _run() -> void:
 	_expect(await _until(func(): return main.mode == "battle"), "the barrow's own monsters fight")
 	await _until(func(): return main.battle.phase == "command")
 	await _shot("barrow_battle")
+	# The lantern: lit to begin with; a cold thing in the dark is shrouded;
+	# any hero can spend a turn to light it again.
+	_expect(main.battle.lantern, "the lantern is lit when a fight starts")
+	var guard: Dictionary = main.battle.enemies[0]
+	_expect(bool(guard.get("cold", false)), "the barrow's dead are of the cold")
+	guard["hp"] = 1000
+	guard["maxhp"] = 1000
+	main.battle.lantern = false
+	main.battle.apply_damage(guard, 100, false)
+	_expect(int(guard["hp"]) == 950, "a cold thing in the dark takes half")
+	var can_light := false
+	for cmd in main.battle.commands_for(Gs.party[0]):
+		if cmd["id"] == "light":
+			can_light = true
+	_expect(can_light, "and Light is on the menu while it is out")
+	main.battle.resolve_hero_action(Gs.party[0], {"kind": "light"})
+	_expect(main.battle.lantern, "and lighting it works")
 	main.finish_battle("win", "")
 	await _until(func(): return main.mode == "field")
 
@@ -386,6 +403,7 @@ func _run() -> void:
 	main.start_encounter(["ogre"], "chieftain")
 	_expect(await _until(func(): return main.mode == "battle"), "the chieftain fights")
 	await _until(func(): return main.battle.phase != "intro")
+	_expect(not main.battle.lantern, "in the dark: the barrow starts with the lantern out")
 	var exp_total := 0
 	for e in main.battle.enemies:
 		exp_total += int(e["exp"])

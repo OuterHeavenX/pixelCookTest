@@ -62,6 +62,15 @@ func start(group: Array, boss: String) -> void:
 	sub_index = 0
 	banner = str(Dat.bosses[boss]["banner"]) if boss != "" else "Monsters appear!"
 	banner_t = 2.2
+	# The lantern: lit unless the fight says otherwise. The keeper's coat
+	# shrugs off the first snuff of every fight for whoever wears it.
+	lantern = not (boss != "" and bool(Dat.bosses[boss].get("starts_dark", false)))
+	snuff_shield = 0
+	for h in Gs.party:
+		if bool(h["alive"]):
+			var a = Gs.equipped(h, "armour")
+			if a != null:
+				snuff_shield += int(a.get("snuff_shield", 0))
 
 	enemies = []
 	var counts := {}
@@ -95,6 +104,39 @@ func start(group: Array, boss: String) -> void:
 		h["hurt"] = 0.0
 		h["offset"] = 0.0
 	Snd.play("battle")
+
+
+var lantern := true
+var snuff_shield := 0
+
+
+## The lantern's two teeth. A cold enemy in the dark takes half damage, and
+## its blows go through armour; lit, it is just a monster.
+func shrouded(victim: Dictionary) -> bool:
+	return bool(victim.get("cold", false)) and not lantern
+
+
+func light_lantern(who, how := "") -> void:
+	lantern = true
+	if how != "":
+		flash_banner(how)
+	elif who != null:
+		flash_banner("%s lights the lantern." % who["name"])
+	else:
+		flash_banner("The lantern takes.")
+	Snd.sfx("heal")
+
+
+func snuff_lantern(e: Dictionary) -> void:
+	if snuff_shield > 0:
+		snuff_shield -= 1
+		flash_banner("%s reaches for the flame. The coat holds it." % e["label"])
+		Snd.sfx("cursor")
+		return
+	lantern = false
+	flash_banner("%s snuffs the lantern!" % e["label"])
+	shake = max(shake, 3.0)
+	Snd.sfx("cancel")
 
 
 func living_enemies() -> Array:
@@ -164,7 +206,8 @@ func enemy_center(e: Dictionary) -> Vector2:
 
 func phys_damage(attacker: Dictionary, victim: Dictionary, mult := 1.0) -> Dictionary:
 	var atk := float(attacker["atk"]) * mult
-	var dfn := float(victim["def"]) * (1.9 if bool(victim.get("defending", false)) else 1.0)
+	var pierce: bool = bool(attacker.get("cold", false)) and not lantern and bool(Dat.lantern.get("pierce", true))
+	var dfn := 0.0 if pierce else float(victim["def"]) * (1.9 if bool(victim.get("defending", false)) else 1.0)
 	var dmg := int(round((atk * 2.2 - dfn * 1.1) * randf_range(0.9, 1.12)))
 	dmg = maxi(1, dmg)
 	var crit := randf() < 0.07
@@ -206,6 +249,10 @@ func _target_anchor(victim: Dictionary, is_hero: bool) -> Vector2:
 
 
 func apply_damage(victim: Dictionary, dmg: int, is_hero: bool, crit := false, weak := false) -> void:
+	var shroud := false
+	if not is_hero and shrouded(victim):
+		dmg = maxi(1, int(ceil(dmg * float(Dat.lantern.get("shroud", 0.5)))))
+		shroud = true
 	victim["hp"] = maxi(0, int(victim["hp"]) - dmg)
 	victim["hurt"] = 0.28
 	var pos := _target_anchor(victim, is_hero)
@@ -219,6 +266,8 @@ func apply_damage(victim: Dictionary, dmg: int, is_hero: bool, crit := false, we
 		popup("CRITICAL", pos + Vector2(0, -18), Color("#ffd75a"))
 	elif weak:
 		popup("WEAK", pos + Vector2(0, -18), Color("#8fe8ff"))
+	elif shroud:
+		popup("SHROUDED", pos + Vector2(0, -18), Color("#8c8cb8"))
 	shake = max(shake, 5.0 if crit else 3.0)
 	if int(victim["hp"]) <= 0:
 		victim["alive"] = false
@@ -241,6 +290,8 @@ func commands_for(h: Dictionary) -> Array:
 	if (h["spells"] as Array).size() > 0:
 		list.append({"id": "magic", "label": "Magic"})
 	list.append({"id": "item", "label": "Item"})
+	if not lantern:
+		list.append({"id": "light", "label": "Light"})
 	list.append({"id": "guard", "label": "Guard"})
 	list.append({"id": "run", "label": "Run"})
 	return list
@@ -368,6 +419,8 @@ func update_command(dt: float) -> void:
 				begin_targeting("enemy", {"kind": "fight"})
 			elif id == "guard":
 				choose_action({"kind": "guard"})
+			elif id == "light":
+				choose_action({"kind": "light"})
 			elif id == "run":
 				choose_action({"kind": "run"})
 			else:
@@ -413,6 +466,9 @@ func update_command(dt: float) -> void:
 	else:
 		var item_id: String = entries[sub_index]["id"]
 		Snd.sfx("confirm")
+		if Dat.items[item_id]["kind"] == "light":
+			choose_action({"kind": "item", "item_id": item_id})
+			return
 		var side := "enemy" if Dat.items[item_id]["kind"] == "damage" else "ally"
 		begin_targeting(side, {"kind": "item", "item_id": item_id})
 
@@ -552,6 +608,16 @@ func resolve_action() -> void:
 func resolve_hero_action(h: Dictionary, act: Dictionary) -> void:
 	var kind: String = act["kind"]
 
+	if kind == "light":
+		light_lantern(h)
+		acting["hold"] = 0.45
+		# The lamp key: relighting costs its wearer no turn.
+		var trinket = Gs.equipped(h, "trinket")
+		if trinket != null and bool(trinket.get("relight_free", false)):
+			h["atb"] = 100.0
+			flash_banner("%s lights the lantern with the key. No time lost." % h["name"])
+		return
+
 	if kind == "guard":
 		h["defending"] = true
 		flash_banner("%s takes a guarded stance." % h["name"])
@@ -608,6 +674,8 @@ func resolve_hero_action(h: Dictionary, act: Dictionary) -> void:
 		var restorative := spell_kind in ["heal", "healAll", "revive"]
 		Snd.sfx("heal" if restorative else "magic")
 		acting["hold"] = 0.75
+		if bool(sp.get("relights", false)) and not lantern:
+			light_lantern(h, "The lantern takes from %s." % sp["name"])
 
 		if spell_kind == "attack":
 			var targets := []
@@ -665,6 +733,9 @@ func resolve_hero_action(h: Dictionary, act: Dictionary) -> void:
 		acting["hold"] = 0.55
 		var item_kind: String = it["kind"]
 		var subject: Dictionary = act.get("target", h)
+		if item_kind == "light":
+			light_lantern(h, "%s relights the lantern with oil." % h["name"])
+			return
 		if item_kind == "heal":
 			add_fx("heal", hero_slot(int(subject["slot"])) + Vector2(8, -4))
 			heal_target(subject, int(it["power"]), true)
@@ -721,6 +792,13 @@ func resolve_enemy_action(e: Dictionary, act: Dictionary) -> void:
 		e["hp"] = mini(int(e["maxhp"]), int(e["hp"]) + back)
 		popup("+%d" % back, enemy_center(e) + Vector2(0, -6), Color("#8fffa8"))
 		return
+
+	if kind == "snuff":
+		if lantern or snuff_shield > 0:
+			snuff_lantern(e)
+			acting["hold"] = 0.6
+			return
+		kind = "attack"          # already dark: it just hits you
 
 	if kind == "rally":
 		flash_banner("%s howls for reinforcements!" % e["label"])
@@ -847,6 +925,9 @@ func draw(c: CanvasItem) -> void:
 	var sh: float = round(randf_range(-shake, shake)) if shake > 0.0 else 0.0
 	c.draw_set_transform(Vector2(sh, 0))
 	draw_backdrop(c)
+	if not lantern:
+		# The dark: the backdrop goes to night-blue, and it reads at once.
+		c.draw_rect(Rect2(-8, 0, Art.VW + 16, stage_floor()), Color(6 / 255.0, 8 / 255.0, 30 / 255.0, 0.55))
 
 	for i in enemies.size():
 		var e: Dictionary = enemies[i]
@@ -971,6 +1052,14 @@ func draw_ui(c: CanvasItem) -> void:
 
 	var panel_y := stage_floor()
 	var panel_h := float(HUD_H - 4)
+
+	# The lantern, top left: the one thing every fight shares.
+	var lamp := "LANTERN LIT" if lantern else "LANTERN OUT"
+	Art.draw_window(c, Rect2(6, 6, Art.text_width(lamp) + 22, 18), "dark")
+	if lantern:
+		c.draw_rect(Rect2(11, 9, 10, 11), Color(1.0, 0.84, 0.35, 0.35))
+	c.draw_rect(Rect2(13, 11, 6, 7), Color("#ffd75a") if lantern else Color("#3a3a5a"))
+	Art.draw_text(c, lamp, Vector2(24, 11), Color("#f6e2a8") if lantern else Color("#8c8cb8"))
 
 	var pr := Art.VW - 200.0
 	Art.draw_window(c, Rect2(pr, panel_y, 196, panel_h))

@@ -271,6 +271,22 @@ async function launch() {
   await ev(() => { G.party.forEach(h => { for (let i = 0; i < 6; i++) grantExp(h, 700); }); });
   await ev(() => startEncounter(['goblin', 'goblin', 'wolf'], ''));
   expect(await until(() => G.mode === 'battle', 80), 'an encounter starts');
+  /* The lantern: lit to begin with; a cold thing in the dark is shrouded; any
+   * hero can spend a turn to light it again. */
+  expect(await ev(() => Battle.lantern === true), 'the lantern is lit when a fight starts');
+  const shroud = await ev(() => {
+    const e = Battle.enemies[0]; e.cold = true; e.hp = e.maxhp = 1000; Battle.lantern = false;
+    applyDamage(e, 100, false, {});
+    const taken = 1000 - e.hp;
+    const canLight = commandsFor(G.party[0]).some(c => c.id === 'light');
+    resolveHeroAction({}, G.party[0], { kind: 'light' });
+    const lit = Battle.lantern;
+    e.cold = false; e.hp = e.maxhp = 50;
+    return [taken, canLight, lit];
+  });
+  expect(shroud[0] === 50, 'a cold thing in the dark takes half', String(shroud[0]));
+  expect(shroud[1], 'and Light is on the menu while it is out');
+  expect(shroud[2], 'and lighting it works');
   expect(await until(() => Battle.phase === 'command' && Battle.actor, 200),
     "a character's turn comes up");
   await shot('battle');
@@ -351,6 +367,8 @@ async function launch() {
     'stepping up to him stands him off the bier');
   await pickChoice(0);
   expect(await until(() => G.mode === 'battle', 80), 'and the chieftain fights');
+  expect(await ev(() => Battle.lantern === false), 'in the dark: the barrow starts with the lantern out');
+  expect(await ev(() => Battle.enemies[0].cold === true), 'and he is of the cold');
   expect(await ev(() => Battle.banner), 'his banner names him', await ev(() => Battle.banner));
   await shot('boss');
   await winFight();

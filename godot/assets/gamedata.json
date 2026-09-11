@@ -15,6 +15,7 @@
     "sealBroken"
    ],
    "sprite": "e_ogre",
+   "starts_dark": true,
    "victory": [
     "The chieftain falls, and the barrow goes very quiet.",
     "Beneath the bier, something answers. A seam of light opens in the floor.",
@@ -717,6 +718,10 @@
   "coldwisp": {
    "ai": [
     {
+     "act": "snuff",
+     "w": 30
+    },
+    {
      "act": "attack",
      "w": 30
     },
@@ -731,6 +736,7 @@
     }
    ],
    "atk": 22,
+   "cold": true,
    "def": 12,
    "exp": 58,
    "gil": 44,
@@ -744,6 +750,10 @@
   },
   "drownkeep": {
    "ai": [
+    {
+     "act": "snuff",
+     "w": 15
+    },
     {
      "act": "attack",
      "w": 55
@@ -759,6 +769,7 @@
     }
    ],
    "atk": 30,
+   "cold": true,
    "def": 20,
    "exp": 62,
    "gil": 58,
@@ -795,6 +806,10 @@
   "lampwraith": {
    "ai": [
     {
+     "act": "snuff",
+     "w": 25
+    },
+    {
      "act": "attack",
      "w": 35
     },
@@ -809,6 +824,7 @@
     }
    ],
    "atk": 24,
+   "cold": true,
    "def": 15,
    "exp": 52,
    "gil": 46,
@@ -833,6 +849,7 @@
     }
    ],
    "atk": 21,
+   "cold": true,
    "def": 19,
    "exp": 40,
    "gil": 34,
@@ -846,6 +863,10 @@
   },
   "ogre": {
    "ai": [
+    {
+     "act": "snuff",
+     "w": 20
+    },
     {
      "act": "attack",
      "w": 55
@@ -862,6 +883,7 @@
    ],
    "atk": 30,
    "boss": true,
+   "cold": true,
    "def": 16,
    "exp": 260,
    "gil": 500,
@@ -885,6 +907,7 @@
     }
    ],
    "atk": 27,
+   "cold": true,
    "def": 14,
    "exp": 38,
    "gil": 30,
@@ -908,6 +931,7 @@
     }
    ],
    "atk": 22,
+   "cold": true,
    "def": 16,
    "exp": 26,
    "gil": 22,
@@ -941,6 +965,10 @@
   "warden": {
    "ai": [
     {
+     "act": "snuff",
+     "w": 25
+    },
+    {
      "act": "attack",
      "w": 45
     },
@@ -960,6 +988,7 @@
    ],
    "atk": 44,
    "boss": true,
+   "cold": true,
    "def": 24,
    "exp": 620,
    "gil": 1200,
@@ -973,6 +1002,10 @@
   },
   "wight": {
    "ai": [
+    {
+     "act": "snuff",
+     "w": 20
+    },
     {
      "act": "attack",
      "w": 40
@@ -988,6 +1021,7 @@
     }
    ],
    "atk": 20,
+   "cold": true,
    "def": 13,
    "exp": 34,
    "gil": 30,
@@ -1179,11 +1213,12 @@
    ]
   },
   "keeper_coat": {
-   "desc": "Waxed against water that is colder than water.",
+   "desc": "Waxed against water that is colder than water. Keeps a flame.",
    "icon": "i_armor",
    "name": "Keeper's Coat",
    "price": 0,
    "slot": "armour",
+   "snuff_shield": 1,
    "stats": {
     "def": 22,
     "hp": 40,
@@ -1224,6 +1259,7 @@
    "icon": "i_ring",
    "name": "Sera's Lamp Key",
    "price": 0,
+   "relight_free": true,
    "slot": "trinket",
    "stats": {
     "def": 4,
@@ -1466,6 +1502,14 @@
    "power": 250,
    "price": 150
   },
+  "lamp_oil": {
+   "desc": "Relights the lantern at once.",
+   "icon": "i_ether",
+   "kind": "light",
+   "name": "Lamp Oil",
+   "power": 0,
+   "price": 30
+  },
   "phoenix": {
    "desc": "Revives a fallen ally.",
    "icon": "i_phoenix",
@@ -1482,6 +1526,10 @@
    "power": 70,
    "price": 40
   }
+ },
+ "lantern": {
+  "pierce": true,
+  "shroud": 0.5
  },
  "legend": {
   "\"": [
@@ -2508,14 +2556,16 @@
    "hipotion",
    "ether",
    "phoenix",
-   "bomb"
+   "bomb",
+   "lamp_oil"
   ],
   "hollow": [
    "potion",
    "hipotion",
    "ether",
    "phoenix",
-   "bomb"
+   "bomb",
+   "lamp_oil"
   ]
  },
  "sign_after": {
@@ -2581,6 +2631,7 @@
    "mp": 20,
    "name": "Radiance",
    "power": 58,
+   "relights": true,
    "target": "enemy"
   },
   "ice": {
@@ -2623,6 +2674,7 @@
    "mp": 6,
    "name": "Ward",
    "power": 0,
+   "relights": true,
    "target": "allies"
   }
  },
