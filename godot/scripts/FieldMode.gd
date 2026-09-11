@@ -28,7 +28,9 @@ func _init(owner) -> void:
 
 # --- map handling -----------------------------------------------------------
 
-func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
+## `quiet` skips the map's beats: the party is put home before a chapter's
+## ending plays, and a beat that fired then would be lost behind the credits.
+func enter_map(id: String, tx: int, ty: int, facing := "", quiet := false) -> void:
 	map = Dat.maps[id]
 	Gs.map_id = id
 	Gs.px = tx
@@ -43,14 +45,18 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		# Somebody who has already joined is not still standing in the street.
 		if n.get("recruit", null) != null and Gs.find_hero(n["recruit"]) != null:
 			continue
-		var spot := nearest_free(int(n["x"]), int(n["y"]))
+		# A stage can move somebody and stop them wandering: Tam stands by his
+		# mother once the ground at the south end goes wrong.
+		var stage := npc_stage(n)
+		var spot := nearest_free(int(stage.get("x", n["x"])), int(stage.get("y", n["y"])))
 		var npc := {
 			"tx": spot.x, "ty": spot.y, "ox": 0.0, "oy": 0.0, "phase": 0.0,
 			"cool": randf_range(1.0, 4.0), "move": {}, "boss": "",
 			"sprite": n["sprite"], "dir": n["dir"], "name": n["name"],
-			"wander": bool(n.get("wander", false)), "lines": n["lines"],
+			"wander": bool(stage.get("wander", n.get("wander", false))), "lines": n["lines"],
 			"after": n.get("after", null), "service": n.get("service", ""),
 			"shelf": n.get("shelf", "amber"), "recruit": n.get("recruit", null),
+			"stages": n.get("stages", []),
 		}
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
@@ -66,7 +72,8 @@ func enter_map(id: String, tx: int, ty: int, facing := "") -> void:
 		})
 	Gs.steps_to_encounter = roll_encounter_countdown()
 	Snd.play(map.get("music", "field"))
-	map_beat(id)
+	if not quiet:
+		map_beat(id)
 
 
 func roll_encounter_countdown() -> int:
@@ -113,6 +120,25 @@ func warp_at(x: int, y: int) -> Variant:
 
 ## Scenery is scattered procedurally, so an authored NPC tile can end up under
 ## a tree. Walk outwards until we find somewhere it can actually stand.
+## A townsperson speaks in stages: `lines` before anything has happened, then
+## whichever entry of `stages` has all its `when` flags set and none of its
+## `absent` ones, the last such entry winning. Recruitable people keep the
+## older `after` rule instead. Returns {} when no stage applies.
+func npc_stage(npc: Dictionary) -> Dictionary:
+	var pick := {}
+	for st in npc.get("stages", []):
+		var ok := true
+		for f in st.get("when", []):
+			if not bool(Gs.flags.get(f, false)):
+				ok = false
+		for f in st.get("absent", []):
+			if bool(Gs.flags.get(f, false)):
+				ok = false
+		if ok:
+			pick = st
+	return pick
+
+
 func nearest_free(x: int, y: int) -> Vector2i:
 	if not solid_at(x, y):
 		return Vector2i(x, y)
@@ -227,7 +253,10 @@ func interact() -> void:
 		var use_after: bool = joined if recruit_id != null \
 			else bool(Gs.flags.get(str(npc.get("after_flag", "bossDown")), false))
 		var script: Array = npc["lines"]
-		if use_after and npc.get("after", null) != null:
+		var stage := {} if recruit_id != null else npc_stage(npc)
+		if not stage.is_empty():
+			script = stage["lines"]
+		elif use_after and npc.get("after", null) != null:
 			script = npc["after"]
 		var lines := []
 		for l in script:
@@ -625,7 +654,7 @@ func draw(c: CanvasItem) -> void:
 	# The Blender picture, where the map has one. Anything the tile pass would
 	# have changed at runtime - the ward cracking - is baked in and stays
 	# still; the water moves because its frames are drawn over it in turn.
-	var pics := Art.pictures_for(Gs.map_id)
+	var pics := Art.pictures_for(Gs.map_id, Art.picture_variant(Gs.map_id))
 	if pics.has("base"):
 		Art.draw_picture(c, pics["base"], cam)
 		if pics.has("water"):

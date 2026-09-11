@@ -48,7 +48,9 @@ def main():
     # <map>_water<k>.png are the water surfaces alone, one per frame of the
     # loop, drawn over the base picture in turn so the water moves.
     pre_dir = os.path.join(ROOT, "art", "prerender")
-    prerender, overlay, water = {}, {}, {}
+    # <map>.<variant>.png is the same picture in another state - the town
+    # frosted once the seal is broken - chosen by flag in the game.
+    prerender, overlay, water, variants = {}, {}, {}, {}
     if os.path.isdir(pre_dir):
         for name in sorted(os.listdir(pre_dir)):
             if not name.endswith(".png"):
@@ -57,8 +59,11 @@ def main():
             uri = "data:image/png;base64," + base64.b64encode(
                 open(os.path.join(pre_dir, name), "rb").read()).decode("ascii")
             frame = re.match(r"^(.*)_water(\d+)$", stem)
+            variant = re.match(r"^([^.]+)\.([a-z]+)$", stem)
             if frame and frame.group(1) in maps:
                 water.setdefault(frame.group(1), []).append((int(frame.group(2)), uri))
+            elif variant and variant.group(1) in maps:
+                variants.setdefault(variant.group(1), {})[variant.group(2)] = uri
             elif stem.endswith("_over") and stem[:-5] in maps:
                 overlay[stem[:-5]] = uri
             elif stem in maps:
@@ -71,6 +76,7 @@ def main():
         "const PRERENDER_PNG = %s;" % json.dumps(prerender),
         "const PRERENDER_OVER = %s;" % json.dumps(overlay),
         "const PRERENDER_WATER = %s;" % json.dumps(water),
+        "const PRERENDER_VARIANTS = %s;" % json.dumps(variants),
         "const ATLAS_META = %s;" % json.dumps(meta, separators=(",", ":")),
         "const MAPS = %s;" % json.dumps(maps, separators=(",", ":")),
         "const GAMEDATA = %s;" % json.dumps(gamedata, separators=(",", ":")),

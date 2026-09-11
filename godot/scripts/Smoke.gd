@@ -292,10 +292,20 @@ func _run() -> void:
 	await _shot("battle_action")
 
 	_say("barrow")
+	# The field has to be in charge for a beat to play out: finish the fight
+	# first, the way a player would, rather than poking the field from inside
+	# the battle.
+	main.finish_battle("win", "")
+	await _settle()
+	_expect(await _until(func(): return main.mode == "field"), "the fight ends")
 	main.field.enter_map("barrow1", 20, 27)
 	Gs.steps_to_encounter = 9999
 	await _step(10)
 	_expect(Gs.map_id == "barrow1", "the barrow loads")
+	# Aldric's moment: the re-cut sign, and whether the town gets word.
+	_expect(await _wait_for_choice(), "the barrow mouth asks whether to send word")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("aldricWarned", false)), "and the runner goes back to Rivenbrook")
 	_expect(str(main.field.map.get("encounters", "")) == "barrow",
 		"it draws from the barrow's own encounter table")
 	_expect(Dat.encounters.has("barrow") and not Dat.encounters["barrow"].is_empty(),
@@ -328,6 +338,11 @@ func _run() -> void:
 	Gs.steps_to_encounter = 9999
 	await _step(10)
 	_expect(Gs.map_id == "barrow2", "the lower floor loads")
+	# Lyra's moment: a minute with the letters before anyone breaks them.
+	_expect(str(main.field.msg.get("speaker", "")) == "Lyra" and await _wait_for_choice(),
+		"Lyra asks for a minute with the letters")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("lyraRead", false)), "and reads the name cut into them")
 	var boss_here := false
 	for n in main.field.npcs:
 		if n["boss"]:
@@ -406,6 +421,16 @@ func _run() -> void:
 			break
 		await _press("confirm", 3)
 	_expect(main.ending.phase == "card", "the beats give way to the card")
+	var remembers := false
+	var wall_lit := false
+	for b in main.ending.beats():
+		var text := " ".join(b["lines"])
+		if text.find("VAIL") >= 0:
+			remembers = true
+		if text.find("Every lamp on the wall") >= 0:
+			wall_lit = true
+	_expect(remembers, "and the ending remembers what Lyra read")
+	_expect(wall_lit, "and that the wall was lit for your return")
 	await _shot("ending_card")
 	# The card holds for 0.6s before it will accept a confirm, so a player
 	# mashing through the beats cannot skip past their own results.
@@ -424,13 +449,25 @@ func _run() -> void:
 	main.begin_game(true)
 	await _until(func(): return main.mode == "field")
 	_expect(main.mode == "field", "Continue picks the game back up in the field")
+	# Mira's moment fires the moment you are back in charge in town: Tam,
+	# shivering, and whether the party stays the night.
+	await _step(8)
+	_expect(str(main.field.msg.get("speaker", "")) == "Mira" and await _wait_for_choice(),
+		"Mira asks to sit with the boy")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("miraTended", false)), "and stays the night")
 	main.field.enter_map("town", 20, 24)
 	await _step(8)
 	var reacted := false
+	var tam_still := false
 	for n in main.field.npcs:
-		if n["name"] == "Elder Halvard" and n.get("after", null) != null:
+		if n["name"] == "Elder Halvard" and not main.field.npc_stage(n).is_empty():
 			reacted = true
+		if n["name"] == "Tam" and not bool(n["wander"]):
+			tam_still = true
 	_expect(reacted, "the town has something new to say")
+	_expect(tam_still, "and Tam has stopped wandering")
+	_expect(Art.picture_variant("town") == "cold", "and the town wears its frost")
 	await _shot("aftermath_town")
 
 	_say("chapter two")
@@ -618,8 +655,8 @@ func _run() -> void:
 	await _press("confirm", 6)
 	_expect(main.ending.phase == "credits", "and chapter two's credits roll")
 	_expect(await _roll_credits(), "all the way to the next hook")
-	_expect(str(main.ending.ending().get("hook", "")).find("dark") >= 0,
-		"which is the road south, gone dark")
+	_expect(str(main.ending.ending().get("hook", "")).find("Mere Road") >= 0,
+		"which is the road south, and what is on it")
 	await _shot("end2_hook")
 
 	_say("save")

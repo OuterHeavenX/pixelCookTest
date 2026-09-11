@@ -35,8 +35,21 @@ func ending() -> Dictionary:
 	return Dat.endings.get(which, Dat.endings.get("one", {}))
 
 
+## The beats this party earned: a beat with `when` needs those flags, one
+## with `absent` needs them unset, so the close can say what you did.
 func beats() -> Array:
-	return ending().get("beats", [])
+	var out := []
+	for b in ending().get("beats", []):
+		var ok := true
+		for f in b.get("when", []):
+			if not bool(Gs.flags.get(f, false)):
+				ok = false
+		for f in b.get("absent", []):
+			if bool(Gs.flags.get(f, false)):
+				ok = false
+		if ok:
+			out.append(b)
+	return out
 
 
 func current() -> Dictionary:

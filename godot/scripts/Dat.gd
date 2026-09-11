@@ -18,6 +18,7 @@ var sign_text := {}
 var chest_loot := {}
 var gear := {}
 var gear_slots := []
+var picture_variants := {}
 var gear_stock := {}
 var starting_gear := {}
 var sign_after := {}
@@ -44,6 +45,7 @@ func _ready() -> void:
 	chest_loot = data.get("chest_loot", {})
 	gear = data.get("gear", {})
 	gear_slots = data.get("gear_slots", [])
+	picture_variants = data.get("picture_variants", {})
 	gear_stock = data.get("gear_stock", {})
 	starting_gear = data.get("starting_gear", {})
 	sign_after = data.get("sign_after", {})

@@ -655,6 +655,37 @@ def grade(img):
     return out
 
 
+def frost(img, from_frac=0.42):
+    """The cold coming up from the south end of a picture: below `from_frac`
+    of the height the colour drains toward an icy blue-white, harder the
+    further south, so the town's north still looks like spring and its
+    fence line does not. A post-process on the game-resolution frame, so a
+    variant costs seconds and no render."""
+    from spritecook.imaging import Image
+    out = Image(img.width, img.height)
+    ice = (206, 220, 238)
+    start = img.height * from_frac
+    span = max(1.0, (img.height - start) * 0.8)
+    for y in range(img.height):
+        k = max(0.0, min(1.0, (y - start) / span))
+        k = k ** 1.5                          # slow at the edge, hard at the fence
+        for x in range(img.width):
+            r, g, b, a = img.get(x, y)
+            if k <= 0.0:
+                out.set(x, y, (r, g, b, a))
+                continue
+            lum = 0.299 * r + 0.587 * g + 0.114 * b
+            r2 = lum + (r - lum) * (1 - k * 0.9)
+            g2 = lum + (g - lum) * (1 - k * 0.9)
+            b2 = lum + (b - lum) * (1 - k * 0.9)
+            r2 = r2 * (1 - k * 0.7) + ice[0] * k * 0.7
+            g2 = g2 * (1 - k * 0.7) + ice[1] * k * 0.7
+            b2 = b2 * (1 - k * 0.7) + ice[2] * k * 0.7
+            out.set(x, y, (int(max(0, min(255, r2))), int(max(0, min(255, g2))),
+                           int(max(0, min(255, b2))), a))
+    return out
+
+
 def finish(raw_path, style, colours=0):
     """The render at game resolution, graded if the style asks for it, and
     quantised to `colours` when that is set, saved beside the raw frame. This

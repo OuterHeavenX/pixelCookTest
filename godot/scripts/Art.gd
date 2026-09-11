@@ -97,11 +97,29 @@ func _picture(path: String) -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
-func pictures_for(map_id: String) -> Dictionary:
-	if _pictures.has(map_id):
-		return _pictures[map_id]
+## Which picture a map wears right now: the last variant in the data whose
+## flags are all set, else "" for the plain one. The town frosts once the
+## seal breaks. Variants share the plain picture's overlay and water.
+func picture_variant(map_id: String) -> String:
+	var pick := ""
+	for rule in Dat.picture_variants.get(map_id, []):
+		var ok := true
+		for f in rule.get("when", []):
+			if not bool(Gs.flags.get(f, false)):
+				ok = false
+		if ok:
+			pick = str(rule["variant"])
+	return pick
+
+
+func pictures_for(map_id: String, variant := "") -> Dictionary:
+	var key := map_id if variant == "" else "%s.%s" % [map_id, variant]
+	if _pictures.has(key):
+		return _pictures[key]
 	var out := {}
-	var base := _picture("res://assets/prerender/%s.png" % map_id)
+	var base := _picture("res://assets/prerender/%s.png" % key)
+	if base == null and variant != "":
+		base = _picture("res://assets/prerender/%s.png" % map_id)
 	if base != null:
 		out["base"] = base
 		var over := _picture("res://assets/prerender/%s_over.png" % map_id)
@@ -117,7 +135,7 @@ func pictures_for(map_id: String) -> Dictionary:
 			k += 1
 		if not water.is_empty():
 			out["water"] = water
-	_pictures[map_id] = out
+	_pictures[key] = out
 	return out
 
 

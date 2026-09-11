@@ -164,7 +164,7 @@ func finish_battle(how: String, was_boss: String) -> void:
 				h["alive"] = true
 			var home: String = str(closed["returns"])
 			var spawn: Array = Dat.maps[home]["spawn"]
-			field.enter_map(home, int(spawn[0]), int(spawn[1]), "up")
+			field.enter_map(home, int(spawn[0]), int(spawn[1]), "up", true)
 			Gs.save_game()
 			mode = "ending"
 			ending.open(str(closed["ending"]))

@@ -524,36 +524,66 @@
     {
      "lines": [
       "The Chieftain was not the barrow's tenant.",
-      "He was its warden. Something older set him",
-      "on that bier and told him to sit, and he sat",
+      "He was its warden. Somebody set him on",
+      "that bier and told him to sit, and he sat",
       "for four hundred years."
      ],
      "scene": "barrow"
     },
     {
      "lines": [
+      "Lyra read the letters before the floor",
+      "split. Forty, cut in fours. Half a sentence,",
+      "she says. And a name at the end of it,",
+      "the way you sign a letter: VAIL."
+     ],
+     "scene": "rift",
+     "when": [
+      "lyraRead"
+     ]
+    },
+    {
+     "absent": [
+      "lyraRead"
+     ],
+     "lines": [
       "Cold comes up through the crack in the ward.",
       "Not the cold of a cellar. The cold of",
-      "somewhere with no season.",
-      "Far below, something turns over and settles."
+      "somewhere with no season. The letters were",
+      "a sentence, Lyra says. Nobody read it."
      ],
      "scene": "rift"
     },
     {
      "lines": [
       "You walk back into Rivenbrook at dawn.",
-      "The lanterns are still lit. The gate is",
-      "still standing. Elder Halvard meets you at",
-      "the well and does not ask what you saw."
+      "Every lamp on the wall is lit. Your runner",
+      "did that. Halvard meets you at the well",
+      "and does not ask what you saw."
+     ],
+     "scene": "town",
+     "when": [
+      "aldricWarned"
+     ]
+    },
+    {
+     "absent": [
+      "aldricWarned"
+     ],
+     "lines": [
+      "You walk back into Rivenbrook at dawn.",
+      "There is frost on the south end of town.",
+      "In spring. Halvard meets you at the well",
+      "and does not ask what you saw."
      ],
      "scene": "town"
     },
     {
      "lines": [
-      "For tonight the Thornwilds are quiet,",
-      "and that is enough.",
-      "The seal will hold a while yet.",
-      "A while."
+      "The other half of that sentence is cut",
+      "under ice, four hundred miles north, in a",
+      "town that lights its lamps at noon.",
+      "Its keeper went down eleven years ago."
      ],
      "scene": "town"
     }
@@ -568,9 +598,9 @@
     "Played in a browser and in Godot 4",
     "",
     "Chapter Two: THE COLD BELOW",
-    "coming up out of the floor"
+    "and who has been cutting the other half"
    ],
-   "hook": "Your journal is saved. The rift is still open.",
+   "hook": "Your journal is saved. Somebody up north is still cutting.",
    "subtitle": "THE WARDEN OF THE BARROW",
    "title": "CHAPTER ONE"
   },
@@ -598,26 +628,26 @@
      "lines": [
       "You come up into Hollowmere at noon,",
       "and Hollowmere is dark. Every lantern.",
-      "The whole town, out, in daylight, at once,",
-      "and nobody put them out."
+      "\"They never burned to keep it out,\"",
+      "Kestrel says. \"They burned to keep it asleep.\""
      ],
      "scene": "hollow"
     },
     {
      "lines": [
       "The mere is open water. In midwinter.",
-      "Steaming.",
-      "\"They only ever burned to keep it down,\"",
-      "Kestrel says. \"It is not down.\""
+      "Steaming. Whatever slept under two halves",
+      "of one sentence has had both halves",
+      "taken from it in a single year."
      ],
      "scene": "hollow"
     },
     {
      "lines": [
-      "South, the Mere Road runs into the dark.",
-      "Every lamp along it is out, the whole way",
-      "to the bridge. Bram is out there with a",
-      "taper, wondering why."
+      "South, the Mere Road goes dark one lamp",
+      "at a time. Not all at once. In order, from",
+      "the water, at the pace of someone walking.",
+      "Bram is out there with a taper."
      ],
      "scene": "road"
     }
@@ -631,9 +661,9 @@
     "One set of rules, two engines, no drift",
     "",
     "Chapter Three: WHAT THE LAMPS WERE FOR",
-    "and who has been lighting them"
+    "and what walks when they go out"
    ],
-   "hook": "The road south is dark. Somebody should tell him.",
+   "hook": "Something is walking the Mere Road south. Bram is on it.",
    "subtitle": "THE COLD BELOW",
    "title": "CHAPTER TWO"
   }
@@ -1710,6 +1740,74 @@
   }
  },
  "map_beats": {
+  "barrow1": [
+   {
+    "choice": {
+     "options": [
+      "Send a runner back with word",
+      "Go down now"
+     ],
+     "replies": [
+      [
+       "Aldric writes three lines for the boy at the gate and adds a fourth: light the wall.",
+       "He does not know why he adds it. His hands wanted to."
+      ],
+      [
+       "Every hour up here is an hour the chisel down there is not answered.",
+       "You go down."
+      ]
+     ],
+     "sets": [
+      "aldricWarned",
+      "aldricHurried"
+     ]
+    },
+    "flag": "aldricGate",
+    "lines": [
+     "The shrine sign at the mouth of the barrow has been re-cut. This week. The chisel marks are still pale.",
+     "Somebody knows this place is open and did not tell Rivenbrook.",
+     "Aldric looks back up the road. Halvard said take care. He did not say come back with word."
+    ],
+    "party": [
+     "aldric"
+    ]
+   }
+  ],
+  "barrow2": [
+   {
+    "choice": {
+     "options": [
+      "Let her read",
+      "We are not here to read"
+     ],
+     "replies": [
+      [
+       "She reads with her fingers, lips moving, and stops at the last four.",
+       "\"There is a name,\" she says. \"VAIL. Whoever cut this signed it.\"",
+       "She looks like someone who has read the first half of a letter addressed to her."
+      ],
+      [
+       "\"Fine.\" She steps back. \"But once it is broken, nobody will ever know what it said.\"",
+       "She is right. You do it anyway."
+      ]
+     ],
+     "sets": [
+      "lyraRead",
+      "lyraHurried"
+     ]
+    },
+    "flag": "lyraLetters",
+    "lines": [
+     "Wait. Before anyone touches it. Those are letters, not a pattern.",
+     "Forty of them, cut in fours. It is a sentence, {name}. Half of one.",
+     "Give me a minute with it. One minute. Then do what you came to do."
+    ],
+    "party": [
+     "lyra"
+    ],
+    "speaker": "Lyra"
+   }
+  ],
   "hollow": [
    {
     "flag": "seraLamp",
@@ -1878,6 +1976,43 @@
     ],
     "speaker": "Sera"
    }
+  ],
+  "town": [
+   {
+    "choice": {
+     "options": [
+      "Stay the night",
+      "We move at dawn"
+     ],
+     "replies": [
+      [
+       "She sits with him until the frost comes off the inside of the window.",
+       "\"It is not in him,\" she says in the morning. \"It was visiting. It is looking for something, and he is not it.\""
+      ],
+      [
+       "\"Then I will sit until dawn,\" she says, \"and leave when you do.\"",
+       "She does. You do not ask what she saw."
+      ]
+     ],
+     "sets": [
+      "miraTended",
+      "miraHurried"
+     ]
+    },
+    "flag": "miraTam",
+    "lines": [
+     "Pell's boy. Tam. He has been shivering since the night the barrow opened, and he is not ill.",
+     "I can sit with him tonight. It costs us the night and I do not think I can help him.",
+     "I think I should be there anyway. You decide where we sleep, {name}."
+    ],
+    "needs": [
+     "bossDown"
+    ],
+    "party": [
+     "mira"
+    ],
+    "speaker": "Mira"
+   }
   ]
  },
  "npcs": {
@@ -1954,6 +2089,17 @@
     ],
     "name": "Old Marrow",
     "sprite": "elder",
+    "stages": [
+     {
+      "lines": [
+       "It came up. My father was right, and I am too old to be pleased about it.",
+       "The lamps went out and the water steamed. Then Kestrel Vail walked up the stair."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": false,
     "x": 12,
     "y": 19
@@ -1966,6 +2112,17 @@
     ],
     "name": "Pip",
     "sprite": "child",
+    "stages": [
+     {
+      "lines": [
+       "The mere is not frozen any more. It is steaming. In winter.",
+       "Sera said stay off it. I am staying off it. I am not stupid twice."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": true,
     "x": 33,
     "y": 22
@@ -1977,6 +2134,17 @@
     ],
     "name": "Watchwoman",
     "sprite": "guard",
+    "stages": [
+     {
+      "lines": [
+       "We watch the road now.",
+       "The lamps on it are going out one at a time, south, at a walking pace. Your big friend is out there."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": false,
     "x": 8,
     "y": 22
@@ -2049,51 +2217,136 @@
   ],
   "town": [
    {
-    "after": [
-     "You came back. Sit down, {name}. You look like the barrow looked at you.",
-     "The scouts found the shrine sign re-cut. Fresh chisel marks, this week.",
-     "Somebody is still tending that seal. It is not us."
-    ],
     "dir": "down",
     "lines": [
      "Rivenbrook has stood a hundred years, {name}.",
-     "But something stirs in the Thornwilds. A chieftain, the scouts say.",
+     "Something stirs in the Thornwilds. A chieftain, the scouts say.",
+     "And the shrine sign on the south road has been re-cut. Fresh marks, this week. It was not us.",
      "Take the south gate. And take care."
     ],
     "name": "Elder Halvard",
     "sprite": "elder",
+    "stages": [
+     {
+      "lines": [
+       "You came back. Sit down, {name}. You look like the barrow looked at you.",
+       "Somebody was tending that seal for four hundred years. Somebody who was not us.",
+       "And now nobody is."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "Your runner reached us before you did. We lit every lamp on the wall.",
+       "I do not know why that felt like the right thing to do. It did.",
+       "Sit down, {name}. You look like the barrow looked at you."
+      ],
+      "when": [
+       "bossDown",
+       "aldricWarned"
+      ]
+     },
+     {
+      "lines": [
+       "Kestrel Vail. So that is who was cutting.",
+       "I danced with her once, at a harvest, forty years ago. She had cold hands even then.",
+       "The wall lamps went out last night, north to south, and came back. I have stopped asking why."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": false,
     "x": 20,
     "y": 17
    },
    {
-    "after": [
-     "Carrots this spring, maybe. The fence held.",
-     "Ground has gone cold at the south end, mind. Nothing takes root there."
-    ],
     "dir": "right",
     "lines": [
      "These beds were carrots last spring.",
-     "Now? Weeds and worry. Nothing grows with monsters at the fence."
+     "The south row will not take this year. Not carrots, not weeds, not anything.",
+     "I put my hand in the soil down there and it is cold as a well. In spring."
     ],
     "name": "Gardener Pell",
     "sprite": "villager",
+    "stages": [
+     {
+      "lines": [
+       "The fence held. The frost did not go back.",
+       "It has come up to the third row now, and my boy will not go near it. Good."
+      ],
+      "wander": false,
+      "when": [
+       "bossDown"
+      ],
+      "x": 14,
+      "y": 23
+     },
+     {
+      "lines": [
+       "Green. Look at it. The south row came back the day you say the water went quiet.",
+       "I am not asking how. I am planting carrots."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": true,
     "x": 16,
     "y": 21
    },
    {
-    "after": [
-     "Did you SEE it? Was it big? Was it bigger than the mill?",
-     "Ma says stay off the south road. Ma says a lot of things."
-    ],
     "dir": "left",
     "lines": [
      "I saw a wolf as big as a cart!",
-     "Mum says I made it up. I did not."
+     "Its breath did not steam. Mum says I made that bit up. I did not."
     ],
     "name": "Tam",
     "sprite": "child",
+    "stages": [
+     {
+      "lines": [
+       "Did you SEE it? Was it bigger than the mill?",
+       "I am not allowed past the fence now. Ma says the ground is wrong.",
+       "I am cold all the time and I am not even ill."
+      ],
+      "wander": false,
+      "when": [
+       "bossDown"
+      ],
+      "x": 15,
+      "y": 23
+     },
+     {
+      "lines": [
+       "The healer sat with me all night. She did not sing or anything. She just sat.",
+       "She said the cold was not in me. It was visiting. It is looking for something and I am not it."
+      ],
+      "wander": false,
+      "when": [
+       "bossDown",
+       "miraTended"
+      ],
+      "x": 15,
+      "y": 23
+     },
+     {
+      "lines": [
+       "The lamps on the wall went out last night. All at once. Then they came back on.",
+       "Nobody touched them. I was watching. I am always watching."
+      ],
+      "wander": true,
+      "when": [
+       "wardenDown"
+      ],
+      "x": 24,
+      "y": 14
+     }
+    ],
     "wander": true,
     "x": 24,
     "y": 14
@@ -2106,6 +2359,26 @@
     ],
     "name": "Gate Guard",
     "sprite": "guard",
+    "stages": [
+     {
+      "lines": [
+       "We heard the barrow from here. Like a door, a long way down.",
+       "Then the frost came up the road to the gate. In spring. I have stopped saying \"in spring\"."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "The wall lamps went out last night on their own. North to south, one after another.",
+       "Then they came back. I have not slept and I am not going to."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": false,
     "x": 19,
     "y": 26
@@ -2118,22 +2391,68 @@
     ],
     "name": "Gate Guard",
     "sprite": "guard",
+    "stages": [
+     {
+      "lines": [
+       "Nobody told us anything. We lit the wall lamps when the frost reached the gate.",
+       "Seemed the thing to do. Nobody could say why."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "Your runner came through at dusk. We had every lamp on the wall lit before dark.",
+       "Halvard's orders. I would have done it anyway. My hands wanted to."
+      ],
+      "when": [
+       "bossDown",
+       "aldricWarned"
+      ]
+     },
+     {
+      "lines": [
+       "A pedlar from the north says the Mere Road lamps are going out. One a night.",
+       "Like somebody walking. I keep the wall lit. It is the only thing I know how to do about it."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": false,
     "x": 21,
     "y": 26
    },
    {
-    "after": [
-     "Bring me the chieftain's plate and I will make you something out of it.",
-     "Whatever cracked in that barrow, you will want better steel than this."
-    ],
     "dir": "down",
     "lines": [
      "Steel I can give you. Courage you bring yourself.",
-     "Lyra's fire and Mira's mercy - that's a party worth its salt."
+     "Pell's boy keeps bringing me monster teeth. They are river stones. I keep every one."
     ],
     "name": "Smith Orla",
     "sprite": "villager",
+    "stages": [
+     {
+      "lines": [
+       "Bring me the chieftain's plate and I will make you something out of it.",
+       "Whatever cracked in that barrow, you will want better steel than this."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "Four hundred years that ward held, and it was cut with a chisel.",
+       "I would like to meet the smith who made the chisel. I would like to know what it was quenched in."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": true,
     "x": 9,
     "y": 12
@@ -2146,12 +2465,42 @@
     ],
     "name": "Pedlar Voss",
     "sprite": "merchant",
+    "stages": [
+     {
+      "lines": [
+       "The south road is quieter since you went down there.",
+       "Quieter is not the same as safe. The bandits left. Bandits know things."
+      ],
+      "when": [
+       "bossDown"
+      ]
+     },
+     {
+      "lines": [
+       "Carts from the north say the Mere Road lamps are going out. One a night, in order.",
+       "Like somebody walking it. Nobody has seen who."
+      ],
+      "when": [
+       "wardenDown"
+      ]
+     }
+    ],
     "wander": true,
     "x": 33,
     "y": 16
    }
   ],
   "wild": []
+ },
+ "picture_variants": {
+  "town": [
+   {
+    "variant": "cold",
+    "when": [
+     "sealBroken"
+    ]
+   }
+  ]
  },
  "shop_stock": {
   "amber": [

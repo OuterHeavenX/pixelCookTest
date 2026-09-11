@@ -1148,6 +1148,22 @@ def main():
         print("%-9s -> %s  %dx%d" % (name, os.path.relpath(game, ROOT), small.width, small.height))
 
 
+# The other states a map's picture can be in, made from the finished frame:
+# <map>.<variant>.png beside it. The game picks one by flag (PICTURE_VARIANTS
+# in datacook). The town frosts from the south end once the seal is broken.
+VARIANTS = {
+    "town": {"cold": lambda img: town.frost(img, 0.36)},
+}
+
+
+def write_variants(map_id, small, dest):
+    for name, make in VARIANTS.get(map_id, {}).items():
+        path = dest.replace(".png", ".%s.png" % name)
+        with open(path, "wb") as fh:
+            fh.write(make(small).to_png())
+        print("variant  -> %s" % os.path.relpath(path, ROOT))
+
+
 def regrade(args, maps, map_id):
     """The finish step alone: every raw frame the last render left under
     art/blender goes through downscale and grade again and lands under
@@ -1163,6 +1179,7 @@ def regrade(args, maps, map_id):
     assert (small.width, small.height) == (m["w"] * PPT, m["h"] * PPT)
     with open(dest, "wb") as fh:
         fh.write(small.to_png())
+    write_variants(map_id, small, dest)
     over_raw = raw.replace(".png", "_over.png")
     if os.path.exists(over_raw):
         _, over = town.finish(over_raw, town.STYLES[over_style])
@@ -1218,6 +1235,7 @@ def full(args, maps, map_id):
     with open(dest, "wb") as fh:
         fh.write(small.to_png())
     print("full     -> %s  %dx%d" % (os.path.relpath(dest, ROOT), small.width, small.height))
+    write_variants(map_id, small, dest)
     if over is not None:
         with open(over_dest, "wb") as fh:
             fh.write(over.to_png())

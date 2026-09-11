@@ -87,7 +87,29 @@ for (const id in (typeof PRERENDER_WATER !== 'undefined' ? PRERENDER_WATER : {})
 function readyImage(img) {
   return img && img.complete && img.naturalWidth ? img : null;
 }
-function prerenderFor(mapId) { return readyImage(Prerender.images[mapId]); }
+/* Which picture a map wears right now: the last variant in the data whose
+   flags are all set, else the plain one. The town frosts once the seal
+   breaks. Variants share the plain picture's overlay and water. */
+const PICTURE_VARIANTS = GAMEDATA.picture_variants || {};
+for (const id in (typeof PRERENDER_VARIANTS !== 'undefined' ? PRERENDER_VARIANTS : {})) {
+  Prerender.variants = Prerender.variants || {};
+  Prerender.variants[id] = {};
+  for (const v in PRERENDER_VARIANTS[id]) {
+    const img = new Image(); img.src = PRERENDER_VARIANTS[id][v]; Prerender.variants[id][v] = img;
+  }
+}
+function pictureVariant(mapId) {
+  let pick = null;
+  for (const rule of (PICTURE_VARIANTS[mapId] || [])) {
+    if ((rule.when || []).every(f => G.flags[f])) pick = rule.variant;
+  }
+  return pick;
+}
+function prerenderFor(mapId) {
+  const v = pictureVariant(mapId);
+  const varied = v && Prerender.variants && Prerender.variants[mapId] && readyImage(Prerender.variants[mapId][v]);
+  return varied || readyImage(Prerender.images[mapId]);
+}
 function prerenderOverFor(mapId) { return readyImage(Prerender.over[mapId]); }
 function prerenderWaterFor(mapId, t) {
   const frames = Prerender.water[mapId];
@@ -1017,7 +1039,9 @@ const Field = {
   msg: null, chestGlow: 0
 };
 
-function enterMap(id, tx, ty, dir) {
+/* `opts.quiet` skips the map's beats: the party is put home before a chapter's
+   ending plays, and a beat that fired then would be lost behind the credits. */
+function enterMap(id, tx, ty, dir, opts) {
   Field.map = MAPS[id];
   G.mapId = id;
   G.px = tx; G.py = ty; G.dir = dir || G.dir;
@@ -1025,10 +1049,13 @@ function enterMap(id, tx, ty, dir) {
   Field.msg = null;
   Field.walkPhase = 0;
   Field.npcs = (NPCS[id] || []).filter(n => !(n.recruit && inRoster(n.recruit))).map(n => {
-    const spot = nearestFree(n.x, n.y);
+    // A stage can move somebody and stop them wandering: Tam stands by his
+    // mother once the ground at the south end goes wrong.
+    const stage = npcStage(n) || {};
+    const spot = nearestFree(stage.x !== undefined ? stage.x : n.x, stage.y !== undefined ? stage.y : n.y);
     return Object.assign({
       tx: spot[0], ty: spot[1], ox: 0, oy: 0, phase: 0, cool: rnd(1, 4), move: null
-    }, n);
+    }, n, stage.wander !== undefined ? { wander: stage.wander } : {});
   });
   // Any map that declares a boss gets one, so moving him is a map edit.
   const bossDef = Field.map.boss && BOSSES[Field.map.boss.id];
@@ -1040,7 +1067,7 @@ function enterMap(id, tx, ty, dir) {
     });
   }
   G.stepsToEncounter = rollEncounterCountdown();
-  mapBeat(id);
+  if (!(opts && opts.quiet)) mapBeat(id);
   // Whatever track the map names. This used to be a chain of equality tests
   // that fell through to 'field', so the barrow's theme was written, cooked
   // and never once played in this build.
@@ -1049,6 +1076,21 @@ function enterMap(id, tx, ty, dir) {
 
 /* Scenery is scattered procedurally, so an NPC's authored tile can end up
    under a tree. Walk outwards until we find somewhere it can actually stand. */
+/* A townsperson speaks in stages: `lines` before anything has happened, then
+   whichever entry of `stages` has all its `when` flags set and none of its
+   `absent` ones, the last such entry winning, so a later stage can refine an
+   earlier one (Tam after the barrow, Tam after the barrow if Mira sat with
+   him). Recruitable people keep the older `after` rule instead. */
+function npcStage(npc) {
+  let pick = null;
+  for (const st of (npc.stages || [])) {
+    if ((st.when || []).some(f => !G.flags[f])) continue;
+    if ((st.absent || []).some(f => G.flags[f])) continue;
+    pick = st;
+  }
+  return pick;
+}
+
 function nearestFree(x, y) {
   if (!solidAt(x, y)) return [x, y];
   for (let r = 1; r <= 5; r++) {
@@ -1236,7 +1278,8 @@ function interact() {
     // flag they are waiting on is set - the chieftain, unless they name
     // another one, because most of them are waiting on the chieftain.
     const useAfter = npc.recruit ? joined : !!G.flags[npc.after_flag || 'bossDown'];
-    const script = useAfter && npc.after ? npc.after : npc.lines;
+    const stage = npc.recruit ? null : npcStage(npc);
+    const script = stage ? stage.lines : (useAfter && npc.after ? npc.after : npc.lines);
     Field.msg = makeMessage(script.map(fillTokens), { speaker: npc.name });
     if (npc.recruit && !joined) {
       Field.msg.onClose = () => recruit(npc.recruit);
@@ -2225,7 +2268,7 @@ function endBattle(how) {
       // that knows what happened rather than in the room where it happened.
       G.party.forEach(h => { h.hp = h.maxhp; h.mp = h.maxmp; h.alive = true; });
       const home = MAPS[closed.returns];
-      enterMap(closed.returns, home.spawn[0], home.spawn[1], 'up');
+      enterMap(closed.returns, home.spawn[0], home.spawn[1], 'up', { quiet: true });
       saveGame();
       startEnding(closed.ending);
       return;
@@ -3374,7 +3417,13 @@ function startEnding(which) {
 }
 
 function ending() { return ENDINGS[Ending.which] || ENDINGS.one; }
-function endingBeat() { const e = ending(); return e.beats[Math.min(Ending.beat, e.beats.length - 1)]; }
+/* The beats this party earned: a beat with `when` needs those flags, one
+   with `absent` needs them unset, so the close can say what you did. */
+function endingBeats() {
+  return ending().beats.filter(b => !(b.when || []).some(f => !G.flags[f])
+    && !(b.absent || []).some(f => G.flags[f]));
+}
+function endingBeat() { const b = endingBeats(); return b[Math.min(Ending.beat, b.length - 1)]; }
 
 function updateEnding(dt) {
   Ending.t += dt;
@@ -3390,7 +3439,7 @@ function updateEnding(dt) {
       Ending.beat++;
       Ending.chars = 0;
       Audio_.sfx('cursor');
-      if (Ending.beat >= ending().beats.length) { Ending.phase = 'card'; Ending.t = 0; }
+      if (Ending.beat >= endingBeats().length) { Ending.phase = 'card'; Ending.t = 0; }
     }
     return;
   }

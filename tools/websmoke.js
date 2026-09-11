@@ -310,6 +310,12 @@ async function launch() {
   section('barrow');
   await go('barrow1', 20, 27);
   expect(await ev(() => G.mapId) === 'barrow1', 'the barrow loads');
+  /* Aldric's moment: the re-cut sign, and whether the town gets word. */
+  expect(await ev(() => !!(Field.msg && Field.msg.choice)), 'the barrow mouth asks whether to send word',
+    await msgLine());
+  await pickChoice(0);
+  await readMsg();
+  expect(await ev(() => !!G.flags.aldricWarned), 'and the runner goes back to Rivenbrook');
   expect(await ev(() => Field.map.encounters) === 'barrow',
     "it draws from the barrow's own encounter table");
   expect(await ev(() => Audio_.track) === 'barrow', 'and plays the barrow theme',
@@ -324,6 +330,12 @@ async function launch() {
   await shot('barrow');
   await go('barrow2', 18, 25);
   expect(await ev(() => G.mapId) === 'barrow2', 'the lower floor loads');
+  /* Lyra's moment: a minute with the letters before anyone breaks them. */
+  expect(await ev(() => Field.msg && Field.msg.speaker === 'Lyra' && !!Field.msg.choice),
+    'Lyra asks for a minute with the letters', await msgLine());
+  await pickChoice(0);
+  await readMsg();
+  expect(await ev(() => !!G.flags.lyraRead), 'and reads the name cut into them');
   expect(await ev(() => !!Field.npcs.find(n => n.boss === 'chieftain')),
     'the chieftain waits at the bottom');
 
@@ -357,6 +369,10 @@ async function launch() {
   }
   expect(await ev(() => Ending.phase) !== 'beats', 'the beats give way to the card',
     await ev(() => Ending.phase));
+  expect(await ev(() => endingBeats().some(b => b.lines.join(' ').indexOf('VAIL') >= 0)),
+    'and the ending remembers what Lyra read');
+  expect(await ev(() => endingBeats().some(b => b.lines.join(' ').indexOf('Every lamp on the wall') >= 0)),
+    'and that the wall was lit for your return');
   await shot('ending_card');
 
   // --- afterwards ---------------------------------------------------------
@@ -370,9 +386,19 @@ async function launch() {
   await press('KeyZ', 900);
   expect(await mode() === 'field', 'Continue picks the game back up in the field',
     await mode());
+  /* Mira's moment fires the moment you are back in charge in town: Tam,
+   * shivering, and whether the party stays the night. */
+  expect(await ev(() => Field.msg && Field.msg.speaker === 'Mira' && !!Field.msg.choice),
+    'Mira asks to sit with the boy', await msgLine());
+  await pickChoice(0);
+  await readMsg();
+  expect(await ev(() => !!G.flags.miraTended), 'and stays the night');
   await go('town', 20, 24);
-  expect(await ev(() => !!Field.npcs.find(n => n.name === 'Elder Halvard' && n.after)),
+  expect(await ev(() => !!Field.npcs.find(n => n.name === 'Elder Halvard' && npcStage(n))),
     'the town has something new to say');
+  expect(await ev(() => Field.npcs.find(n => n.name === 'Tam').wander === false),
+    'and Tam has stopped wandering');
+  expect(await ev(() => pictureVariant('town')) === 'cold', 'and the town wears its frost');
   const sign = await ev(() => { G.px = 46; G.py = 38; return !!SIGN_AFTER.wild; });
   expect(sign, 'and the shrine sign reads differently');
 
