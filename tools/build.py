@@ -22,6 +22,22 @@ def sh(*args):
     subprocess.run([sys.executable] + list(args), check=True, cwd=ROOT)
 
 
+# The UI typeface, embedded so the page stays one file that works offline.
+# Inter (SIL Open Font License, assets/fonts/OFL.txt), the Latin subset, in
+# the two weights the menus use.
+UI_FONTS = (("500", "Inter-500.woff2"), ("700", "Inter-700.woff2"))
+
+
+def font_faces():
+    faces = []
+    for weight, name in UI_FONTS:
+        raw = open(os.path.join(ROOT, "assets", "fonts", name), "rb").read()
+        faces.append("@font-face { font-family: 'Inter'; font-style: normal; font-weight: %s;"
+                     " font-display: block; src: url(data:font/woff2;base64,%s) format('woff2'); }"
+                     % (weight, base64.b64encode(raw).decode("ascii")))
+    return "\n  ".join(faces)
+
+
 def main():
     sh(os.path.join("tools", "spritecook.py"))
     sh(os.path.join("tools", "mapcook.py"))
@@ -84,6 +100,7 @@ def main():
 
     out = html.replace("/*__ASSETS__*/", assets)
     out = out.replace("/*__FONT__*/", font)
+    out = out.replace("/*__FONTS_CSS__*/", font_faces())
     out = out.replace("/*__GAME__*/", game)
 
     path = os.path.join(ROOT, "index.html")

@@ -646,7 +646,7 @@ func _draw_equip(c: CanvasItem) -> void:
 	for i in stats.size():
 		var x := 112 + i * 50
 		Art.draw_text(c, stats[i][0], Vector2(x, 126), Color("#7a82a8"))
-		Art.draw_text(c, str(int(hero[stats[i][1]])), Vector2(x + 44, 126),
+		Art.draw_text(c, str(int(hero[stats[i][1]])), Vector2(x + 41, 126),
 			Color("#f2f4ff"), "right")
 
 	if slot_open:

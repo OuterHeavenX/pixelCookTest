@@ -157,6 +157,10 @@ func _shot(name: String) -> void:
 	if out_dir == "":
 		return
 	var img := get_viewport().get_texture().get_image()
+	# The window is drawn at its own resolution now. Half of it is plenty
+	# for the record and keeps the repository from growing by megabytes a run.
+	if img.get_width() > Art.VW * 2:
+		img.resize(Art.VW * 2, Art.VH * 2, Image.INTERPOLATE_BILINEAR)
 	var err := img.save_png("%s/godot_%s.png" % [out_dir, name])
 	if err != OK:
 		failures.append("could not save screenshot %s (error %d)" % [name, err])
@@ -381,11 +385,12 @@ func _run() -> void:
 	_expect(barrow_only, "its encounters name real monsters (%s)" % ", ".join(group))
 	main.start_encounter(["skeleton", "wight"])
 	_expect(await _until(func(): return main.mode == "battle"), "the barrow's own monsters fight")
+	# The lantern: lit to begin with; a cold thing in the dark is shrouded;
+	# any hero can spend a turn to light it again. Read before anyone has had
+	# a turn: a skeleton that acts first would snuff it.
+	_expect(main.battle.lantern, "the lantern is lit when a fight starts")
 	await _until(func(): return main.battle.phase == "command")
 	await _shot("barrow_battle")
-	# The lantern: lit to begin with; a cold thing in the dark is shrouded;
-	# any hero can spend a turn to light it again.
-	_expect(main.battle.lantern, "the lantern is lit when a fight starts")
 	var guard: Dictionary = main.battle.enemies[0]
 	_expect(bool(guard.get("cold", false)), "the barrow's dead are of the cold")
 	guard["hp"] = 1000

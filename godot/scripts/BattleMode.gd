@@ -1048,7 +1048,7 @@ func draw_fx(c: CanvasItem) -> void:
 
 func draw_ui(c: CanvasItem) -> void:
 	if banner_t > 0.0:
-		var w: int = mini(Art.VW - 16, Art.text_width(banner) + 20)
+		var w: int = mini(Art.VW - 16, roundi(Art.text_width(banner)) + 20)
 		Art.draw_window(c, Rect2(Art.VW / 2.0 - w / 2.0, 6, w, 18), "dark")
 		Art.draw_text(c, banner, Vector2(Art.VW / 2.0, 11), Color("#f6f0d8"), "center")
 
@@ -1119,7 +1119,7 @@ func draw_ui(c: CanvasItem) -> void:
 		var alive := living_enemies()
 		if not alive.is_empty():
 			var foe: Dictionary = alive[0]
-			Art.draw_text(c, (foe["label"] as String).substr(0, 15),
+			Art.draw_text(c, Art.fit_text(str(foe["label"]), 94.0),
 				Vector2(14, panel_y + 26), Color("#f2f4ff"))
 			Art.draw_bar(c, Vector2(14, panel_y + 40), Vector2(94, 5),
 				float(foe["hp"]) / float(foe["maxhp"]), Color("#ff9a9a"), Color("#c0384c"))

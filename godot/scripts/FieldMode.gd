@@ -767,8 +767,7 @@ func draw_message_box(c: CanvasItem) -> void:
 		Art.draw_text(c, speaker, Vector2(16, y - 5), Color("#f6e2a8"))
 
 	var full: String = msg["lines"][int(msg["page"])]
-	var shown := full.substr(0, int(msg["chars"]))
-	var lines := Art.wrap_text(shown, 47)
+	var lines := Art.typed_lines(full, int(msg["chars"]), 47, 2)
 	for i in mini(2, lines.size()):
 		Art.draw_text(c, lines[i], Vector2(16, y + 11 + i * 12), Color("#f2f4ff"))
 
@@ -776,10 +775,10 @@ func draw_message_box(c: CanvasItem) -> void:
 	if not choice.is_empty() and int(msg["page"]) == msg["lines"].size() - 1 \
 			and float(msg["chars"]) >= full.length():
 		var options: Array = choice["options"]
-		var w := 0
+		var w := 0.0
 		for o in options:
-			w = maxi(w, Art.text_width(o))
-		w += 26
+			w = maxf(w, Art.text_width(o))
+		w = roundf(w + 26)
 		var h := 8 + options.size() * 13
 		var cx := Art.VW - w - 12
 		var cy := y - h - 4

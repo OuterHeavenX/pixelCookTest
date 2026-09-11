@@ -78,6 +78,12 @@ none of them ever took a step.
   screen, `localStorage` saves, and a small chiptune soundtrack whose note
   tables live in the data (`THEMES`), so both builds play the same eight tunes
   on the same three voices.
+- **Crisp menus at any size.** The world is pixel art and stays that way,
+  drawn at a whole-number scale with no smoothing. The windows and the text
+  over it are drawn at the screen's own resolution, in Inter, so a menu on a
+  phone or a 4K monitor reads like a modern game rather than a zoomed
+  screenshot. Screens compose themselves from the view's width, so a wide
+  phone gets a wide shelf in the shop instead of a margin.
 - **Plain English throughout.** The townsfolk, signs, bosses and endings say
   what they mean in ordinary modern words. The place names stay, the riddles go.
 
@@ -191,8 +197,8 @@ The same goes for the art and the maps — one atlas, one map file, both builds.
 | --- | --- | --- |
 | Entry point | `index.html` (everything inlined) | `godot/project.godot` |
 | Source | `src/game.js`, `src/font.js` | `godot/scripts/*.gd` |
-| Rendering | one 2D canvas at 320x180 | one `Node2D._draw()` at 320x180 |
-| Text | glyph sheet built from `FONT` | same glyphs, from `font.json` |
+| Rendering | one 2D canvas at the screen's resolution, scaled by a whole number so the pixel art stays exact | one `Node2D._draw()`, stretch mode `canvas_items`, the same whole-number scale |
+| Text | Inter, embedded in the page, drawn at screen resolution | the same two Inter faces from `assets/fonts/` |
 | Audio | WebAudio square-wave synth | generated `AudioStreamWAV` buffers |
 | Saves | `localStorage` | `user://rivenbrook_save.json` |
 
@@ -268,7 +274,7 @@ one-line change.
 | `tools/spritecook/rendered.py` | carries the rendered monsters onto the atlas |
 | `tools/mapcook.py` | the five maps, painted with drawing ops and walked for reachability |
 | `tools/datacook.py` | the rules: spells, items, growth, monsters, loot |
-| `tools/godotcook.py` | stages the cooked assets and the font under `godot/` |
+| `tools/godotcook.py` | stages the cooked assets and the typeface under `godot/` |
 | `tools/build.py` | runs every cook, inlines the atlas into `index.html` |
 | `tools/gdlint.py` | cross-reference check for the Godot scripts |
 | `tools/godotsmoke.py` | boots the Godot build in the engine and plays it |
@@ -277,15 +283,15 @@ one-line change.
 
     index.html          the built browser game (everything inlined)
     src/game.js         browser source: field, battle, menus, audio
-    src/font.js         5x7 bitmap font
+    src/font.js         the old 5x7 bitmap font; only its cell size is still used by the layouts
     src/index.html      page shell the build fills in
     godot/              the Godot 4 project
-      project.godot     autoloads, 320x180 viewport, nearest-neighbour filtering
+      project.godot     autoloads, canvas_items stretch at a whole-number scale, nearest-neighbour filtering
       scenes/Main.tscn  a single Node2D; everything else is built in code
       scripts/          Art, Dat, Gs, Snd, Inp autoloads + the five game modes
       scripts/Smoke.gd  the smoke test that drives the game (see godotsmoke.py)
-      assets/           staged copies of the cooked atlas, maps, rules, font
-    assets/             cooked atlas.png, atlas.json, maps.json, gamedata.json
+      assets/           staged copies of the cooked atlas, maps, rules, and the UI typeface
+    assets/             cooked atlas.png, atlas.json, maps.json, gamedata.json; fonts/ holds Inter (OFL)
     art/blender/        raw Blender renders of the battle backdrops
     art/backdrops/      the same renders quantised to the game palette
     art/enemies/raw/    Blender renders of the monsters, at 8x sprite size

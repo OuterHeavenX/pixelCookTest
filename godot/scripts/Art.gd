@@ -29,16 +29,21 @@ func fit(win: Vector2i) -> bool:
 	VH = h
 	return true
 const TILE := 16
+## The cell the layouts count in: the 5x7 bitmap glyphs the menus were
+## composed for sat in a 6x8 cell. The text itself is now set in Inter at a
+## size that puts the capitals seven tall and the digits six wide, so every
+## column still lines up, and the window is drawn at the screen's own
+## resolution (stretch mode canvas_items), so it reads crisp at any size.
 const GLYPH_W := 6
 const GLYPH_H := 8
-const FONT_W := 5
-const FONT_ROWS := 7
+const TEXT_PX := 10
+const TEXT_BASE := 7.0   # baseline, down from the top of the cell
 
 var atlas: Texture2D
 var frames := {}
 
-var _glyph_sheet: ImageTexture
-var _glyph_index := {}
+var ui_font: Font
+var ui_font_bold: Font
 
 const INK := Color("#12101c")
 const PAPER := Color("#f4f4ec")
@@ -51,28 +56,18 @@ func _ready() -> void:
 	var meta = JSON.parse_string(FileAccess.get_file_as_string("res://assets/atlas.json"))
 	if typeof(meta) == TYPE_DICTIONARY:
 		frames = meta.get("frames", {})
-	_build_font()
+	_load_fonts()
 
 
-func _build_font() -> void:
-	var font = JSON.parse_string(FileAccess.get_file_as_string("res://assets/font.json"))
-	if typeof(font) != TYPE_DICTIONARY:
-		push_error("assets/font.json did not load")
-		return
-	var keys := (font as Dictionary).keys()
-	keys.sort()
-	var img := Image.create(GLYPH_W * keys.size(), GLYPH_H, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	for i in keys.size():
-		var ch: String = keys[i]
-		_glyph_index[ch] = i
-		var rows: Array = font[ch]
-		for y in FONT_ROWS:
-			var row: String = rows[y]
-			for x in FONT_W:
-				if row[x] == "1":
-					img.set_pixel(i * GLYPH_W + x, y, Color(1, 1, 1, 1))
-	_glyph_sheet = ImageTexture.create_from_image(img)
+func _load_fonts() -> void:
+	ui_font = load("res://assets/fonts/Inter-500.woff2")
+	ui_font_bold = load("res://assets/fonts/Inter-700.woff2")
+	if ui_font == null or ui_font_bold == null:
+		push_error("assets/fonts did not load (run python3 tools/godotcook.py)")
+		if ui_font == null:
+			ui_font = ThemeDB.fallback_font
+		if ui_font_bold == null:
+			ui_font_bold = ui_font
 
 
 # --- pictures ---------------------------------------------------------------
@@ -218,66 +213,80 @@ func scale_for(sprite_name: String, target_h: float, steps := [1.0, 1.5, 2.0, 3.
 
 # --- text -------------------------------------------------------------------
 
-func text_width(s: String) -> int:
-	return s.length() * GLYPH_W
+func text_width(s: String) -> float:
+	return ui_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_PX).x
 
 
 func draw_text(c: CanvasItem, s: String, pos: Vector2, color := PAPER,
 		align := "left", shadow := true) -> void:
-	var x: float = round(pos.x)
-	var y: float = round(pos.y)
+	var x: float = pos.x
+	var y: float = pos.y + TEXT_BASE
 	var w := text_width(s)
 	if align == "center":
-		x -= round(w / 2.0)
+		x -= w / 2.0
 	elif align == "right":
 		x -= w
 	if shadow:
-		_blit_text(c, s, x + 1, y + 1, INK)
-	_blit_text(c, s, x, y, color)
-
-
-func _blit_text(c: CanvasItem, s: String, x: float, y: float, color: Color) -> void:
-	for i in s.length():
-		var ch := s[i]
-		if not _glyph_index.has(ch):
-			continue
-		var idx: int = _glyph_index[ch]
-		c.draw_texture_rect_region(_glyph_sheet,
-			Rect2(x + i * GLYPH_W, y, GLYPH_W, GLYPH_H),
-			Rect2(idx * GLYPH_W, 0, GLYPH_W, GLYPH_H), color)
+		c.draw_string(ui_font, Vector2(x + 0.5, y + 0.7), s, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			TEXT_PX, Color(INK, 0.9))
+	c.draw_string(ui_font, Vector2(x, y), s, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_PX, color)
 
 
 func draw_text_big(c: CanvasItem, s: String, pos: Vector2, color: Color,
 		scale: int, align := "left") -> void:
+	var size := TEXT_PX * scale
 	var x := pos.x
+	var w := ui_font_bold.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	if align == "center":
-		x -= text_width(s) * scale / 2.0
-	for pass_i in 2:
-		var col := INK if pass_i == 0 else color
-		var off := float(scale) if pass_i == 0 else 0.0
-		for i in s.length():
-			var ch := s[i]
-			if not _glyph_index.has(ch):
-				continue
-			var idx: int = _glyph_index[ch]
-			c.draw_texture_rect_region(_glyph_sheet,
-				Rect2(round(x + i * GLYPH_W * scale + off), round(pos.y + off),
-					GLYPH_W * scale, GLYPH_H * scale),
-				Rect2(idx * GLYPH_W, 0, GLYPH_W, GLYPH_H), col)
+		x -= w / 2.0
+	var y := pos.y + TEXT_BASE * scale
+	c.draw_string(ui_font_bold, Vector2(x + 0.6 * scale, y + 0.8 * scale), s,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(INK, 0.9))
+	c.draw_string(ui_font_bold, Vector2(x, y), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
 
 
-func wrap_text(s: String, max_chars: int) -> Array:
+## Cut a string to a width, with an ellipsis, rather than to a count of
+## characters.
+func fit_text(s: String, max_w: float) -> String:
+	if text_width(s) <= max_w:
+		return s
+	var n := s.length()
+	while n > 1 and text_width(s.substr(0, n).strip_edges(false, true) + "\u2026") > max_w:
+		n -= 1
+	return s.substr(0, n).strip_edges(false, true) + "\u2026"
+
+
+func wrap_width(s: String, max_w: float) -> Array:
 	var lines := []
 	var line := ""
 	for word in s.split(" "):
-		if line != "" and (line + " " + word).length() > max_chars:
+		var cand := word if line == "" else line + " " + word
+		if line != "" and text_width(cand) > max_w:
 			lines.append(line)
 			line = word
 		else:
-			line = word if line == "" else line + " " + word
+			line = cand
 	if line != "":
 		lines.append(line)
 	return lines
+
+
+## The layouts still say how many of the old 6px cells a line may hold.
+func wrap_text(s: String, max_chars: int) -> Array:
+	return wrap_width(s, max_chars * GLYPH_W)
+
+
+## A line being typed out: wrapped as the whole line will be, then revealed
+## character by character, so a word does not hop lines as it appears.
+func typed_lines(full: String, chars: int, max_chars: int, max_lines: int) -> Array:
+	var lines := wrap_text(full, max_chars)
+	var out := []
+	var left := chars
+	for i in mini(max_lines, lines.size()):
+		var ln: String = lines[i]
+		out.append(ln.substr(0, maxi(0, left)))
+		left -= ln.length() + 1
+	return out
 
 
 # --- windows ----------------------------------------------------------------

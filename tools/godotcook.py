@@ -2,8 +2,7 @@
 """godotcook - stage the cooked assets for the Godot project.
 
 The Godot build reads exactly the same atlas, maps and rules as the browser
-build; this copies them under godot/assets/ and converts the bitmap font from
-src/font.js into font.json so GDScript can rebuild the glyph sheet at startup.
+build; this copies them under godot/assets/ along with the UI typeface.
 
     python3 tools/godotcook.py
 """
@@ -64,10 +63,19 @@ def build():
     if pictures:
         copied.append("prerender/ (%d pictures)" % pictures)
 
+    # The UI typeface, the same files the browser build embeds, so both
+    # runtimes set their menus in the same face.
+    fonts_src = os.path.join(ROOT, "assets", "fonts")
+    fonts_dst = os.path.join(GODOT_ASSETS, "fonts")
+    os.makedirs(fonts_dst, exist_ok=True)
+    faces = 0
+    for name in sorted(os.listdir(fonts_src)):
+        if name.endswith((".woff2", ".txt")):
+            shutil.copyfile(os.path.join(fonts_src, name), os.path.join(fonts_dst, name))
+            faces += name.endswith(".woff2")
+    copied.append("fonts/ (%d faces)" % faces)
+
     font = parse_font(os.path.join(ROOT, "src", "font.js"))
-    with open(os.path.join(GODOT_ASSETS, "font.json"), "w") as fh:
-        json.dump(font, fh, indent=0, sort_keys=True)
-    copied.append("font.json")
     return copied, len(font)
 
 

@@ -17,6 +17,12 @@
    expect it. */
 const VMIN_W = 320, VMIN_H = 180, VMAX_W = 512, VMAX_H = 288;
 let VW = VMIN_W, VH = VMIN_H;
+/* Device pixels per game pixel. The canvas is the size of the screen and the
+   context is scaled by this, so the game keeps drawing in its own units while
+   text and window edges come out at the screen's own resolution. The pixel
+   art is drawn without smoothing at a whole-number scale, so it stays exactly
+   as chunky as it was. */
+let SCALE = 1;
 const TILE = 16;
 
 /* --------------------------------------------------------------- canvas -- */
@@ -50,8 +56,10 @@ function fitCanvas() {
   const scale = Math.max(1, Math.floor(Math.min(availW / VMIN_W, availH / VMIN_H)));
   VW = clamp(Math.floor(availW / scale) & ~1, VMIN_W, VMAX_W);
   VH = clamp(Math.floor(availH / scale) & ~1, VMIN_H, VMAX_H);
-  canvas.width = VW;
-  canvas.height = VH;
+  SCALE = scale;
+  canvas.width = VW * scale;
+  canvas.height = VH * scale;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.imageSmoothingEnabled = false;
   canvas.style.width = (VW * scale / dpr) + 'px';
   canvas.style.height = (VH * scale / dpr) + 'px';
@@ -159,72 +167,88 @@ function scaleFor(name, targetH, steps) {
 }
 
 /* ----------------------------------------------------------------- text -- */
-const FontCache = {
-  keys: Object.keys(FONT),
-  index: {},
-  base: null,
-  tints: {},
-  build() {
-    const c = document.createElement('canvas');
-    c.width = GLYPH_W * this.keys.length; c.height = GLYPH_H;
-    const g = c.getContext('2d');
-    g.fillStyle = '#ffffff';
-    this.keys.forEach((ch, i) => {
-      this.index[ch] = i;
-      const rows = FONT[ch];
-      for (let y = 0; y < FONT_ROWS; y++)
-        for (let x = 0; x < FONT_W; x++)
-          if (rows[y][x] === '1') g.fillRect(i * GLYPH_W + x, y, 1, 1);
-    });
-    this.base = c;
-  },
-  tint(color) {
-    if (this.tints[color]) return this.tints[color];
-    const c = document.createElement('canvas');
-    c.width = this.base.width; c.height = this.base.height;
-    const g = c.getContext('2d');
-    g.drawImage(this.base, 0, 0);
-    g.globalCompositeOperation = 'source-in';
-    g.fillStyle = color;
-    g.fillRect(0, 0, c.width, c.height);
-    this.tints[color] = c;
-    return c;
-  }
-};
+/* The UI is set in Inter, a real typeface drawn at the screen's resolution,
+   so menus read crisp on any device. Sizes are in game units: at 10px the
+   capitals stand seven tall, the height of the 5x7 glyphs the layouts were
+   composed for, and the digits are six wide like those glyphs were, so every
+   column still lines up. GLYPH_W and GLYPH_H (from font.js) stay the cell the
+   layouts count in; the bitmap itself is no longer drawn. */
+const UI_FONT = '"Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+const TEXT_PX = 10;
+const TEXT_BASE = 7;      // baseline, measured down from the top of the cell
+const INK = 'rgba(18,16,28,0.9)';
 
-function textWidth(str) { return str.length * GLYPH_W; }
+function uiFont(scale, bold) {
+  return (bold ? 700 : 500) + ' ' + (TEXT_PX * (scale || 1)) + 'px ' + UI_FONT;
+}
+
+/* Measured widths, cached: the same labels are measured every frame. */
+const WidthCache = new Map();
+function textWidth(str) {
+  str = String(str);
+  let w = WidthCache.get(str);
+  if (w === undefined) {
+    ctx.font = uiFont(1);
+    w = ctx.measureText(str).width;
+    if (WidthCache.size > 6000) WidthCache.clear();
+    WidthCache.set(str, w);
+  }
+  return w;
+}
 
 function drawText(str, x, y, color, opts) {
   opts = opts || {};
   str = String(str);
-  x = Math.round(x); y = Math.round(y);
-  if (opts.align === 'center') x -= Math.round(textWidth(str) / 2);
-  else if (opts.align === 'right') x -= textWidth(str);
+  const w = textWidth(str);
+  if (opts.align === 'center') x -= w / 2;
+  else if (opts.align === 'right') x -= w;
+  ctx.font = uiFont(1);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   if (opts.shadow !== false) {
-    const sheet = FontCache.tint(opts.shadowColor || '#12101c');
-    blitText(sheet, str, x + 1, y + 1);
+    ctx.fillStyle = opts.shadowColor || INK;
+    ctx.fillText(str, x + 0.5, y + TEXT_BASE + 0.7);
   }
-  blitText(FontCache.tint(color || '#f4f4ec'), str, x, y);
-  return textWidth(str);
+  ctx.fillStyle = color || '#f4f4ec';
+  ctx.fillText(str, x, y + TEXT_BASE);
+  return w;
 }
 
-function blitText(sheet, str, x, y) {
-  for (let i = 0; i < str.length; i++) {
-    const idx = FontCache.index[str[i]];
-    if (idx === undefined) continue;
-    ctx.drawImage(sheet, idx * GLYPH_W, 0, GLYPH_W, GLYPH_H, x + i * GLYPH_W, y, GLYPH_W, GLYPH_H);
-  }
+/* Cut a string to a width, with an ellipsis, rather than to a count of
+   characters: "Bronze Swo" was the old way. */
+function fitText(str, maxW) {
+  str = String(str);
+  if (textWidth(str) <= maxW) return str;
+  let n = str.length;
+  while (n > 1 && textWidth(str.slice(0, n).replace(/\s+$/, '') + '…') > maxW) n--;
+  return str.slice(0, n).replace(/\s+$/, '') + '…';
 }
 
-function wrapText(str, maxChars) {
+function wrapWidth(str, maxW) {
   const words = String(str).split(' ');
   const lines = []; let line = '';
   for (const w of words) {
-    if (line && (line + ' ' + w).length > maxChars) { lines.push(line); line = w; }
-    else line = line ? line + ' ' + w : w;
+    const cand = line ? line + ' ' + w : w;
+    if (line && textWidth(cand) > maxW) { lines.push(line); line = w; }
+    else line = cand;
   }
   if (line) lines.push(line);
   return lines;
+}
+
+/* The layouts still say how many of the old 6px cells a line may hold. */
+function wrapText(str, maxChars) { return wrapWidth(str, maxChars * GLYPH_W); }
+
+/* A line being typed out: wrapped as the whole line will be, then revealed
+   character by character, so a word does not hop lines as it appears. */
+function typedLines(full, chars, maxChars, maxLines) {
+  const lines = wrapText(full, maxChars).slice(0, maxLines);
+  let left = Math.floor(chars);
+  return lines.map(ln => {
+    const part = ln.slice(0, Math.max(0, left));
+    left -= ln.length + 1;
+    return part;
+  });
 }
 
 /* -------------------------------------------------------------- windows -- */
@@ -1606,8 +1630,7 @@ function drawMessageBox(m) {
     drawText(m.speaker, 16, y - 5, '#f6e2a8');
   }
   const full = m.lines[m.page] || '';
-  const shown = full.slice(0, Math.floor(m.chars));
-  wrapText(shown, 47).slice(0, 2).forEach((ln, i) => drawText(ln, 16, y + 11 + i * 12, '#f2f4ff'));
+  typedLines(full, m.chars, 47, 2).forEach((ln, i) => drawText(ln, 16, y + 11 + i * 12, '#f2f4ff'));
   if (m.choice && m.page === m.lines.length - 1 && m.chars >= full.length) {
     const c = m.choice;
     const w = Math.max.apply(null, c.options.map(textWidth)) + 26;
@@ -2601,7 +2624,7 @@ function drawBattleUi() {
     drawText(G.gil + '', 108, panelY + 9, '#f6e2a8', { align: 'right' });
     const foe = livingEnemies()[0];
     if (foe) {
-      drawText(foe.label.slice(0, 15), 14, panelY + 26, '#f2f4ff');
+      drawText(fitText(foe.label, 94), 14, panelY + 26, '#f2f4ff');
       drawBar(14, panelY + 40, 94, 5, foe.hp / foe.maxhp, '#ff9a9a', '#c0384c');
     }
   }
@@ -2647,23 +2670,18 @@ function hpColor(h) {
 function drawTextBig(str, x, y, color, scale, opts) {
   opts = opts || {};
   scale = scale || 2;
-  const w = textWidth(str) * scale;
-  if (opts.align === 'center') x -= w / 2;
+  str = String(str);
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  const sheet = FontCache.tint(color);
-  const shadow = FontCache.tint(opts.shadowColor || '#12101c');
-  for (let pass = 0; pass < 2; pass++) {
-    const s = pass === 0 ? shadow : sheet;
-    const ox = pass === 0 ? scale : 0, oy = pass === 0 ? scale : 0;
-    for (let i = 0; i < str.length; i++) {
-      const idx = FontCache.index[str[i]];
-      if (idx === undefined) continue;
-      ctx.drawImage(s, idx * GLYPH_W, 0, GLYPH_W, GLYPH_H,
-        Math.round(x + i * GLYPH_W * scale + ox), Math.round(y + oy),
-        GLYPH_W * scale, GLYPH_H * scale);
-    }
-  }
+  ctx.font = uiFont(scale, true);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = (0.6 * scale) + 'px';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const w = ctx.measureText(str).width;
+  if (opts.align === 'center') x -= w / 2;
+  ctx.fillStyle = opts.shadowColor || INK;
+  ctx.fillText(str, x + 0.6 * scale, y + TEXT_BASE * scale + 0.8 * scale);
+  ctx.fillStyle = color;
+  ctx.fillText(str, x, y + TEXT_BASE * scale);
   ctx.restore();
   return w;
 }
@@ -3102,7 +3120,7 @@ function drawEquipPane() {
   stats.forEach((st, i) => {
     const x = 112 + i * 50;
     drawText(st[0], x, 126, '#7a82a8');
-    drawText(st[1] + '', x + 44, 126, '#f2f4ff', { align: 'right' });
+    drawText(st[1] + '', x + 41, 126, '#f2f4ff', { align: 'right' });
   });
 
   if (slotOpen) {
@@ -3273,83 +3291,102 @@ function updateShop(dt) {
 /* A screen composed at a fixed size, centred in whatever the screen turned
    out to be. The shop is a two-column layout that does not get better for
    being stretched; it gets better for being in the middle. */
-function panel(w, h, draw) {
-  const ox = Math.round((VW - w) / 2), oy = Math.round((VH - h) / 2);
-  ctx.save();
-  ctx.translate(ox, oy);
-  Taps.origin(ox, oy);
-  draw();
-  Taps.origin(0, 0);
-  ctx.restore();
+/* The counter fills the view: the shelf down the left, the purse and the bag
+   stacked on the right. Composed from VW and VH rather than centred at
+   320x180, so a wide phone gets a wide shelf instead of a margin. */
+function shopLayout() {
+  const m = 8, gap = 6;
+  const right = clamp(Math.round(VW * 0.29), 100, 124);
+  const left = { x: m, y: m, w: VW - m * 2 - right - gap, h: VH - m * 2 };
+  const gil = { x: left.x + left.w + gap, y: m, w: right, h: 40 };
+  const bag = { x: gil.x, y: gil.y + gil.h + gap, w: right, h: VH - m - (gil.y + gil.h + gap) };
+  return { left, gil, bag };
 }
 
 function drawShop() {
   drawField();
   ctx.fillStyle = 'rgba(8,6,18,0.7)';
   ctx.fillRect(0, 0, VW, VH);
-  panel(320, 180, drawShopPanel);
+  drawShopPanel();
 }
 
 function drawShopPanel() {
-  drawWindow(20, 14, 180, 150);
-  drawText('QUARTERMASTER', 30, 20, '#f6e2a8');
+  const L = shopLayout();
+  const { left, gil, bag } = L;
+  const inner = left.w - 20;                    // text runs from x+10 to the right rule
+  drawWindow(left.x, left.y, left.w, left.h);
+  drawText('QUARTERMASTER', left.x + 10, left.y + 6, '#f6e2a8');
 
-  // Two shelves: consumables and gear. The armoury is where gil finally goes.
+  // The shelves the counter has anything on: wares, gear, or both.
   shopTabs().forEach((tb, i) => {
-    const bx = 30 + i * 60, by = 32;
+    const bx = left.x + 10 + i * 60, by = left.y + 18;
     const id = 'shoptab:' + i;
     drawButton(bx, by, 56, 13, tb.label,
       { selected: i === Shop.tab, pressed: Taps.pressed(id) });
     Taps.add(id, bx, by, 56, 13, () => shopTab(i));
   });
 
+  // Description and the wearer's line sit at the bottom; the list gets the
+  // room between, however many rows that is on this screen.
+  const listTop = left.y + 36;
+  const footH = 40;
+  const rows = Math.max(1, Math.floor((left.h - 36 - footH - 2) / 15));
+  const rowW = inner - 6;                       // leaves room for the scroll track
   const stock = shopStock();
-  if (!stock.length) { drawText('Nothing on this shelf today.', 30, 56, '#9aa4c8'); return; }
-  const rows = 5;
+  if (!stock.length) { drawText('Nothing on this shelf today.', left.x + 10, listTop + 6, '#9aa4c8'); return; }
   const start = clamp(Shop.index - rows + 1, 0, Math.max(0, stock.length - rows));
   for (let i = start; i < Math.min(stock.length, start + rows); i++) {
-    const it = stock[i], by = 50 + (i - start) * 15;
+    const it = stock[i], by = listTop + (i - start) * 15, bx = left.x + 10;
     const id = 'shop:' + i;
     const afford = G.gil >= it.price;
-    drawButton(30, by, 160, 13, '', { selected: i === Shop.index, pressed: Taps.pressed(id) });
-    spr(it.icon, 33, by + 2);
-    drawText(it.name, 45, by + 3, afford ? '#f2f4ff' : '#8a8fb0');
-    drawText(it.price + 'g', 186, by + 3, afford ? '#9fd0ff' : '#8a8fb0', { align: 'right' });
-    Taps.add(id, 30, by, 160, 13, () => buyStock(i));
+    drawButton(bx, by, rowW, 13, '', { selected: i === Shop.index, pressed: Taps.pressed(id) });
+    spr(it.icon, bx + 3, by + 2);
+    const price = it.price + 'g';
+    drawText(price, bx + rowW - 4, by + 3, afford ? '#9fd0ff' : '#8a8fb0', { align: 'right' });
+    drawText(fitText(it.name, rowW - 19 - textWidth(price) - 6), bx + 15, by + 3, afford ? '#f2f4ff' : '#8a8fb0');
+    Taps.add(id, bx, by, rowW, 13, () => buyStock(i));
   }
   if (stock.length > rows) {
-    const track = rows * 15 - 2;
+    const track = rows * 15 - 2, tx = left.x + 10 + rowW + 2;
     const thumb = Math.max(6, Math.round(track * rows / stock.length));
-    const ty = 50 + Math.round((track - thumb) * start / (stock.length - rows));
-    ctx.fillStyle = '#1a2148'; ctx.fillRect(192, 50, 2, track);
-    ctx.fillStyle = '#7c88b8'; ctx.fillRect(192, ty, 2, thumb);
+    const ty = listTop + Math.round((track - thumb) * start / (stock.length - rows));
+    ctx.fillStyle = '#1a2148'; ctx.fillRect(tx, listTop, 2, track);
+    ctx.fillStyle = '#7c88b8'; ctx.fillRect(tx, ty, 2, thumb);
   }
 
   const sel = stock[Math.min(Shop.index, stock.length - 1)];
-  wrapText(sel.desc, 27).slice(0, 2).forEach((ln, i) =>
-    drawText(ln, 30, 130 + i * 11, '#9aa4c8'));
+  const footY = left.y + left.h - footH;
+  wrapWidth(sel.desc, inner).slice(0, 2).forEach((ln, i) =>
+    drawText(ln, left.x + 10, footY + i * 11, '#9aa4c8'));
   // For gear, what it would do for whoever can actually wear it.
   if (sel.gear) {
     const wearer = G.party.find(h => canWear(h, sel));
-    drawText(wearer ? wearer.name + ': ' + gearDelta(wearer, sel) : 'Nobody here can use it.',
-      30, 152, wearer ? '#8fd8a0' : '#e08a90');
+    drawText(fitText(wearer ? wearer.name + ': ' + gearDelta(wearer, sel) : 'Nobody here can use it.', inner),
+      left.x + 10, footY + 24, wearer ? '#8fd8a0' : '#e08a90');
   } else {
     drawText(document.body.classList.contains('touch')
-      ? 'Tap to buy   B to leave' : '[Z] buy   [X] leave', 30, 152, '#7a82a8');
+      ? 'Tap to buy   B to leave' : '[Z] buy   [X] leave', left.x + 10, footY + 24, '#7a82a8');
   }
 
-  drawWindow(206, 14, 96, 44);
-  spr('i_gil', 214, 21);
-  drawText('Gil', 225, 22, '#9aa4c8');
-  drawText(G.gil + '', 294, 36, '#f6e2a8', { align: 'right' });
-  drawWindow(206, 64, 96, 100);
-  drawText('BAG', 214, 72, '#9aa4c8');
+  drawWindow(gil.x, gil.y, gil.w, gil.h);
+  spr('i_gil', gil.x + 8, gil.y + 7);
+  drawText('Gil', gil.x + 19, gil.y + 8, '#9aa4c8');
+  drawText(G.gil + '', gil.x + gil.w - 8, gil.y + 22, '#f6e2a8', { align: 'right' });
+
+  drawWindow(bag.x, bag.y, bag.w, bag.h);
+  drawText('BAG', bag.x + 8, bag.y + 8, '#9aa4c8');
   const carried = bagList().map(b => [ITEMS[b.id].name, b.n])
     .concat(Object.keys(G.gear || {}).filter(k => GEAR[k]).map(k => [GEAR[k].name, G.gear[k]]));
-  carried.slice(0, 7).forEach((row, i) => {
-    drawText(row[0].slice(0, 10), 214, 86 + i * 11, '#f2f4ff');
-    drawText('x' + row[1], 294, 86 + i * 11, '#9fd0ff', { align: 'right' });
+  const fit = Math.max(1, Math.floor((bag.h - 22 - 4) / 11));
+  const shown = carried.length > fit ? fit - 1 : carried.length;
+  carried.slice(0, shown).forEach((row, i) => {
+    const count = 'x' + row[1], ry = bag.y + 22 + i * 11;
+    drawText(count, bag.x + bag.w - 8, ry, '#9fd0ff', { align: 'right' });
+    drawText(fitText(row[0], bag.w - 16 - textWidth(count) - 4), bag.x + 8, ry, '#f2f4ff');
   });
+  if (carried.length > shown) {
+    drawText('+' + (carried.length - shown) + ' more', bag.x + bag.w - 8, bag.y + 22 + shown * 11, '#7a82a8', { align: 'right' });
+  }
   if (Shop.noteT > 0) {
     const w = textWidth(Shop.note) + 20;
     drawWindow(VW / 2 - w / 2, VH - 24, w, 18, { tone: 'dark' });
@@ -3399,7 +3436,7 @@ function drawTitle() {
   // under the hint on anything taller.
   const titleOpts = ['New Game'].concat(hasSave() ? ['Continue'] : []);
   const boxH = 16 + titleOpts.length * 14;
-  const boxY = VH - 24 - boxH;
+  const boxY = VH - 28 - boxH;
   const horizon = boxY - 10;
   for (let i = 0; i < 60; i++) {
     const x = (i * 71) % VW, y = (i * 37) % 90;
@@ -3444,9 +3481,9 @@ function drawTitle() {
   drawText(touch
     ? 'Drag the left of the screen to walk   A confirm   B cancel'
     : 'Arrows move   Z confirm   X cancel   C menu',
-    VW / 2, VH - 16, '#8f97c0', { align: 'center' });
+    VW / 2, VH - 21, '#8f97c0', { align: 'center' });
   drawText(touch ? 'Hold B to run' : 'Hold X to run   M mute',
-    VW / 2, VH - 8, '#8f97c0', { align: 'center' });
+    VW / 2, VH - 10, '#8f97c0', { align: 'center' });
   const problem = saveProblem();
   if (problem) {
     drawText('The journal could not be read: ' + problem + '.', VW / 2, 72, '#e07a8a', { align: 'center' });
@@ -3743,13 +3780,19 @@ function frame(now) {
 }
 
 function boot() {
-  FontCache.build();
   Input.init();
   fitCanvas();
-  atlas.onload = () => {
+  // The typeface is embedded in the page; the first frame waits for it so
+  // nothing is measured or drawn in a stand-in font. A browser without the
+  // font loading API just starts.
+  const fonts = (document.fonts && document.fonts.load)
+    ? Promise.all([document.fonts.load(uiFont(1)), document.fonts.load(uiFont(1, true))]).catch(() => null)
+    : Promise.resolve();
+  const art = new Promise(resolve => { atlas.onload = resolve; });
+  Promise.all([fonts, art]).then(() => {
     document.getElementById('loading').style.display = 'none';
     requestAnimationFrame(frame);
-  };
+  });
   atlas.src = ATLAS_PNG;
   const start = () => { Audio_.ensure(); Audio_.resume(); };
   window.addEventListener('keydown', start, { once: true });

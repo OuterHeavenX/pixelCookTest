@@ -52,7 +52,7 @@ func draw(c: CanvasItem) -> void:
 	# under the hint on anything taller.
 	var opts := options()
 	var box_h := float(16 + opts.size() * 14)
-	var box_y := Art.VH - 24.0 - box_h
+	var box_y := Art.VH - 28.0 - box_h
 	var horizon := box_y - 10.0
 	c.draw_rect(Rect2(0, horizon, Art.VW, Art.VH - horizon), Color("#171a38"))
 	for i in int(ceil(Art.VW / 38.0)) + 1:
@@ -89,9 +89,9 @@ func draw(c: CanvasItem) -> void:
 			Art.draw_cursor(c, Vector2(Art.VW / 2.0 - 36, y - 1), t)
 	# Two lines: the four keys everyone needs, then the two everyone misses.
 	Art.draw_text(c, "Arrows move   Z confirm   X cancel   C menu",
-		Vector2(Art.VW / 2.0, Art.VH - 16), Color("#8f97c0"), "center")
+		Vector2(Art.VW / 2.0, Art.VH - 21), Color("#8f97c0"), "center")
 	Art.draw_text(c, "Hold X to run   M mute",
-		Vector2(Art.VW / 2.0, Art.VH - 8), Color("#8f97c0"), "center")
+		Vector2(Art.VW / 2.0, Art.VH - 10), Color("#8f97c0"), "center")
 	var problem := Gs.save_problem()
 	if problem != "":
 		Art.draw_text(c, "The journal could not be read: %s." % problem,
