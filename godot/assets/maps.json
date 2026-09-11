@@ -431,7 +431,7 @@
   "rows": [
    "WWWWWWWWWWW",
    "WWWWWWWWWWW",
-   "WFFFFFcFHHW",
+   "WFFFFFcsHHW",
    "WFKKKKFFFFW",
    "WFFFFFFFFAW",
    "WFFFFFFFFAW",
@@ -678,6 +678,14 @@
   ]
  },
  "town": {
+  "boss": {
+   "id": "walker",
+   "needs": [
+    "wildDark"
+   ],
+   "x": 20,
+   "y": 27
+  },
   "encounter": 0,
   "ground": "t_grass",
   "h": 30,
@@ -832,7 +840,7 @@
   "rows": [
    "WWWWWWWWWWWW",
    "WWWWWWWWWWWW",
-   "WHHHHFcFFFFW",
+   "WHHHHFcFsFFW",
    "WFFFFFFFF1FW",
    "WFFUUUUFF2FW",
    "WFFUUUUFFFFW",

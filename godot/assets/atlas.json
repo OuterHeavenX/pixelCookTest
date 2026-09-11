@@ -1,91 +1,91 @@
 {
  "frames": {
   "aldric_attack": [
-   61,
+   88,
    470,
    34,
    32
   ],
   "aldric_down0": [
-   96,
+   123,
    470,
    24,
    32
   ],
   "aldric_down1": [
-   121,
+   148,
    470,
    24,
    32
   ],
   "aldric_down2": [
-   146,
+   173,
    470,
    24,
    32
   ],
   "aldric_hurt": [
-   171,
+   198,
    470,
    34,
    32
   ],
   "aldric_left0": [
-   206,
+   233,
    470,
    24,
    32
   ],
   "aldric_left1": [
-   231,
+   258,
    470,
    24,
    32
   ],
   "aldric_left2": [
-   256,
+   283,
    470,
    24,
    32
   ],
   "aldric_ready": [
-   281,
+   308,
    470,
    34,
    32
   ],
   "aldric_right0": [
-   316,
+   343,
    470,
    24,
    32
   ],
   "aldric_right1": [
-   341,
+   368,
    470,
    24,
    32
   ],
   "aldric_right2": [
-   366,
+   393,
    470,
    24,
    32
   ],
   "aldric_up0": [
-   391,
+   418,
    470,
    24,
    32
   ],
   "aldric_up1": [
-   416,
+   443,
    470,
    24,
    32
   ],
   "aldric_up2": [
-   441,
+   468,
    470,
    24,
    32
@@ -115,169 +115,169 @@
    116
   ],
   "bram_attack": [
-   466,
-   470,
+   1,
+   511,
    24,
    32
   ],
   "bram_down0": [
-   1,
+   26,
    511,
    24,
    32
   ],
   "bram_down1": [
-   26,
+   51,
    511,
    24,
    32
   ],
   "bram_down2": [
-   51,
+   76,
    511,
    24,
    32
   ],
   "bram_hurt": [
-   76,
+   101,
    511,
    24,
    32
   ],
   "bram_left0": [
-   101,
+   126,
    511,
    24,
    32
   ],
   "bram_left1": [
-   126,
+   151,
    511,
    24,
    32
   ],
   "bram_left2": [
-   151,
-   511,
-   24,
-   32
-  ],
-  "bram_ready": [
    176,
    511,
    24,
    32
   ],
-  "bram_right0": [
+  "bram_ready": [
    201,
    511,
    24,
    32
   ],
-  "bram_right1": [
+  "bram_right0": [
    226,
    511,
    24,
    32
   ],
-  "bram_right2": [
+  "bram_right1": [
    251,
    511,
    24,
    32
   ],
-  "bram_up0": [
+  "bram_right2": [
    276,
    511,
    24,
    32
   ],
-  "bram_up1": [
+  "bram_up0": [
    301,
    511,
    24,
    32
   ],
-  "bram_up2": [
+  "bram_up1": [
    326,
    511,
    24,
    32
   ],
-  "child_down0": [
+  "bram_up2": [
    351,
    511,
    24,
    32
   ],
-  "child_down1": [
+  "child_down0": [
    376,
    511,
    24,
    32
   ],
-  "child_down2": [
+  "child_down1": [
    401,
    511,
    24,
    32
   ],
-  "child_left0": [
+  "child_down2": [
    426,
    511,
    24,
    32
   ],
-  "child_left1": [
+  "child_left0": [
    451,
    511,
    24,
    32
   ],
-  "child_left2": [
+  "child_left1": [
    476,
    511,
    24,
    32
   ],
-  "child_right0": [
+  "child_left2": [
    1,
    544,
    24,
    32
   ],
-  "child_right1": [
+  "child_right0": [
    26,
    544,
    24,
    32
   ],
-  "child_right2": [
+  "child_right1": [
    51,
    544,
    24,
    32
   ],
-  "child_up0": [
+  "child_right2": [
    76,
    544,
    24,
    32
   ],
-  "child_up1": [
+  "child_up0": [
    101,
    544,
    24,
    32
   ],
-  "child_up2": [
+  "child_up1": [
    126,
    544,
    24,
    32
   ],
-  "e_bandit": [
+  "child_up2": [
    151,
+   544,
+   24,
+   32
+  ],
+  "e_bandit": [
+   176,
    544,
    24,
    32
@@ -289,7 +289,7 @@
    20
   ],
   "e_goblin": [
-   176,
+   201,
    544,
    24,
    32
@@ -324,20 +324,26 @@
    24,
    20
   ],
-  "e_warden": [
+  "e_walker": [
    34,
    470,
    26,
    38
   ],
+  "e_warden": [
+   61,
+   470,
+   26,
+   38
+  ],
   "e_wight": [
-   201,
+   226,
    544,
    26,
    32
   ],
   "e_wight_ice": [
-   228,
+   253,
    544,
    26,
    32
@@ -367,145 +373,145 @@
    22
   ],
   "elder_down0": [
-   255,
-   544,
-   24,
-   32
-  ],
-  "elder_down1": [
    280,
    544,
    24,
    32
   ],
-  "elder_down2": [
+  "elder_down1": [
    305,
    544,
    24,
    32
   ],
-  "elder_left0": [
+  "elder_down2": [
    330,
    544,
    24,
    32
   ],
-  "elder_left1": [
+  "elder_left0": [
    355,
    544,
    24,
    32
   ],
-  "elder_left2": [
+  "elder_left1": [
    380,
    544,
    24,
    32
   ],
-  "elder_right0": [
+  "elder_left2": [
    405,
    544,
    24,
    32
   ],
-  "elder_right1": [
+  "elder_right0": [
    430,
    544,
    24,
    32
   ],
-  "elder_right2": [
+  "elder_right1": [
    455,
    544,
    24,
    32
   ],
-  "elder_up0": [
+  "elder_right2": [
    480,
    544,
    24,
    32
   ],
-  "elder_up1": [
+  "elder_up0": [
    1,
    577,
    24,
    32
   ],
-  "elder_up2": [
+  "elder_up1": [
    26,
    577,
    24,
    32
   ],
-  "guard_down0": [
+  "elder_up2": [
    51,
    577,
    24,
    32
   ],
-  "guard_down1": [
+  "guard_down0": [
    76,
    577,
    24,
    32
   ],
-  "guard_down2": [
+  "guard_down1": [
    101,
    577,
    24,
    32
   ],
-  "guard_left0": [
+  "guard_down2": [
    126,
    577,
    24,
    32
   ],
-  "guard_left1": [
+  "guard_left0": [
    151,
    577,
    24,
    32
   ],
-  "guard_left2": [
+  "guard_left1": [
    176,
    577,
    24,
    32
   ],
-  "guard_right0": [
+  "guard_left2": [
    201,
    577,
    24,
    32
   ],
-  "guard_right1": [
+  "guard_right0": [
    226,
    577,
    24,
    32
   ],
-  "guard_right2": [
+  "guard_right1": [
    251,
    577,
    24,
    32
   ],
-  "guard_up0": [
+  "guard_right2": [
    276,
    577,
    24,
    32
   ],
-  "guard_up1": [
+  "guard_up0": [
    301,
    577,
    24,
    32
   ],
-  "guard_up2": [
+  "guard_up1": [
    326,
+   577,
+   24,
+   32
+  ],
+  "guard_up2": [
+   351,
    577,
    24,
    32
@@ -571,313 +577,313 @@
    8
   ],
   "lyra_attack": [
-   351,
+   376,
    577,
    18,
    32
   ],
   "lyra_down0": [
-   370,
+   395,
    577,
    20,
    32
   ],
   "lyra_down1": [
-   391,
+   416,
    577,
    20,
    32
   ],
   "lyra_down2": [
-   412,
+   437,
    577,
    20,
    32
   ],
   "lyra_hurt": [
-   433,
+   458,
    577,
    18,
    32
   ],
   "lyra_left0": [
-   452,
+   477,
    577,
    20,
    32
   ],
   "lyra_left1": [
-   473,
-   577,
+   1,
+   610,
    20,
    32
   ],
   "lyra_left2": [
-   1,
+   22,
    610,
    20,
    32
   ],
   "lyra_ready": [
-   22,
+   43,
    610,
    18,
    32
   ],
   "lyra_right0": [
-   41,
-   610,
-   20,
-   32
-  ],
-  "lyra_right1": [
    62,
    610,
    20,
    32
   ],
-  "lyra_right2": [
+  "lyra_right1": [
    83,
    610,
    20,
    32
   ],
-  "lyra_up0": [
+  "lyra_right2": [
    104,
    610,
    20,
    32
   ],
-  "lyra_up1": [
+  "lyra_up0": [
    125,
    610,
    20,
    32
   ],
-  "lyra_up2": [
+  "lyra_up1": [
    146,
    610,
    20,
    32
   ],
-  "merchant_down0": [
+  "lyra_up2": [
    167,
+   610,
+   20,
+   32
+  ],
+  "merchant_down0": [
+   188,
    610,
    24,
    32
   ],
   "merchant_down1": [
-   192,
+   213,
    610,
    24,
    32
   ],
   "merchant_down2": [
-   217,
+   238,
    610,
    24,
    32
   ],
   "merchant_left0": [
-   242,
+   263,
    610,
    24,
    32
   ],
   "merchant_left1": [
-   267,
+   288,
    610,
    24,
    32
   ],
   "merchant_left2": [
-   292,
+   313,
    610,
    24,
    32
   ],
   "merchant_right0": [
-   317,
+   338,
    610,
    24,
    32
   ],
   "merchant_right1": [
-   342,
+   363,
    610,
    24,
    32
   ],
   "merchant_right2": [
-   367,
+   388,
    610,
    24,
    32
   ],
   "merchant_up0": [
-   392,
+   413,
    610,
    24,
    32
   ],
   "merchant_up1": [
-   417,
+   438,
    610,
    24,
    32
   ],
   "merchant_up2": [
-   442,
+   463,
    610,
    24,
    32
   ],
   "mira_attack": [
-   467,
+   488,
    610,
    14,
    32
   ],
   "mira_down0": [
-   482,
-   610,
-   18,
-   32
-  ],
-  "mira_down1": [
    1,
    643,
    18,
    32
   ],
-  "mira_down2": [
+  "mira_down1": [
    20,
    643,
    18,
    32
   ],
-  "mira_hurt": [
+  "mira_down2": [
    39,
+   643,
+   18,
+   32
+  ],
+  "mira_hurt": [
+   58,
    643,
    14,
    32
   ],
   "mira_left0": [
-   54,
-   643,
-   18,
-   32
-  ],
-  "mira_left1": [
    73,
    643,
    18,
    32
   ],
-  "mira_left2": [
+  "mira_left1": [
    92,
    643,
    18,
    32
   ],
-  "mira_ready": [
+  "mira_left2": [
    111,
+   643,
+   18,
+   32
+  ],
+  "mira_ready": [
+   130,
    643,
    14,
    32
   ],
   "mira_right0": [
-   126,
-   643,
-   18,
-   32
-  ],
-  "mira_right1": [
    145,
    643,
    18,
    32
   ],
-  "mira_right2": [
+  "mira_right1": [
    164,
    643,
    18,
    32
   ],
-  "mira_up0": [
+  "mira_right2": [
    183,
    643,
    18,
    32
   ],
-  "mira_up1": [
+  "mira_up0": [
    202,
    643,
    18,
    32
   ],
-  "mira_up2": [
+  "mira_up1": [
    221,
    643,
    18,
    32
   ],
-  "sera_attack": [
+  "mira_up2": [
    240,
+   643,
+   18,
+   32
+  ],
+  "sera_attack": [
+   259,
    643,
    24,
    32
   ],
   "sera_down0": [
-   265,
+   284,
    643,
    24,
    32
   ],
   "sera_down1": [
-   290,
+   309,
    643,
    24,
    32
   ],
   "sera_down2": [
-   315,
+   334,
    643,
    24,
    32
   ],
   "sera_hurt": [
-   340,
+   359,
    643,
    24,
    32
   ],
   "sera_left0": [
-   365,
+   384,
    643,
    24,
    32
   ],
   "sera_left1": [
-   390,
+   409,
    643,
    24,
    32
   ],
   "sera_left2": [
-   415,
+   434,
    643,
    24,
    32
   ],
   "sera_ready": [
-   440,
+   459,
    643,
    24,
    32
   ],
   "sera_right0": [
-   465,
+   484,
    643,
    24,
    32

@@ -67,8 +67,19 @@ none of them ever took a step.
   hands you back a saved game in a Rivenbrook that reacts, a shrine sign
   someone has re-cut, and a rift in the barrow floor you have nothing to fight
   with yet.
+- **Chapter three: the Walker.** The thing that was under both wards wakes up
+  and walks the lake road toward the biggest light it can see, putting out every
+  lamp it passes. Kestrel brings the news up out of the mere, Bram is waiting on
+  the dark road, the wilds and the town wear night pictures, and at the gate
+  Aldric gives one order: keep the wall lit and stand there, or put it out and
+  meet the Walker with a single lantern. The fight, and the ending, remember
+  which.
 - **A stylised menu** (items, magic, status, save), a title screen, a game over
-  screen, `localStorage` saves, and a small chiptune soundtrack.
+  screen, `localStorage` saves, and a small chiptune soundtrack whose note
+  tables live in the data (`THEMES`), so both builds play the same eight tunes
+  on the same three voices.
+- **Plain English throughout.** The townsfolk, signs, bosses and endings say
+  what they mean in ordinary modern words. The place names stay, the riddles go.
 
 ## Controls
 
@@ -143,6 +154,18 @@ Shops name their shelf, so the Amber Lantern and the Hollowmere armoury sell
 different things from one shop screen. Cold-country monsters are recolours
 cooked from the finished sprite (`tools/spritecook/tints.py`), so a Rimewolf is
 a direwolf that has been out in it too long and neither renderer has to know.
+
+## Chapter three
+
+Everything chapter three needs is data the earlier chapters already had a slot
+for. Townsfolk carry `needs` and `absent` flags like beats do, so Kestrel Vail
+stands in Hollowmere only once the Warden is down and Bram stands on the shore
+road only once it has gone dark. A map's `boss` carries `needs` too, which puts
+the Walker at the town gate only after you have seen the wall lamps from the
+wilds. A boss can be `dark_if` a flag, so the Walker starts in the dark only if
+you chose to put the wall out. Picture variants can be `absent` a flag, so the
+night pictures go away once the fight is won. Ending beats can be `when` a flag,
+so the close describes the order you gave and not the one you did not.
 
 ## The ending
 

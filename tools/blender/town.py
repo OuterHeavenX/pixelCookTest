@@ -686,6 +686,25 @@ def frost(img, from_frac=0.42):
     return out
 
 
+def night(img):
+    """The same picture after dark: everything pulled toward a deep blue,
+    the brights kept a little so lit windows and lamps still read. A
+    post-process on the finished frame, so a variant costs seconds."""
+    from spritecook.imaging import Image
+    out = Image(img.width, img.height)
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = img.get(x, y)
+            lum = 0.299 * r + 0.587 * g + 0.114 * b
+            k = 0.62 if lum < 200 else 0.45          # bright things keep more
+            r2 = lum * 0.22 * (1 - k) + r * (1 - k) * 0.5 + 10 * k
+            g2 = lum * 0.30 * (1 - k) + g * (1 - k) * 0.5 + 16 * k
+            b2 = lum * 0.55 * (1 - k) + b * (1 - k) * 0.5 + 44 * k
+            out.set(x, y, (int(max(0, min(255, r2))), int(max(0, min(255, g2))),
+                           int(max(0, min(255, b2))), a))
+    return out
+
+
 def finish(raw_path, style, colours=0):
     """The render at game resolution, graded if the style asks for it, and
     quantised to `colours` when that is set, saved beside the raw frame. This

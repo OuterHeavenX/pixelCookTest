@@ -101,7 +101,7 @@ for (const id in (typeof PRERENDER_VARIANTS !== 'undefined' ? PRERENDER_VARIANTS
 function pictureVariant(mapId) {
   let pick = null;
   for (const rule of (PICTURE_VARIANTS[mapId] || [])) {
-    if ((rule.when || []).every(f => G.flags[f])) pick = rule.variant;
+    if ((rule.when || []).every(f => G.flags[f]) && !(rule.absent || []).some(f => G.flags[f])) pick = rule.variant;
   }
   return pick;
 }
@@ -615,27 +615,11 @@ const Audio_ = {
       case 'levelup': [784, 988, 1175, 1568].forEach((f, i) => setTimeout(() => this.blip(f, 0.16, 'triangle', 0.4), i * 90)); break;
     }
   },
-  // note tables: 0 = rest
-  themes: {
-    town: { bpm: 340, lead: [523,0,659,0,784,0,659,0, 587,0,698,0,880,0,698,0, 523,0,659,0,784,659,523,0, 494,0,587,0,494,0,440,0],
-            bass: [131,0,196,0,131,0,196,0, 147,0,220,0,147,0,220,0, 131,0,196,0,131,0,196,0, 123,0,185,0,110,0,110,0] },
-    field: { bpm: 380, lead: [440,494,523,587,659,587,523,494, 440,0,523,0,659,0,523,0, 392,440,494,523,587,523,494,440, 392,0,494,0,392,0,330,0],
-             bass: [110,0,165,0,110,0,165,0, 131,0,196,0,131,0,196,0, 98,0,147,0,98,0,147,0, 110,0,165,0,110,110,110,0] },
-    battle: { bpm: 480, lead: [659,0,659,622,659,0,784,0, 587,0,587,523,587,0,698,0, 659,0,659,622,659,784,880,784, 659,587,523,494,440,494,523,587],
-              bass: [165,165,0,165,165,0,165,0, 147,147,0,147,147,0,147,0, 165,165,0,165,165,0,165,0, 110,110,110,110,147,147,165,165] },
-    inn: { bpm: 260, lead: [659,0,784,0,880,0,784,0, 659,0,587,0,523,0,587,0],
-           bass: [131,0,131,0,175,0,175,0, 196,0,196,0,131,0,131,0] },
-    // Slow, minor, and low: the barrow should feel like somewhere you are
-    // trespassing rather than somewhere you are adventuring.
-    hollow: { bpm: 250, lead: [523,0,587,0,494,0,440,0, 523,0,659,0,587,0,523,0,
-                              466,0,523,0,440,0,392,0, 440,0,523,0,466,0,0,0],
-              bass: [131,0,0,0,131,0,0,0, 156,0,0,0,156,0,0,0,
-                     117,0,0,0,117,0,0,0, 131,0,0,0,98,0,0,0] },
-    barrow: { bpm: 210, lead: [392,0,0,0,466,0,0,0, 440,0,0,0,349,0,0,0,
-                               392,0,0,0,523,0,466,0, 440,0,392,0,330,0,0,0],
-              bass: [98,0,0,0,98,0,0,0, 117,0,0,0,117,0,0,0,
-                     110,0,0,0,110,0,0,0, 87,0,0,0,87,0,87,0] }
-  },
+  // The note tables live in the data (datacook THEMES), so both engines play
+  // the same tunes. Three voices: the tune on a triangle wave, a bass under
+  // it, and a quiet harmony in the middle, all soft enough to sit under an
+  // hour of play.
+  themes: GAMEDATA.themes || {},
   play(name) {
     if (this.track === name) return;
     this.track = name;
@@ -647,8 +631,10 @@ const Audio_ = {
     this.timer = setInterval(() => {
       if (this.muted) return;
       const i = this.step % th.lead.length;
-      if (th.lead[i]) this.blip(th.lead[i], ms / 1000 * 0.9, 'square', 0.18);
-      if (th.bass[i % th.bass.length]) this.blip(th.bass[i % th.bass.length], ms / 1000 * 1.1, 'triangle', 0.22);
+      const beat = ms / 1000;
+      if (th.lead[i]) this.blip(th.lead[i], beat * 1.6, 'triangle', 0.2);
+      if (th.bass && th.bass[i % th.bass.length]) this.blip(th.bass[i % th.bass.length], beat * 2.2, 'triangle', 0.2);
+      if (th.harm && th.harm[i % th.harm.length]) this.blip(th.harm[i % th.harm.length], beat * 4.0, 'sine', 0.12);
       this.step++;
     }, ms);
   },
@@ -1048,7 +1034,10 @@ function enterMap(id, tx, ty, dir, opts) {
   Field.moving = null;
   Field.msg = null;
   Field.walkPhase = 0;
-  Field.npcs = (NPCS[id] || []).filter(n => !(n.recruit && inRoster(n.recruit))).map(n => {
+  // `needs` and `absent` on a townsperson say when they are there at all:
+  // Kestrel is only in Hollowmere once she has climbed the stair.
+  const present = n => !(n.needs || []).some(f => !G.flags[f]) && !(n.absent || []).some(f => G.flags[f]);
+  Field.npcs = (NPCS[id] || []).filter(n => present(n) && !(n.recruit && inRoster(n.recruit))).map(n => {
     // A stage can move somebody and stop them wandering: Tam stands by his
     // mother once the ground at the south end goes wrong.
     const stage = npcStage(n) || {};
@@ -1059,7 +1048,8 @@ function enterMap(id, tx, ty, dir, opts) {
   });
   // Any map that declares a boss gets one, so moving him is a map edit.
   const bossDef = Field.map.boss && BOSSES[Field.map.boss.id];
-  if (bossDef && !G.flags[bossDef.flag]) {
+  const bossDue = bossDef && !G.flags[bossDef.flag] && !(Field.map.boss.needs || []).some(f => !G.flags[f]);
+  if (bossDue) {
     Field.npcs.push({
       boss: Field.map.boss.id, after: null, tx: Field.map.boss.x, ty: Field.map.boss.y,
       ox: 0, oy: 0, sprite: bossDef.sprite, dir: 'down', name: bossDef.name,
@@ -1675,7 +1665,8 @@ function startEncounter(group, isBoss) {
     Battle.bannerT = 2.2;
     // The lantern: lit unless the fight says otherwise. The keeper's coat
     // shrugs off the first snuff of every fight for whoever wears it.
-    Battle.lantern = !(isBoss && BOSSES[isBoss].starts_dark);
+    const bossDef = isBoss ? BOSSES[isBoss] : null;
+    Battle.lantern = !(bossDef && (bossDef.starts_dark || (bossDef.dark_if && G.flags[bossDef.dark_if])));
     Battle.snuffShield = G.party.reduce((n, h) => {
       const a = h.alive && h.gear ? equipped(h, 'armour') : null;
       return n + ((a && a.snuff_shield) || 0);
@@ -1693,7 +1684,7 @@ function startEncounter(group, isBoss) {
     });
     G.party.forEach(h => { h.atb = h.alive ? rnd(0, 45) : 0; h.defending = false; h.hurt = 0; h.offset = 0; });
     G.mode = 'battle';
-    Audio_.play('battle');
+    Audio_.play(isBoss ? 'boss' : 'battle');
   });
 }
 
@@ -3525,7 +3516,7 @@ function startEnding(which) {
   G.mode = 'ending';
   Ending.phase = 'beats';
   Ending.beat = 0; Ending.chars = 0; Ending.t = 0; Ending.scroll = 0;
-  Audio_.play('barrow');
+  Audio_.play('ending');
 }
 
 function ending() { return ENDINGS[Ending.which] || ENDINGS.one; }

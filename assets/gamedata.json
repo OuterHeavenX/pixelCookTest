@@ -3,8 +3,8 @@
   "chieftain": {
    "banner": "The Ogre Chieftain blocks your path!",
    "challenge": [
-    "The Ogre Chieftain hauls itself off the bier at the barrow's bottom.",
-    "There will be no fleeing from this one. Stand and fight?"
+    "The Ogre Chieftain climbs off the stone bed at the bottom of the barrow.",
+    "There is no running from this one. Stand and fight?"
    ],
    "ending": "one",
    "enemy": "ogre",
@@ -18,16 +18,16 @@
    "starts_dark": true,
    "victory": [
     "The chieftain falls, and the barrow goes very quiet.",
-    "Beneath the bier, something answers. A seam of light opens in the floor.",
-    "The stone had a ward carved into it. It is cracked now."
+    "Under the stone bed, something answers. A line of light opens in the floor.",
+    "There was a ward carved into that stone. It is cracked now."
    ]
   },
   "drowned": {
    "banner": "The Drowned Warden rises from the ward!",
    "challenge": [
-    "The water above the ward turns over, and something stands up out of it.",
+    "The water above the ward moves, and something stands up out of it.",
     "It has been cutting the other side of these letters for four hundred years.",
-    "There is nowhere to run to down here. Stand and fight?"
+    "There is nowhere to run down here. Stand and fight?"
    ],
    "ending": "two",
    "enemy": "warden",
@@ -40,8 +40,31 @@
    "sprite": "e_warden",
    "victory": [
     "The Warden comes apart, and the cutting stops.",
-    "For the first time in eleven years the ward is quiet.",
-    "Above you, very faintly, the lamps of Hollowmere go out one by one."
+    "For the first time in eleven years, the ward is quiet.",
+    "Far above you, very faintly, the lamps of Hollowmere go out one by one."
+   ]
+  },
+  "walker": {
+   "banner": "The Walker reaches the gate!",
+   "challenge": [
+    "It comes up the south road at a walking pace. It does not hurry. It never has.",
+    "Every lamp it passes goes out. Then it stops in front of you.",
+    "This is the gate. There is nowhere else to stand. Fight?"
+   ],
+   "dark_if": "wallDark",
+   "ending": "three",
+   "enemy": "walker",
+   "flag": "walkerDown",
+   "name": "The Walker",
+   "returns": "town",
+   "sets": [
+    "lampsQuiet"
+   ],
+   "sprite": "e_walker",
+   "victory": [
+    "The Walker stops. It does not fall. It simply is not there any more.",
+    "The cold goes out of the air like a held breath let go.",
+    "Behind you, one by one, the lamps on the wall come back on."
    ]
   }
  },
@@ -554,19 +577,19 @@
    "beats": [
     {
      "lines": [
-      "The Chieftain was not the barrow's tenant.",
-      "He was its warden. Somebody set him on",
-      "that bier and told him to sit, and he sat",
-      "for four hundred years."
+      "The Chieftain did not live in the barrow.",
+      "He was its guard. Somebody put him on that",
+      "stone bed and told him to sit, and he sat",
+      "there for four hundred years."
      ],
      "scene": "barrow"
     },
     {
      "lines": [
       "Lyra read the letters before the floor",
-      "split. Forty, cut in fours. Half a sentence,",
-      "she says. And a name at the end of it,",
-      "the way you sign a letter: VAIL."
+      "split. Forty of them, in groups of four.",
+      "Half a sentence, she says. And a name at",
+      "the end, like you sign a letter: VAIL."
      ],
      "scene": "rift",
      "when": [
@@ -579,9 +602,9 @@
      ],
      "lines": [
       "Cold comes up through the crack in the ward.",
-      "Not the cold of a cellar. The cold of",
-      "somewhere with no season. The letters were",
-      "a sentence, Lyra says. Nobody read it."
+      "Not cellar cold. The cold of somewhere that",
+      "has no seasons. The letters were a sentence,",
+      "Lyra says. Nobody read it before it broke."
      ],
      "scene": "rift"
     },
@@ -589,8 +612,8 @@
      "lines": [
       "You walk back into Rivenbrook at dawn.",
       "Every lamp on the wall is lit. Your runner",
-      "did that. Halvard meets you at the well",
-      "and does not ask what you saw."
+      "did that. Halvard meets you at the well and",
+      "does not ask what you saw."
      ],
      "scene": "town",
      "when": [
@@ -604,17 +627,17 @@
      "lines": [
       "You walk back into Rivenbrook at dawn.",
       "There is frost on the south end of town.",
-      "In spring. Halvard meets you at the well",
-      "and does not ask what you saw."
+      "In spring. Halvard meets you at the well and",
+      "does not ask what you saw."
      ],
      "scene": "town"
     },
     {
      "lines": [
-      "The other half of that sentence is cut",
-      "under ice, four hundred miles north, in a",
-      "town that lights its lamps at noon.",
-      "Its keeper went down eleven years ago."
+      "The other half of that sentence is carved",
+      "under the ice, four hundred miles north, in",
+      "a town that lights its lamps at noon. The",
+      "woman who kept it went down eleven years ago."
      ],
      "scene": "town"
     }
@@ -632,53 +655,130 @@
     "and who has been cutting the other half"
    ],
    "hook": "Your journal is saved. Somebody up north is still cutting.",
-   "subtitle": "THE WARDEN OF THE BARROW",
+   "subtitle": "THE GUARD OF THE BARROW",
    "title": "CHAPTER ONE"
+  },
+  "three": {
+   "beats": [
+    {
+     "lines": [
+      "This is what the lamps were for.",
+      "It follows light. It always has. The keepers",
+      "lit the lamps in a ring around the lake so",
+      "it would walk in a circle forever."
+     ],
+     "scene": "road"
+    },
+    {
+     "lines": [
+      "Two wards held it asleep under the ring.",
+      "One broke in spring, one in winter. It woke,",
+      "and it walked toward the biggest light",
+      "it could see. Your town."
+     ],
+     "scene": "rift"
+    },
+    {
+     "lines": [
+      "You kept the wall lit and met it at the",
+      "gate. Every guard on the wall was there.",
+      "Halvard was there. Tam was there, behind",
+      "his mother, watching. He is always watching."
+     ],
+     "scene": "town",
+     "when": [
+      "wallLit"
+     ]
+    },
+    {
+     "lines": [
+      "You put the wall lamps out and met it in the",
+      "dark, with one lantern between you. It could",
+      "not see the town. It could only see you.",
+      "That was the idea."
+     ],
+     "scene": "town",
+     "when": [
+      "wallDark"
+     ]
+    },
+    {
+     "lines": [
+      "Tonight every lamp in Rivenbrook is lit.",
+      "Nobody had to be told. Sera is showing Tam",
+      "how to trim a wick, and Bram is asleep in a",
+      "chair by the gate with his boots on."
+     ],
+     "scene": "town"
+    },
+    {
+     "lines": [
+      "Under the barrow, the crack in the floor",
+      "has frozen shut. Somebody has cut a new",
+      "letter into the ice. Sera says it is not",
+      "one of theirs."
+     ],
+     "scene": "barrow"
+    }
+   ],
+   "credits": [
+    "RIVENBROOK",
+    "A Tale of the Thornwilds",
+    "",
+    "Written for one town and the people in it",
+    "Rendered in Blender, cooked in Python",
+    "Played in a browser and in Godot 4",
+    "",
+    "Thank you for keeping the lamps lit."
+   ],
+   "hook": "Every lamp in Rivenbrook is lit. Somebody wrote a new letter in the ice.",
+   "subtitle": "WHAT THE LAMPS WERE FOR",
+   "title": "CHAPTER THREE"
   },
   "two": {
    "beats": [
     {
      "lines": [
-      "The ward under the mere is one half",
-      "of a sentence. The other half was cut",
-      "under a barrow four hundred miles south,",
-      "and you broke that one in the spring."
+      "The ward under the lake is one half of a",
+      "sentence. The other half was carved under",
+      "a barrow four hundred miles south, and you",
+      "broke that one in the spring."
      ],
      "scene": "mere"
     },
     {
      "lines": [
-      "Kestrel Vail climbs the keepers' stair",
+      "Kestrel Vail climbs the keepers' stairs",
       "for the first time in eleven years.",
-      "She does not say a great deal. She holds",
-      "her daughter's hand the whole way up."
+      "She does not say much. She holds her",
+      "daughter's hand the whole way up."
      ],
      "scene": "mere"
     },
     {
      "lines": [
-      "You come up into Hollowmere at noon,",
-      "and Hollowmere is dark. Every lantern.",
-      "\"They never burned to keep it out,\"",
-      "Kestrel says. \"They burned to keep it asleep.\""
+      "You come up into Hollowmere at noon, and",
+      "Hollowmere is dark. Every lamp is out.",
+      "\"They never burned to keep it out,\" Kestrel",
+      "says. \"They burned to keep it asleep.\""
      ],
      "scene": "hollow"
     },
     {
      "lines": [
-      "The mere is open water. In midwinter.",
-      "Steaming. Whatever slept under two halves",
-      "of one sentence has had both halves",
+      "The lake is open water. In midwinter.",
+      "Steaming. Whatever slept under those two",
+      "halves of one sentence has had both halves",
       "taken from it in a single year."
      ],
      "scene": "hollow"
     },
     {
      "lines": [
-      "South, the Mere Road goes dark one lamp",
-      "at a time. Not all at once. In order, from",
-      "the water, at the pace of someone walking.",
-      "Bram is out there with a taper."
+      "South, the lake road goes dark one lamp at",
+      "a time. Not all at once. In order, from the",
+      "water, at the speed of somebody walking.",
+      "Bram is out there with a lit lamp."
      ],
      "scene": "road"
     }
@@ -687,7 +787,7 @@
     "RIVENBROOK",
     "A Tale of the Thornwilds",
     "",
-    "Hollowmere, the Mere Road and the ward below",
+    "Hollowmere, the lake road and the ward below",
     "Monsters modelled in Blender, tiles cooked in Python",
     "One set of rules, two engines, no drift",
     "",
@@ -749,7 +849,7 @@
    "ai": [
     {
      "act": "snuff",
-     "w": 30
+     "w": 20
     },
     {
      "act": "attack",
@@ -837,7 +937,7 @@
    "ai": [
     {
      "act": "snuff",
-     "w": 25
+     "w": 18
     },
     {
      "act": "attack",
@@ -895,7 +995,7 @@
    "ai": [
     {
      "act": "snuff",
-     "w": 20
+     "w": 14
     },
     {
      "act": "attack",
@@ -992,11 +1092,44 @@
    "sprite": "e_slime",
    "weak": "bolt"
   },
+  "walker": {
+   "ai": [
+    {
+     "act": "attack",
+     "w": 34
+    },
+    {
+     "act": "snuff",
+     "w": 26
+    },
+    {
+     "act": "spell",
+     "spell": "ice",
+     "w": 22
+    },
+    {
+     "act": "smash",
+     "w": 18
+    }
+   ],
+   "atk": 48,
+   "cold": true,
+   "def": 26,
+   "exp": 900,
+   "gil": 700,
+   "height": 46,
+   "hp": 1500,
+   "mag": 32,
+   "name": "The Walker",
+   "spd": 15,
+   "sprite": "e_walker",
+   "weak": "fire"
+  },
   "warden": {
    "ai": [
     {
      "act": "snuff",
-     "w": 25
+     "w": 18
     },
     {
      "act": "attack",
@@ -1034,7 +1167,7 @@
    "ai": [
     {
      "act": "snuff",
-     "w": 20
+     "w": 14
     },
     {
      "act": "attack",
@@ -1113,7 +1246,7 @@
  },
  "gear": {
   "bronze_sword": {
-   "desc": "A recruit's blade. Honest, blunt.",
+   "desc": "A new soldier's sword. Simple and solid.",
    "icon": "i_sword",
    "name": "Bronze Sword",
    "price": 120,
@@ -1126,7 +1259,7 @@
    ]
   },
   "chain_mail": {
-   "desc": "Turns a blade. Slows a step.",
+   "desc": "Stops a blade. Slows you down a little.",
    "icon": "i_armor",
    "name": "Chain Mail",
    "price": 420,
@@ -1140,7 +1273,7 @@
    ]
   },
   "copper_ring": {
-   "desc": "Warm against the skin.",
+   "desc": "Warm to wear.",
    "icon": "i_ring",
    "name": "Copper Ring",
    "price": 150,
@@ -1151,7 +1284,7 @@
    "users": null
   },
   "flame_brand": {
-   "desc": "Its edge burns. Ice hates it.",
+   "desc": "The edge burns. Ice creatures hate it.",
    "element": "fire",
    "icon": "i_sword",
    "name": "Flame Brand",
@@ -1165,7 +1298,7 @@
    ]
   },
   "frost_pike": {
-   "desc": "Cold to carry. Colder to be hit by.",
+   "desc": "Cold to carry. Colder to be hit with.",
    "element": "ice",
    "icon": "i_sword",
    "name": "Frost Pike",
@@ -1180,7 +1313,7 @@
    ]
   },
   "furs": {
-   "desc": "Warm. That is the entire argument.",
+   "desc": "Warm. That is all it needs to be.",
    "icon": "i_armor",
    "name": "Thick Furs",
    "price": 300,
@@ -1192,7 +1325,7 @@
    "users": null
   },
   "guard_charm": {
-   "desc": "Someone wanted you to come home.",
+   "desc": "A charm from someone who wanted you home safe.",
    "icon": "i_ring",
    "name": "Guard Charm",
    "price": 700,
@@ -1204,7 +1337,7 @@
    "users": null
   },
   "ice_charm": {
-   "desc": "Cold to hold, and it keeps the cold out.",
+   "desc": "Cold to hold, but it keeps the cold out.",
    "icon": "i_ring",
    "name": "Rime Charm",
    "price": 560,
@@ -1216,7 +1349,7 @@
    "users": null
   },
   "iron_halberd": {
-   "desc": "Long enough to keep trouble at arm's length.",
+   "desc": "Long enough to keep trouble away from you.",
    "icon": "i_sword",
    "name": "Iron Halberd",
    "price": 620,
@@ -1230,7 +1363,7 @@
    ]
   },
   "iron_sword": {
-   "desc": "Heavier, and it tells.",
+   "desc": "Heavier than bronze, and it hits harder.",
    "icon": "i_sword",
    "name": "Iron Sword",
    "price": 480,
@@ -1243,7 +1376,7 @@
    ]
   },
   "keeper_coat": {
-   "desc": "Waxed against water that is colder than water. Keeps a flame.",
+   "desc": "Waxed against the coldest water. Keeps a flame alive.",
    "icon": "i_armor",
    "name": "Keeper's Coat",
    "price": 0,
@@ -1257,7 +1390,7 @@
    "users": null
   },
   "knight_plate": {
-   "desc": "A wall you can walk in.",
+   "desc": "Like wearing a wall.",
    "icon": "i_armor",
    "name": "Knight Plate",
    "price": 1200,
@@ -1271,7 +1404,7 @@
    ]
   },
   "lake_mail": {
-   "desc": "Scales cut from something that lived in the mere.",
+   "desc": "Scales cut from something that lived in the lake.",
    "icon": "i_armor",
    "name": "Lake Mail",
    "price": 780,
@@ -1285,7 +1418,7 @@
    ]
   },
   "lamp_key": {
-   "desc": "Her mother's. It still turns the ones on the bridge.",
+   "desc": "Her mother's key. It still opens the lamps on the bridge.",
    "icon": "i_ring",
    "name": "Sera's Lamp Key",
    "price": 0,
@@ -1301,7 +1434,7 @@
    ]
   },
   "lantern_stone": {
-   "desc": "Hollowmere keeps its lamps lit with these.",
+   "desc": "Hollowmere keeps its lamps burning with these.",
    "icon": "i_ring",
    "name": "Lantern Stone",
    "price": 820,
@@ -1324,7 +1457,7 @@
    "users": null
   },
   "mere_wand": {
-   "desc": "Lake-glass, still cold from the water.",
+   "desc": "Made of lake glass, still cold from the water.",
    "icon": "i_staff",
    "name": "Mere Wand",
    "price": 900,
@@ -1339,7 +1472,7 @@
    ]
   },
   "moon_rod": {
-   "desc": "Cold to hold. Sharpens a spell.",
+   "desc": "Cold to hold. Makes spells stronger.",
    "icon": "i_staff",
    "name": "Moon Rod",
    "price": 520,
@@ -1353,7 +1486,7 @@
    ]
   },
   "oak_staff": {
-   "desc": "Plain wood, patiently carved.",
+   "desc": "Plain wood, carefully carved.",
    "icon": "i_staff",
    "name": "Oak Staff",
    "price": 100,
@@ -1368,7 +1501,7 @@
    ]
   },
   "rimeblade": {
-   "desc": "The edge frosts over as you draw it.",
+   "desc": "Frost forms on the edge when you draw it.",
    "element": "ice",
    "icon": "i_sword",
    "name": "Rimeblade",
@@ -1382,7 +1515,7 @@
    ]
   },
   "sage_cane": {
-   "desc": "Carried by healers who walk far.",
+   "desc": "Carried by healers who travel far.",
    "icon": "i_staff",
    "name": "Sage Cane",
    "price": 560,
@@ -1397,7 +1530,7 @@
    ]
   },
   "sage_pendant": {
-   "desc": "Holds a little more of the well.",
+   "desc": "Gives you a little more magic.",
    "icon": "i_ring",
    "name": "Sage Pendant",
    "price": 300,
@@ -1408,7 +1541,7 @@
    "users": null
   },
   "silk_robe": {
-   "desc": "Woven to carry a spell cleanly.",
+   "desc": "Woven to help a spell flow.",
    "icon": "i_armor",
    "name": "Silk Robe",
    "price": 380,
@@ -1423,7 +1556,7 @@
    ]
   },
   "swift_boots": {
-   "desc": "The gauge fills that bit faster.",
+   "desc": "Your turn comes a little faster.",
    "icon": "i_ring",
    "name": "Swift Boots",
    "price": 450,
@@ -1434,7 +1567,7 @@
    "users": null
   },
   "warden_coat": {
-   "desc": "Lined, hooded, and older than anyone wearing it.",
+   "desc": "Lined and hooded. Older than anyone who has worn it.",
    "icon": "i_armor",
    "name": "Warden Coat",
    "price": 720,
@@ -1450,7 +1583,7 @@
    ]
   },
   "warden_staff": {
-   "desc": "Hollowmere work. The head is a seal, not an ornament.",
+   "desc": "Made in Hollowmere. The head is a seal, not a decoration.",
    "icon": "i_staff",
    "name": "Warden Staff",
    "price": 640,
@@ -1559,7 +1692,7 @@
  },
  "lantern": {
   "pierce": true,
-  "shroud": 0.5
+  "shroud": 0.6
  },
  "legend": {
   "\"": [
@@ -1789,30 +1922,30 @@
   "gate": {
    "flag": "barrowKey",
    "open": [
-    "The iron gate stands open. The stair falls away below."
+    "The iron gate is open. Stairs lead down into the dark."
    ],
    "shut": [
     "An iron gate, barred and locked.",
-    "The lock is old, and it is not going to give."
+    "The lock is old, but it is not going to give."
    ]
   },
   "hatch": {
    "flag": "mereOpened",
    "open": [
-    "The keepers' hatch stands open. Cold comes up out of it."
+    "The keepers' hatch is open. Cold air comes up out of it."
    ],
    "shut": [
-    "Planks and iron, set flush into the shore.",
-    "There is no handle on this side. It opens for keepers."
+    "Planks and iron, set flat into the shore.",
+    "There is no handle on this side. It only opens for keepers."
    ]
   },
   "pass": {
    "flag": "bossDown",
    "open": [
-    "The west pass. Someone has been keeping the road clear."
+    "The west pass. Somebody has been keeping the road clear."
    ],
    "shut": [
-    "A pass west, choked with thorn and rockfall.",
+    "A pass to the west, blocked with thorns and fallen rock.",
     "Nobody has come through here in a long time."
    ]
   }
@@ -1831,7 +1964,7 @@
        "He does not know why he adds it. His hands wanted to."
       ],
       [
-       "Every hour up here is an hour the chisel down there is not answered.",
+       "Every hour spent up here is an hour that chisel down there goes unanswered.",
        "You go down."
       ]
      ],
@@ -1842,9 +1975,9 @@
     },
     "flag": "aldricGate",
     "lines": [
-     "The shrine sign at the mouth of the barrow has been re-cut. This week. The chisel marks are still pale.",
-     "Somebody knows this place is open and did not tell Rivenbrook.",
-     "Aldric looks back up the road. Halvard said take care. He did not say come back with word."
+     "The sign at the mouth of the barrow has been re-carved. This week. The cuts are still pale.",
+     "Somebody knows this place is open, and did not tell Rivenbrook.",
+     "Aldric looks back up the road. Halvard said take care. He did not say send word."
     ],
     "party": [
      "aldric"
@@ -1861,8 +1994,8 @@
      "replies": [
       [
        "She reads with her fingers, lips moving, and stops at the last four.",
-       "\"There is a name,\" she says. \"VAIL. Whoever cut this signed it.\"",
-       "She looks like someone who has read the first half of a letter addressed to her."
+       "\"There is a name,\" she says. \"VAIL. Whoever carved this signed it.\"",
+       "She looks like someone who has just read the first half of a letter addressed to her."
       ],
       [
        "\"Fine.\" She steps back. \"But once it is broken, nobody will ever know what it said.\"",
@@ -1877,8 +2010,8 @@
     "flag": "lyraLetters",
     "lines": [
      "Wait. Before anyone touches it. Those are letters, not a pattern.",
-     "Forty of them, cut in fours. It is a sentence, {name}. Half of one.",
-     "Give me a minute with it. One minute. Then do what you came to do."
+     "Forty of them, in groups of four. It is a sentence, {name}. Half of one.",
+     "Give me one minute with it. Then do what you came to do."
     ],
     "party": [
      "lyra"
@@ -1891,9 +2024,9 @@
     "flag": "seraLamp",
     "gives": "lamp_key",
     "lines": [
-     "Hold out your hand. No - the other one. You keep that one free. I have been watching.",
+     "Hold out your hand. No, the other one. You keep that one free. I have been watching.",
      "It is a lamp key. Every keeper gets one at twelve and loses it by thirty.",
-     "That one was hers. It still turns the ones on the bridge, so do not drop it in the mere.",
+     "That one was my mother's. It still opens the lamps on the bridge, so do not drop it in the lake.",
      "{name}. That is the first time I have said your name without the town in front of it."
     ],
     "needs": [
@@ -1908,7 +2041,7 @@
     "flag": "seraKeptTwice",
     "lines": [
      "You asked me what I promised. Out on the road, before I told you to ask later.",
-     "Not to let one go out. That is all it is. Nobody ever said why.",
+     "Never to let one go out. That is all it is. Nobody ever said why.",
      "I have added you to it. You do not get a say in that.",
      "Now stop looking at me like that and go and buy a coat."
     ],
@@ -1941,15 +2074,43 @@
    {
     "flag": "mereOpened",
     "lines": [
-     "Come down to the shore. Past the lanterns. Right down to the ice.",
-     "There is a hatch under that snow with a keeper's lock on it. It has never been opened by anybody who was not one of us.",
+     "Come down to the shore. Past the lamps. Right down to the ice.",
+     "There is a hatch under the snow with a keeper's lock on it. Nobody who was not a keeper has ever opened it.",
      "My mother went through it eleven years ago to re-cut the ward.",
-     "The town buried an empty box that winter and told me it was the cold. I was twelve. I believed them for about four years.",
-     "You have her key. I gave it to you and I knew exactly what I was doing.",
+     "The town buried an empty box that winter and told me the cold took her. I was twelve. I believed them for about four years.",
+     "You have her key. I gave it to you, and I knew exactly what I was doing.",
      "Open it."
     ],
     "needs": [
      "seraWater"
+    ],
+    "party": [
+     "sera"
+    ],
+    "speaker": "Sera"
+   },
+   {
+    "flag": "roadDark",
+    "lines": [
+     "Listen to me. The lamps on the road went out one at a time, from here going south.",
+     "That is not the wind. Something is walking the road and putting them out as it goes.",
+     "It is the thing that was under the wards. It is awake, and it is following the light.",
+     "Your friend Bram is out on that road. Go and get him. Then go after it."
+    ],
+    "needs": [
+     "wardenDown"
+    ],
+    "speaker": "Kestrel Vail"
+   }
+  ],
+  "hollow_keepers": [
+   {
+    "flag": "seraHome",
+    "lines": [
+     "This is my house. It was my mother's, and her mother's before that.",
+     "Four lamps, one in each corner. A keeper's house is never dark. Not for one minute, not ever.",
+     "That chest by the wall has been locked since I was twelve. Go on. You have the key.",
+     "I could never make myself open it."
     ],
     "party": [
      "sera"
@@ -1961,7 +2122,7 @@
    {
     "flag": "mereLamps",
     "lines": [
-     "Lanterns. The whole length of it. Every one of them lit.",
+     "Lamps. The whole length of the hall. Every one of them lit.",
      "Nobody has been down here in eleven years, {name}.",
      "So somebody has been lighting these."
     ],
@@ -1972,9 +2133,9 @@
    {
     "flag": "cuttingFloor",
     "lines": [
-     "The room at the bottom of the keepers' stair is not a tomb.",
-     "It is a workshop. Stone chips underfoot. A whetstone worn into a saddle.",
-     "A tally scratched into the wall in fours, and the fours go on and on and on."
+     "The room at the bottom of the keepers' stairs is not a tomb.",
+     "It is a workshop. Stone chips on the floor. A whetstone worn down in the middle.",
+     "A tally scratched into the wall in groups of four. The groups go on and on."
     ]
    }
   ],
@@ -1983,12 +2144,12 @@
     "flag": "bramHoldsRoad",
     "leaves": "bram",
     "lines": [
-     "Hold on. Look at the lamps - every one of them lit, all the way back.",
-     "Somebody walks this road at dusk to do that. Every night. Alone.",
+     "Hold on. Look at the lamps. Every one of them is lit, all the way back.",
+     "Somebody walks this road at dusk to light them. Every night. Alone.",
      "If the road goes dark, Hollowmere goes dark, and then it is just you down there.",
-     "So I am staying up here and keeping them lit. No, do not.",
+     "So I am staying up here to keep them lit. No, do not argue.",
      "{name}. I have followed you into one hole in the ground already.",
-     "Let me be useful where you can still find me."
+     "Let me be useful somewhere you can still find me."
     ],
     "needs": [
      "bossDown"
@@ -2003,10 +2164,10 @@
     "flag": "seraDusk",
     "lines": [
      "He is going to light every one of them, you know. All the way to the bridge.",
-     "My mother did that. Not the whole road - ours, and the two either side, because the Marrows are old.",
-     "I thought it was a chore. Then she went in the winter, and I went out at dusk anyway.",
-     "That was when I understood it was not a chore. It was a promise.",
-     "Ask me what I promised. No - ask me later. When we know what is under the water."
+     "My mother did that. Not the whole road. Ours, and the two on either side, because the Marrows are old.",
+     "I thought it was a chore. Then she disappeared that winter, and I went out at dusk anyway.",
+     "That is when I understood. It was not a chore. It was a promise.",
+     "Ask me what I promised. No. Ask me later, when we know what is under the water."
     ],
     "needs": [
      "bramHoldsRoad"
@@ -2024,13 +2185,13 @@
      ],
      "replies": [
       [
-       "She does not say anything else for a long while. Neither do you.",
-       "The lamps take, one after another, all the way down to the bridge.",
+       "She does not say anything else for a long time. Neither do you.",
+       "The lamps catch, one after another, all the way down to the bridge.",
        "\"There,\" she says. \"Now I have kept it twice.\""
       ],
       [
        "\"No,\" she agrees. \"There is not.\"",
-       "She stands, walks on ahead of you, and lights the next one anyway.",
+       "She stands up, walks on ahead of you, and lights the next one anyway.",
        "She does not sound angry. Somehow that is worse."
       ]
      ],
@@ -2041,10 +2202,10 @@
     },
     "flag": "seraWater",
     "lines": [
-     "Stop a moment. The ice is talking.",
-     "It does that when it is thinking about breaking. Grandmother said it was the mere clearing its throat.",
+     "Stop a moment. Listen to the ice.",
+     "It makes that sound when it is about to break. My grandmother said it was the lake clearing its throat.",
      "We are going down there soon, and one of us is going to say something stupid.",
-     "So it may as well be tonight. Sit with me until the lamps take."
+     "So it might as well be tonight. Sit with me until the lamps catch."
     ],
     "needs": [
      "seraLamp"
@@ -2053,6 +2214,17 @@
      "sera"
     ],
     "speaker": "Sera"
+   },
+   {
+    "flag": "roadWalked",
+    "lines": [
+     "Every lamp on the lake road is out.",
+     "The snow gives off a little light of its own. That is all there is.",
+     "Somewhere ahead of you, Bram is on this road with a lit lamp."
+    ],
+    "needs": [
+     "roadDark"
+    ]
    }
   ],
   "town": [
@@ -2060,15 +2232,15 @@
     "choice": {
      "options": [
       "Stay the night",
-      "We move at dawn"
+      "We leave at dawn"
      ],
      "replies": [
       [
-       "She sits with him until the frost comes off the inside of the window.",
+       "She sits with him until the frost melts off the inside of the window.",
        "\"It is not in him,\" she says in the morning. \"It was visiting. It is looking for something, and he is not it.\""
       ],
       [
-       "\"Then I will sit until dawn,\" she says, \"and leave when you do.\"",
+       "\"Then I will sit with him until dawn,\" she says, \"and leave when you do.\"",
        "She does. You do not ask what she saw."
       ]
      ],
@@ -2079,8 +2251,8 @@
     },
     "flag": "miraTam",
     "lines": [
-     "Pell's boy. Tam. He has been shivering since the night the barrow opened, and he is not ill.",
-     "I can sit with him tonight. It costs us the night and I do not think I can help him.",
+     "Pell's boy. Tam. He has been shivering since the night the barrow opened, and he is not sick.",
+     "I can sit with him tonight. It costs us the night, and I do not think I can help him.",
      "I think I should be there anyway. You decide where we sleep, {name}."
     ],
     "needs": [
@@ -2090,6 +2262,56 @@
      "mira"
     ],
     "speaker": "Mira"
+   },
+   {
+    "absent": [
+     "walkerDown"
+    ],
+    "choice": {
+     "options": [
+      "Keep the lamps lit. We stand at the gate.",
+      "Put the lamps out. Let it pass in the dark."
+     ],
+     "replies": [
+      [
+       "\"Keep them lit,\" Aldric says. \"Every one. If it wants light, it comes to us.\"",
+       "The guards spread out along the wall. Nobody argues."
+      ],
+      [
+       "\"Put them out,\" Aldric says. \"All of them. It cannot want what it cannot see.\"",
+       "The wall goes dark, lamp by lamp. It is very quiet. Then you light your own lantern, and wait."
+      ]
+     ],
+     "sets": [
+      "wallLit",
+      "wallDark"
+     ]
+    },
+    "flag": "gateStand",
+    "lines": [
+     "Every lamp on the wall is lit. You can see them from a mile down the road.",
+     "So can it. It follows light. That is what it does.",
+     "Aldric looks up at the wall, then down the dark road. There is time for one order."
+    ],
+    "needs": [
+     "wildDark"
+    ],
+    "party": [
+     "aldric"
+    ]
+   }
+  ],
+  "wild": [
+   {
+    "flag": "wildDark",
+    "lines": [
+     "The Thornwilds are dark. Nothing moves.",
+     "Far to the north, over the trees, you can see the lamps on the wall of Rivenbrook. They are lit.",
+     "That is where it is going."
+    ],
+    "needs": [
+     "roadDark"
+    ]
    }
   ]
  },
@@ -2097,15 +2319,15 @@
   "hollow": [
    {
     "after": [
-     "Say the word and I will go first. That is the job.",
+     "Say the word and I go first. That is my job.",
      "Have you talked to the lamp girl? She knows something."
     ],
     "dir": "down",
     "lines": [
      "{name}. I heard what came out of that barrow, and I heard who went in.",
-     "Four hundred miles I have not seen you, and you still walk like a recruit.",
-     "They are lighting the lamps at noon here. Noon.",
-     "I am not letting you go down there alone twice. Move over."
+     "I have not seen you in four hundred miles, and you still walk like a new recruit.",
+     "They light the lamps at noon here. At noon.",
+     "I am not letting you go underground alone twice. Move over."
     ],
     "name": "Bram",
     "recruit": "bram",
@@ -2116,16 +2338,16 @@
    },
    {
     "after": [
-     "I keep the lamps because my mother did, and hers.",
-     "Nobody ever said why. We just never let one go out."
+     "I keep the lamps lit because my mother did, and her mother before her.",
+     "Nobody ever told us why. We just never let one go out."
     ],
     "dir": "up",
     "lines": [
-     "Careful. The mere took two dogs and a cart this week.",
-     "It has not frozen in summer since my grandmother was small.",
-     "You are the one from Rivenbrook. You broke the ward.",
-     "No - do not apologise. My family cut that ward. We should have told somebody what it was for.",
-     "I am coming with you. It is my mess as much as yours now."
+     "Careful. The lake took two dogs and a cart this week.",
+     "It has not frozen in summer since my grandmother was a little girl.",
+     "You are the one from Rivenbrook. You broke the ward under the barrow.",
+     "No, do not apologise. My family cut that ward. We should have told somebody what it was for.",
+     "I am coming with you. This is my mess as much as yours now."
     ],
     "name": "Sera",
     "recruit": "sera",
@@ -2135,18 +2357,45 @@
     "y": 9
    },
    {
+    "dir": "down",
+    "lines": [
+     "The lamps on the road went out one at a time. From here, going south. That is not the wind.",
+     "Something is walking the road and putting them out as it goes.",
+     "Your friend Bram is out there on that road. Go and get him. Then go after it."
+    ],
+    "name": "Kestrel Vail",
+    "needs": [
+     "wardenDown"
+    ],
+    "sprite": "sera",
+    "stages": [
+     {
+      "lines": [
+       "It is gone. Not dead. Things that old do not die. But it is nowhere, and nowhere is where it belongs.",
+       "My daughter says you are the reason. I believe her."
+      ],
+      "when": [
+       "walkerDown"
+      ]
+     }
+    ],
+    "wander": false,
+    "x": 20,
+    "y": 12
+   },
+   {
     "dir": "right",
     "lines": [
      "Lamps at noon, lad. Lamps at noon.",
-     "My father said the day we stop is the day it comes up."
+     "My father said the day we stop lighting them is the day it comes up."
     ],
     "name": "Old Marrow",
     "sprite": "elder",
     "stages": [
      {
       "lines": [
-       "It came up. My father was right, and I am too old to be pleased about it.",
-       "The lamps went out and the water steamed. Then Kestrel Vail walked up the stair."
+       "It came up. My father was right, and I am too old to be happy about it.",
+       "The lamps went out, the water steamed, and then Kestrel Vail walked up the stairs."
       ],
       "when": [
        "wardenDown"
@@ -2160,15 +2409,15 @@
    {
     "dir": "left",
     "lines": [
-     "I skated on the mere once. Once.",
-     "Sera pulled me out and did not even shout."
+     "I skated on the lake once. Only once.",
+     "Sera pulled me out and did not even shout at me."
     ],
     "name": "Pip",
     "sprite": "child",
     "stages": [
      {
       "lines": [
-       "The mere is not frozen any more. It is steaming. In winter.",
+       "The lake is not frozen any more. It is steaming. In winter.",
        "Sera said stay off it. I am staying off it. I am not stupid twice."
       ],
       "when": [
@@ -2191,7 +2440,7 @@
      {
       "lines": [
        "We watch the road now.",
-       "The lamps on it are going out one at a time, south, at a walking pace. Your big friend is out there."
+       "The lamps on it are going out one at a time, heading south, at walking speed. Your big friend is out there."
       ],
       "when": [
        "wardenDown"
@@ -2207,7 +2456,7 @@
    {
     "dir": "down",
     "lines": [
-     "Cold-country work. It weighs more and it is worth it.",
+     "Gear made for the cold. It is heavy, and it is worth it.",
      "Everything on this shelf has been under the ice at least once. So have I."
     ],
     "name": "Armourer Fenn",
@@ -2223,7 +2472,7 @@
    {
     "dir": "down",
     "lines": [
-     "Beds are warm. The mere is not. Fifty gil."
+     "The beds are warm. The lake is not. Fifty gil for the night."
     ],
     "name": "Keeper Ilse",
     "service": "inn",
@@ -2231,7 +2480,7 @@
     "stages": [
      {
       "lines": [
-       "Beds are warm. Fifty gil. The mere is warmer, and that is not a thing I ever thought I would say."
+       "Fifty gil for the night. The lake is warmer than my beds now. I never thought I would say that."
       ],
       "when": [
        "wardenDown"
@@ -2245,7 +2494,7 @@
    {
     "dir": "down",
     "lines": [
-     "Oil, potions, and whatever the carts bring up from the south. Which is less each month."
+     "Lamp oil, potions, and whatever the carts bring from the south. Less every month."
     ],
     "name": "Grocer Wen",
     "service": "shop",
@@ -2262,16 +2511,16 @@
    {
     "dir": "down",
     "lines": [
-     "The boy went through the ice last winter. Sera Vail went in after him without taking her coat off.",
-     "I light the two lamps outside this door every dusk. It is the least I owe her."
+     "My boy fell through the ice last winter. Sera Vail went in after him. She did not even take her coat off.",
+     "I light the two lamps outside this door every evening. It is the least I owe her."
     ],
     "name": "Pip's Father",
     "sprite": "villager",
     "stages": [
      {
       "lines": [
-       "The lamps went out on their own. Both of mine, at once, at noon.",
-       "I lit them again. My hands were shaking and I lit them again."
+       "Both my lamps went out on their own. At the same time. At noon.",
+       "I lit them again. My hands were shaking, but I lit them again."
       ],
       "when": [
        "wardenDown"
@@ -2287,8 +2536,8 @@
   "inn": [
    {
     "after": [
-     "Room is on the house tonight. You have earned the bed.",
-     "Do not tell the others, but I have been leaving a lamp lit facing south."
+     "The room is free tonight. You have earned the bed.",
+     "Do not tell the others, but I have been leaving a lamp lit in the south window."
     ],
     "dir": "down",
     "lines": [
@@ -2304,7 +2553,7 @@
    {
     "dir": "down",
     "lines": [
-     "Potions, ethers, and a bomb or two."
+     "Potions, ethers, and lamp oil. The forge and the store have the rest."
     ],
     "name": "Quartermaster",
     "service": "shop",
@@ -2317,7 +2566,7 @@
    {
     "dir": "left",
     "lines": [
-     "If you press {cancel} you can run! Grown-ups always forget."
+     "If you press {cancel} you can run away from a fight! Grown-ups always forget."
     ],
     "name": "Nib",
     "sprite": "child",
@@ -2329,17 +2578,17 @@
   "mere2": [
    {
     "after": [
-     "It is quiet. I had forgotten that was a thing rooms did.",
-     "Take my hand, girl. I have not let go of anything in eleven years and I am out of practice."
+     "It is quiet. I forgot rooms could be quiet.",
+     "Take my hand, Sera. I have not let go of anything in eleven years. I am out of practice."
     ],
     "after_flag": "wardenDown",
     "dir": "left",
     "lines": [
-     "Do not touch the letters. Whatever else you do down here.",
-     "Eleven years. Forty letters. Cut them and it holds, and then the water takes the edges off them again, and you start at the first one.",
-     "You are Sera. You are grown.",
-     "I know. I know exactly what I did. Say it to me afterwards and I will stand still for it.",
-     "The thing on the other side of these is cutting too. It has been cutting the whole time.",
+     "Do not touch the letters. Whatever else you do down here, do not touch them.",
+     "Eleven years. Forty letters. I cut them, the water wears them down, and I cut them again.",
+     "You are Sera. You are grown up.",
+     "I know what I did to you. Say it to me after this, and I will listen to all of it.",
+     "The thing on the other side of these letters is cutting too. It has never stopped.",
      "Kill it, and I can stop."
     ],
     "name": "Kestrel Vail",
@@ -2349,13 +2598,35 @@
     "y": 6
    }
   ],
+  "shore": [
+   {
+    "after": [
+     "I go first. That is the job."
+    ],
+    "dir": "left",
+    "lines": [
+     "It walked right past me. Tall. It did not look at me once.",
+     "It put out the lamp in my hand and kept going south. I lit the lamp again. Then I waited for you.",
+     "It is heading for Rivenbrook, {name}. For the wall lamps. Let us go."
+    ],
+    "name": "Bram",
+    "needs": [
+     "roadDark"
+    ],
+    "recruit": "bram",
+    "sprite": "bram",
+    "wander": false,
+    "x": 44,
+    "y": 14
+   }
+  ],
   "town": [
    {
     "dir": "down",
     "lines": [
-     "Rivenbrook has stood a hundred years, {name}.",
-     "Something stirs in the Thornwilds. A chieftain, the scouts say.",
-     "And the shrine sign on the south road has been re-cut. Fresh marks, this week. It was not us.",
+     "Rivenbrook has stood for a hundred years, {name}.",
+     "Something is moving in the Thornwilds. The scouts say a chieftain.",
+     "And the sign at the old shrine on the south road has been re-carved. Fresh marks, this week. Nobody here did it.",
      "Take the south gate. And take care."
     ],
     "name": "Elder Halvard",
@@ -2363,8 +2634,8 @@
     "stages": [
      {
       "lines": [
-       "You came back. Sit down, {name}. You look like the barrow looked at you.",
-       "Somebody was tending that seal for four hundred years. Somebody who was not us.",
+       "You came back. Sit down, {name}. You look like you saw something down there.",
+       "Somebody was looking after that seal for four hundred years. Somebody who was not us.",
        "And now nobody is."
       ],
       "when": [
@@ -2375,7 +2646,7 @@
       "lines": [
        "Your runner reached us before you did. We lit every lamp on the wall.",
        "I do not know why that felt like the right thing to do. It did.",
-       "Sit down, {name}. You look like the barrow looked at you."
+       "Sit down, {name}. You look like you saw something down there."
       ],
       "when": [
        "bossDown",
@@ -2384,12 +2655,21 @@
      },
      {
       "lines": [
-       "Kestrel Vail. So that is who was cutting.",
-       "I danced with her once, at a harvest, forty years ago. She had cold hands even then.",
-       "The wall lamps went out last night, north to south, and came back. I have stopped asking why."
+       "Kestrel Vail. So that is who was cutting the letters.",
+       "I danced with her once, at a harvest festival, forty years ago. Her hands were cold even then.",
+       "The wall lamps went out last night, one after another, and then came back. I have stopped asking why."
       ],
       "when": [
        "wardenDown"
+      ]
+     },
+     {
+      "lines": [
+       "Every lamp in town is lit tonight. Nobody had to be told.",
+       "Sit down, {name}. Stay a while. You have earned a chair."
+      ],
+      "when": [
+       "walkerDown"
       ]
      }
     ],
@@ -2401,16 +2681,16 @@
     "dir": "right",
     "lines": [
      "These beds were carrots last spring.",
-     "The south row will not take this year. Not carrots, not weeds, not anything.",
-     "I put my hand in the soil down there and it is cold as a well. In spring."
+     "The south row will not grow anything this year. Not carrots, not weeds, nothing.",
+     "I put my hand in the soil down there and it is cold as well water. In spring."
     ],
     "name": "Gardener Pell",
     "sprite": "villager",
     "stages": [
      {
       "lines": [
-       "The fence held. The frost did not go back.",
-       "It has come up to the third row now, and my boy will not go near it. Good."
+       "The fence held. The frost did not go away.",
+       "It has reached the third row now. My boy will not go near it. Good."
       ],
       "wander": false,
       "when": [
@@ -2421,7 +2701,7 @@
      },
      {
       "lines": [
-       "Green. Look at it. The south row came back the day you say the water went quiet.",
+       "Green. Look at it. The south row came back the day you say the lake went quiet.",
        "I am not asking how. I am planting carrots."
       ],
       "when": [
@@ -2437,7 +2717,7 @@
     "dir": "left",
     "lines": [
      "I saw a wolf as big as a cart!",
-     "Its breath did not steam. Mum says I made that bit up. I did not."
+     "Its breath did not steam in the cold. Mum says I made that part up. I did not."
     ],
     "name": "Tam",
     "sprite": "child",
@@ -2446,7 +2726,7 @@
       "lines": [
        "Did you SEE it? Was it bigger than the mill?",
        "I am not allowed past the fence now. Ma says the ground is wrong.",
-       "I am cold all the time and I am not even ill."
+       "I am cold all the time and I am not even sick."
       ],
       "wander": false,
       "when": [
@@ -2457,8 +2737,8 @@
      },
      {
       "lines": [
-       "The healer sat with me all night. She did not sing or anything. She just sat.",
-       "She said the cold was not in me. It was visiting. It is looking for something and I am not it."
+       "The healer sat with me all night. She did not sing or anything. She just sat there.",
+       "She said the cold was not in me. It was just visiting. It is looking for something and I am not it."
       ],
       "wander": false,
       "when": [
@@ -2488,7 +2768,7 @@
    {
     "dir": "down",
     "lines": [
-     "Beyond the gate is the Thornwilds. Fight or flee, but never dawdle.",
+     "Past this gate is the Thornwilds. Fight or run, but never stand still.",
      "Press {menu} any time to open your journal."
     ],
     "name": "Gate Guard",
@@ -2496,7 +2776,7 @@
     "stages": [
      {
       "lines": [
-       "We heard the barrow from here. Like a door, a long way down.",
+       "We heard the barrow open from here. Like a door closing, a long way down.",
        "Then the frost came up the road to the gate. In spring. I have stopped saying \"in spring\"."
       ],
       "when": [
@@ -2506,10 +2786,19 @@
      {
       "lines": [
        "The wall lamps went out last night on their own. North to south, one after another.",
-       "Then they came back. I have not slept and I am not going to."
+       "Then they came back on. I have not slept, and I am not going to."
       ],
       "when": [
        "wardenDown"
+      ]
+     },
+     {
+      "lines": [
+       "I saw it come up the road. I saw what you did at the gate.",
+       "I will keep the wall lit every night for the rest of my life. That is a promise."
+      ],
+      "when": [
+       "walkerDown"
       ]
      }
     ],
@@ -2520,7 +2809,7 @@
    {
     "dir": "down",
     "lines": [
-     "The Amber Lantern keeps a bed and a stocked shelf.",
+     "The Amber Lantern has beds and a shelf of supplies.",
      "Rest before you go. Only a fool walks the wilds tired."
     ],
     "name": "Gate Guard",
@@ -2529,7 +2818,7 @@
      {
       "lines": [
        "Nobody told us anything. We lit the wall lamps when the frost reached the gate.",
-       "Seemed the thing to do. Nobody could say why."
+       "It seemed like the right thing to do. Nobody could say why."
       ],
       "when": [
        "bossDown"
@@ -2547,7 +2836,7 @@
      },
      {
       "lines": [
-       "A pedlar from the north says the Mere Road lamps are going out. One a night.",
+       "A pedlar from the north says the lamps on the lake road are going out. One each night.",
        "Like somebody walking. I keep the wall lit. It is the only thing I know how to do about it."
       ],
       "when": [
@@ -2564,7 +2853,7 @@
    {
     "dir": "down",
     "lines": [
-     "Steel I can give you. Courage you bring yourself.",
+     "I can give you steel. Courage you bring yourself.",
      "Pell's boy keeps bringing me monster teeth. They are river stones. I keep every one."
     ],
     "name": "Smith Orla",
@@ -2574,8 +2863,8 @@
     "stages": [
      {
       "lines": [
-       "Bring me the chieftain's plate and I will make you something out of it.",
-       "Whatever cracked in that barrow, you will want better steel than this."
+       "Bring me the chieftain's armour plate and I will make you something out of it.",
+       "Whatever broke open in that barrow, you will want better steel than this."
       ],
       "when": [
        "bossDown"
@@ -2583,8 +2872,8 @@
      },
      {
       "lines": [
-       "Four hundred years that ward held, and it was cut with a chisel.",
-       "I would like to meet the smith who made the chisel. I would like to know what it was quenched in."
+       "That ward held for four hundred years, and somebody cut it with a chisel.",
+       "I would like to meet the smith who made that chisel."
       ],
       "when": [
        "wardenDown"
@@ -2602,7 +2891,7 @@
     "dir": "down",
     "lines": [
      "He is out at the fence again. He says he is guarding it.",
-     "Pell says the south row is cold. I say the whole south end is, and nobody listens to me either."
+     "Pell says the south row of the garden is cold. I say the whole south end of town is cold. Nobody listens to me either."
     ],
     "name": "Tam's Mother",
     "sprite": "villager",
@@ -2610,7 +2899,7 @@
      {
       "lines": [
        "He shivers in his sleep now. He never used to.",
-       "Pell will not say it, so I will: something came up out of that barrow and it came here."
+       "Pell will not say it, so I will. Something came up out of that barrow, and it came here."
       ],
       "when": [
        "bossDown"
@@ -2618,8 +2907,8 @@
      },
      {
       "lines": [
-       "Your healer sat up with him all night and would not take a copper for it.",
-       "He slept. First time since the barrow. You tell her that from me."
+       "Your healer sat up with him all night and would not take a coin for it.",
+       "He slept. First time since the barrow. Tell her that from me."
       ],
       "when": [
        "bossDown",
@@ -2628,8 +2917,8 @@
      },
      {
       "lines": [
-       "He is himself again. Loud. Filthy. Thank God.",
-       "The lamps on the wall went out last night and he saw them come back. He will tell you. At length."
+       "He is himself again. Loud and filthy. Thank goodness.",
+       "The lamps on the wall went out last night and he saw them come back on. He will tell you about it. At length."
       ],
       "when": [
        "wardenDown"
@@ -2645,7 +2934,7 @@
    {
     "dir": "left",
     "lines": [
-     "Buying? The inn keeps my stock these days.",
+     "Buying? I keep my stock here now.",
      "Too many bandits on the south road for an honest cart."
     ],
     "name": "Pedlar Voss",
@@ -2664,7 +2953,7 @@
      },
      {
       "lines": [
-       "Carts from the north say the Mere Road lamps are going out. One a night, in order.",
+       "Carts from the north say the lamps on the lake road are going out. One each night, in order.",
        "Like somebody walking it. Nobody has seen who."
       ],
       "when": [
@@ -2680,11 +2969,39 @@
   "wild": []
  },
  "picture_variants": {
+  "shore": [
+   {
+    "variant": "night",
+    "when": [
+     "roadDark"
+    ]
+   }
+  ],
   "town": [
    {
     "variant": "cold",
     "when": [
      "sealBroken"
+    ]
+   },
+   {
+    "absent": [
+     "walkerDown"
+    ],
+    "variant": "night",
+    "when": [
+     "wildDark"
+    ]
+   }
+  ],
+  "wild": [
+   {
+    "absent": [
+     "walkerDown"
+    ],
+    "variant": "night",
+    "when": [
+     "roadDark"
     ]
    }
   ]
@@ -2714,17 +3031,19 @@
   ]
  },
  "sign_after": {
-  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.",
-  "wild": "THORNWILDS SHRINE - The barrow below is sealed. The letters are fresh cut. Someone re-carved this recently."
+  "barrow1": "Carved over the door: THE CHIEFTAIN SLEEPS BELOW. Under it, newer: HE IS AWAKE. RUN.",
+  "wild": "OLD SHRINE - The barrow below is sealed. The letters are freshly cut. Somebody re-carved this recently."
  },
  "sign_text": {
-  "barrow1": "Carved into the lintel: THE CHIEFTAIN SLEEPS BELOW. LET HIM.",
-  "hollow": "HOLLOWMERE - Keep the lanterns lit. Keep off the ice.",
-  "hollow_keepers": "KEEPERS OF THE MERE - Never let one go out. (The rest is worn away.)",
-  "mere1": "Cut over the stair, in the keepers' hand: WE GO DOWN SO IT DOES NOT COME UP.",
-  "shore": "THE MERE ROAD - Do not stop between the lamps.",
-  "town": "RIVENBROOK - The Amber Lantern, rooms and remedies.",
-  "wild": "THORNWILDS SHRINE - The barrow below is sealed. It was sealed for a reason."
+  "barrow1": "Carved over the door: THE CHIEFTAIN SLEEPS BELOW. LET HIM SLEEP.",
+  "hollow": "HOLLOWMERE - Keep the lamps lit. Stay off the ice.",
+  "hollow_keepers": "KEEPERS OF THE LAKE - Never let a lamp go out. (The rest has worn away.)",
+  "hollow_watch": "THE WATCH - Lamps lit at dusk, north end first. Count them. If the count is wrong, ring the bell.",
+  "mere1": "Cut over the stairs, in the keepers' handwriting: WE GO DOWN SO IT DOES NOT COME UP.",
+  "shore": "THE LAKE ROAD - Do not stop between the lamps.",
+  "town": "RIVENBROOK - The Amber Lantern: rooms and supplies. The forge and the store are up the street.",
+  "town_halvard": "A letter, very old, kept under glass: 'To the Elder of Rivenbrook. Light the south wall every night. You will not be told why. - K. Vail.'",
+  "wild": "OLD SHRINE - The barrow below is sealed. It was sealed for a reason."
  },
  "spells": {
   "bolt": {
@@ -2849,6 +3168,800 @@
    "armour": "silk_robe",
    "trinket": "copper_ring",
    "weapon": "warden_staff"
+  }
+ },
+ "themes": {
+  "barrow": {
+   "bass": [
+    98,
+    0,
+    0,
+    0,
+    98,
+    0,
+    0,
+    0,
+    117,
+    0,
+    0,
+    0,
+    117,
+    0,
+    0,
+    0,
+    110,
+    0,
+    0,
+    0,
+    110,
+    0,
+    0,
+    0,
+    87,
+    0,
+    0,
+    0,
+    87,
+    0,
+    87,
+    0
+   ],
+   "bpm": 190,
+   "harm": [
+    0,
+    0,
+    0,
+    0,
+    294,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    262,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    311,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    262,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    392,
+    0,
+    0,
+    0,
+    466,
+    0,
+    0,
+    0,
+    440,
+    0,
+    0,
+    0,
+    349,
+    0,
+    0,
+    0,
+    392,
+    0,
+    0,
+    0,
+    523,
+    0,
+    466,
+    0,
+    440,
+    0,
+    392,
+    0,
+    330,
+    0,
+    0,
+    0
+   ]
+  },
+  "battle": {
+   "bass": [
+    165,
+    165,
+    0,
+    165,
+    165,
+    0,
+    165,
+    0,
+    147,
+    147,
+    0,
+    147,
+    147,
+    0,
+    147,
+    0,
+    165,
+    165,
+    0,
+    165,
+    165,
+    0,
+    165,
+    0,
+    110,
+    110,
+    110,
+    110,
+    147,
+    147,
+    165,
+    165
+   ],
+   "bpm": 440,
+   "harm": [
+    392,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    349,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    392,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    659,
+    0,
+    659,
+    587,
+    659,
+    0,
+    784,
+    0,
+    587,
+    0,
+    587,
+    523,
+    587,
+    0,
+    698,
+    0,
+    659,
+    0,
+    659,
+    587,
+    659,
+    784,
+    880,
+    784,
+    659,
+    587,
+    523,
+    494,
+    440,
+    494,
+    523,
+    587
+   ]
+  },
+  "boss": {
+   "bass": [
+    110,
+    110,
+    0,
+    110,
+    110,
+    0,
+    110,
+    0,
+    110,
+    110,
+    0,
+    110,
+    110,
+    0,
+    110,
+    0,
+    110,
+    110,
+    0,
+    110,
+    110,
+    0,
+    110,
+    0,
+    82,
+    82,
+    82,
+    82,
+    82,
+    82,
+    82,
+    82
+   ],
+   "bpm": 400,
+   "harm": [
+    262,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    262,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    247,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    330,
+    0,
+    330,
+    349,
+    330,
+    0,
+    294,
+    0,
+    262,
+    0,
+    262,
+    294,
+    262,
+    0,
+    247,
+    0,
+    330,
+    0,
+    349,
+    0,
+    392,
+    0,
+    440,
+    0,
+    392,
+    349,
+    330,
+    294,
+    262,
+    0,
+    247,
+    0
+   ]
+  },
+  "ending": {
+   "bass": [
+    131,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    98,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    87,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    131,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "bpm": 170,
+   "harm": [
+    392,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    494,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    440,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    523,
+    0,
+    0,
+    0,
+    659,
+    0,
+    0,
+    0,
+    784,
+    0,
+    0,
+    0,
+    659,
+    0,
+    0,
+    0,
+    698,
+    0,
+    0,
+    0,
+    659,
+    0,
+    0,
+    0,
+    587,
+    0,
+    0,
+    0,
+    523,
+    0,
+    0,
+    0
+   ]
+  },
+  "field": {
+   "bass": [
+    110,
+    0,
+    0,
+    0,
+    165,
+    0,
+    0,
+    0,
+    110,
+    0,
+    0,
+    0,
+    98,
+    0,
+    0,
+    0,
+    87,
+    0,
+    0,
+    0,
+    131,
+    0,
+    0,
+    0,
+    98,
+    0,
+    0,
+    0,
+    82,
+    0,
+    0,
+    0
+   ],
+   "bpm": 330,
+   "harm": [
+    262,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    220,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    247,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    440,
+    0,
+    523,
+    0,
+    659,
+    0,
+    587,
+    523,
+    440,
+    0,
+    0,
+    0,
+    392,
+    0,
+    440,
+    0,
+    349,
+    0,
+    440,
+    0,
+    523,
+    0,
+    494,
+    440,
+    392,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0
+   ]
+  },
+  "hollow": {
+   "bass": [
+    131,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    156,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    117,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    131,
+    0,
+    0,
+    0,
+    98,
+    0,
+    0,
+    0
+   ],
+   "bpm": 220,
+   "harm": [
+    392,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    392,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    349,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    523,
+    0,
+    587,
+    0,
+    494,
+    0,
+    440,
+    0,
+    523,
+    0,
+    659,
+    0,
+    587,
+    0,
+    523,
+    0,
+    466,
+    0,
+    523,
+    0,
+    440,
+    0,
+    392,
+    0,
+    440,
+    0,
+    523,
+    0,
+    466,
+    0,
+    0,
+    0
+   ]
+  },
+  "inn": {
+   "bass": [
+    131,
+    0,
+    0,
+    0,
+    175,
+    0,
+    0,
+    0,
+    196,
+    0,
+    0,
+    0,
+    131,
+    0,
+    0,
+    0
+   ],
+   "bpm": 220,
+   "harm": [
+    392,
+    0,
+    0,
+    0,
+    440,
+    0,
+    0,
+    0,
+    494,
+    0,
+    0,
+    0,
+    392,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    659,
+    0,
+    784,
+    0,
+    880,
+    0,
+    784,
+    0,
+    659,
+    0,
+    587,
+    0,
+    523,
+    0,
+    587,
+    0
+   ]
+  },
+  "town": {
+   "bass": [
+    131,
+    0,
+    0,
+    196,
+    0,
+    0,
+    131,
+    0,
+    147,
+    0,
+    0,
+    220,
+    0,
+    0,
+    147,
+    0,
+    131,
+    0,
+    0,
+    196,
+    0,
+    0,
+    131,
+    0,
+    98,
+    0,
+    0,
+    147,
+    0,
+    0,
+    110,
+    0
+   ],
+   "bpm": 300,
+   "harm": [
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    349,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    330,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    294,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "lead": [
+    523,
+    0,
+    659,
+    0,
+    784,
+    0,
+    659,
+    0,
+    587,
+    0,
+    698,
+    0,
+    880,
+    0,
+    698,
+    0,
+    523,
+    0,
+    659,
+    0,
+    784,
+    659,
+    523,
+    0,
+    494,
+    0,
+    587,
+    0,
+    494,
+    0,
+    440,
+    0
+   ]
   }
  },
  "underlay": {

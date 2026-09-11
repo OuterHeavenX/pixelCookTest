@@ -107,6 +107,9 @@ func picture_variant(map_id: String) -> String:
 		for f in rule.get("when", []):
 			if not bool(Gs.flags.get(f, false)):
 				ok = false
+		for f in rule.get("absent", []):
+			if bool(Gs.flags.get(f, false)):
+				ok = false
 		if ok:
 			pick = str(rule["variant"])
 	return pick

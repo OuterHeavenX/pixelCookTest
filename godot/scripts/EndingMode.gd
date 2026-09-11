@@ -26,7 +26,7 @@ func open(chapter := "one") -> void:
 	chars = 0.0
 	t = 0.0
 	scroll = 0.0
-	Snd.play("barrow")
+	Snd.play("ending")
 
 
 ## Which chapter is closing. The game has more than one now, so the ending is

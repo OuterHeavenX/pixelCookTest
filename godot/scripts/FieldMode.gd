@@ -45,6 +45,10 @@ func enter_map(id: String, tx: int, ty: int, facing := "", quiet := false) -> vo
 		# Somebody who has already joined is not still standing in the street.
 		if n.get("recruit", null) != null and Gs.find_hero(n["recruit"]) != null:
 			continue
+		# `needs` and `absent` say when they are there at all: Kestrel is only
+		# in Hollowmere once she has climbed the stair.
+		if not _flags_allow(n):
+			continue
 		# A stage can move somebody and stop them wandering: Tam stands by his
 		# mother once the ground at the south end goes wrong.
 		var stage := npc_stage(n)
@@ -61,12 +65,13 @@ func enter_map(id: String, tx: int, ty: int, facing := "", quiet := false) -> vo
 		npcs.append(npc)
 	# Any map that declares a boss gets one, so moving him is a map edit.
 	var boss_def: Dictionary = Dat.bosses.get(str(map.get("boss", {}).get("id", "")), {})
-	if not boss_def.is_empty() and not bool(Gs.flags.get(boss_def["flag"], false)):
+	if not boss_def.is_empty() and not bool(Gs.flags.get(boss_def["flag"], false)) \
+			and _flags_allow(map.get("boss", {})):
 		npcs.append({
 			"tx": int(map["boss"]["x"]), "ty": int(map["boss"]["y"]),
 			"ox": 0.0, "oy": 0.0, "phase": 0.0, "cool": 999.0, "move": {},
 			"boss": str(map["boss"]["id"]), "after": null, "shelf": "amber",
-			"recruit": null, "after_flag": "bossDown",
+			"recruit": null, "after_flag": str(boss_def["flag"]),
 			"sprite": str(boss_def["sprite"]), "dir": "down",
 			"name": str(boss_def["name"]), "wander": false, "lines": [], "service": "",
 		})
@@ -137,6 +142,17 @@ func npc_stage(npc: Dictionary) -> Dictionary:
 		if ok:
 			pick = st
 	return pick
+
+
+## Whether a thing with `needs` and `absent` flag lists is present right now.
+func _flags_allow(thing: Dictionary) -> bool:
+	for f in thing.get("needs", []):
+		if not bool(Gs.flags.get(f, false)):
+			return false
+	for f in thing.get("absent", []):
+		if bool(Gs.flags.get(f, false)):
+			return false
+	return true
 
 
 func nearest_free(x: int, y: int) -> Vector2i:

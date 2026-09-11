@@ -162,6 +162,7 @@ def town():
         "encounter": 0,
         "music": "town",
         "spawn": [20, 20],
+        "boss": {"x": 20, "y": 27, "id": "walker", "needs": ["wildDark"]},
         "warps": [
             {"x": 19, "y": 29, "to": "wild", "tx": 28, "ty": 3, "dir": "down"},
             {"x": 20, "y": 29, "to": "wild", "tx": 28, "ty": 3, "dir": "down"},
@@ -291,6 +292,7 @@ def town_halvard():
         g.set(9, 4, "2")
         g.rect(3, 4, 4, 3, "U")
         g.set(6, 2, "c")
+        g.set(8, 2, "s")
         g.set(1, 7, "l")
         g.set(10, 7, "l")
     return interior("town_halvard", "Halvard's House", 12, 9, 5, "town", 31, 23, furnish)
@@ -381,6 +383,7 @@ def hollow_watch():
         g.set(9, 4, "A")
         g.set(9, 5, "A")
         g.set(6, 2, "c")
+        g.set(7, 2, "s")
         g.set(1, 7, "l")
         g.set(9, 7, "l")
     return interior("hollow_watch", "The Watch House", 11, 9, 5, "hollow", 35, 29, furnish)

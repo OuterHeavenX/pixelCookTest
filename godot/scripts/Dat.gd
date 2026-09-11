@@ -20,6 +20,7 @@ var gear := {}
 var gear_slots := []
 var picture_variants := {}
 var lantern := {}
+var themes := {}
 var gear_stock := {}
 var starting_gear := {}
 var sign_after := {}
@@ -48,6 +49,7 @@ func _ready() -> void:
 	gear_slots = data.get("gear_slots", [])
 	picture_variants = data.get("picture_variants", {})
 	lantern = data.get("lantern", {})
+	themes = data.get("themes", {})
 	gear_stock = data.get("gear_stock", {})
 	starting_gear = data.get("starting_gear", {})
 	sign_after = data.get("sign_after", {})

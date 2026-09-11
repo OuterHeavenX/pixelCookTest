@@ -66,7 +66,11 @@ func start(group: Array, boss: String) -> void:
 	banner_t = 2.2
 	# The lantern: lit unless the fight says otherwise. The keeper's coat
 	# shrugs off the first snuff of every fight for whoever wears it.
-	lantern = not (boss != "" and bool(Dat.bosses[boss].get("starts_dark", false)))
+	lantern = true
+	if boss != "":
+		var bd: Dictionary = Dat.bosses[boss]
+		var dark_if := str(bd.get("dark_if", ""))
+		lantern = not (bool(bd.get("starts_dark", false)) or (dark_if != "" and bool(Gs.flags.get(dark_if, false))))
 	snuff_shield = 0
 	for h in Gs.party:
 		if bool(h["alive"]):
@@ -105,7 +109,7 @@ func start(group: Array, boss: String) -> void:
 		h["defending"] = false
 		h["hurt"] = 0.0
 		h["offset"] = 0.0
-	Snd.play("battle")
+	Snd.play("boss" if boss != "" else "battle")
 
 
 var lantern := true
@@ -959,7 +963,7 @@ func draw(c: CanvasItem) -> void:
 				Vector2(-ko.x * bs / 2.0, -ko.y * bs / 2.0), bs, Color(1, 1, 1, 0.5))
 			c.draw_set_transform(Vector2(sh, 0))
 			continue
-		var is_acting := not acting.is_empty() and is_same(acting["who"], h) \
+		var is_acting := acting.has("who") and is_same(acting["who"], h) \
 			and int(acting["stage"]) >= 1
 		var is_ready := actor != null and is_same(actor, h)
 		Art.draw_shadow(c, Vector2(pos.x + 12, pos.y + 35), 9.0)

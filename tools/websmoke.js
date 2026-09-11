@@ -302,7 +302,9 @@ async function launch() {
     e.cold = false; e.hp = e.maxhp = 50;
     return [taken, canLight, lit];
   });
-  expect(shroud[0] === 50, 'a cold thing in the dark takes half', String(shroud[0]));
+  const shroudRate = await ev(() => GAMEDATA.lantern.shroud);
+  expect(shroud[0] === Math.ceil(100 * shroudRate), 'a cold thing in the dark takes less (x' + shroudRate + ')',
+    String(shroud[0]));
   expect(shroud[1], 'and Light is on the menu while it is out');
   expect(shroud[2], 'and lighting it works');
   expect(await until(() => Battle.phase === 'command' && Battle.actor, 200),
@@ -578,6 +580,64 @@ async function launch() {
   expect(await ev(() => hasSave() && loadGame() && G.party.length === 1 && G.bag.potion === 2 && !G.bag.gone_item),
     'an old journal without a version still loads, minus what the game no longer has');
   await ev(() => { const k = window.__kept; localStorage.setItem(SAVE_KEY, k[0]); if (k[1]) localStorage.setItem(AUTOSAVE_KEY, k[1]); loadGame(); });
+
+  // --- chapter three ------------------------------------------------------
+  section('chapter three');
+  /* Loading the journal just now already walked into Hollowmere once, and
+   * Kestrel said her piece to nobody. Give her the line back. */
+  await ev(() => { G.mode = 'field'; G.flags.roadDark = false; Field.msg = null; });
+  await go('hollow', 21, 31);
+  expect(await ev(() => Field.msg && Field.msg.speaker) === 'Kestrel Vail',
+    'Kestrel comes up out of the mere with news', await msgLine());
+  await readMsg();
+  expect(await ev(() => !!G.flags.roadDark), 'the lake road has gone dark');
+  expect(await ev(() => !!Field.npcs.find(n => n.name === 'Kestrel Vail')), 'and she stays in Hollowmere');
+  await go('shore', 3, 14);
+  expect(await ev(() => pictureVariant('shore')) === 'night', 'the road wears its night picture');
+  expect(await ev(() => !!Field.msg), 'and the road says so', await msgLine());
+  await readMsg();
+  expect(await ev(() => !!Field.npcs.find(n => n.name === 'Bram')), 'Bram is out on it with a lit lamp');
+  expect(await talkTo('Bram'), 'and can be talked to');
+  expect(await ev(() => inRoster('bram')), 'which brings him back');
+  await go('wild', 28, 3);
+  expect(await ev(() => pictureVariant('wild')) === 'night', 'the wilds are dark too');
+  await readMsg();
+  expect(await ev(() => !!G.flags.wildDark), 'and you can see the wall lamps from them');
+  await go('town', 20, 20);
+  expect(await ev(() => pictureVariant('town')) === 'night', 'Rivenbrook at night');
+  await shot('town_night');
+  await readMsg();
+  expect(await ev(() => !!(Field.msg && Field.msg.choice)), 'Aldric has one order to give',
+    await ev(() => Field.msg && Field.msg.choice ? Field.msg.choice.options.join(' / ') : '-'));
+  await pickChoice(1);
+  expect(await ev(() => !!G.flags.wallDark && !G.flags.wallLit), 'and the wall goes dark');
+  expect(await ev(() => !!Field.npcs.find(n => n.boss === 'walker')), 'the Walker is at the gate');
+  await ev(() => { G.px = 20; G.py = 26; G.dir = 'down'; onStepComplete(); });
+  await p.waitForTimeout(400);
+  expect(await ev(() => Field.msg && Field.msg.speaker) === 'The Walker', 'stepping up to it stops it',
+    await msgLine());
+  await pickChoice(0);
+  expect(await until(() => G.mode === 'battle', 80), 'and it fights');
+  expect(await ev(() => Battle.lantern === false), 'in the dark, because you chose the dark');
+  expect(await ev(() => Audio_.track) === 'boss', 'to the boss theme', await ev(() => Audio_.track));
+  await shot('walker');
+  await winFight();
+  expect(await ev(() => !!G.flags.walkerDown), 'and it does not get past');
+  expect(await until(() => G.mode === 'ending', 60), 'the chapter closes');
+  expect(await ev(() => Ending.which) === 'three', "on chapter three's ending");
+  expect(await ev(() => G.mapId) === 'town', 'at home');
+  const beats3 = await ev(() => endingBeats().map(b => (b.when || []).join('+')));
+  expect(beats3.indexOf('wallDark') >= 0 && beats3.indexOf('wallLit') < 0,
+    'and the ending remembers the order you gave', beats3.join(', '));
+  for (let i = 0; i < 14 && await ev(() => Ending.phase === 'beats'); i++) {
+    await ev(() => { Ending.chars = 9999; });
+    await press('KeyZ', 200);
+  }
+  expect(await ev(() => Ending.phase) !== 'beats', "chapter three's beats give way to its card");
+  expect(await ev(() => ending().subtitle) === 'WHAT THE LAMPS WERE FOR', 'and it is the right card',
+    await ev(() => ending().title + ' / ' + ending().subtitle));
+  await shot('end3_card');
+  await ev(() => { G.mode = 'field'; enterMap('town', 20, 20, 'down', { quiet: true }); });
 
   // --- the screen ---------------------------------------------------------
   /* The view takes the shape of the window now, so a run at one shape proves

@@ -1164,7 +1164,10 @@ def main():
 # <map>.<variant>.png beside it. The game picks one by flag (PICTURE_VARIANTS
 # in datacook). The town frosts from the south end once the seal is broken.
 VARIANTS = {
-    "town": {"cold": lambda img: town.frost(img, 0.36)},
+    "town": {"cold": lambda img: town.frost(img, 0.36),
+             "night": lambda img: town.night(town.frost(img, 0.36))},
+    "shore": {"night": town.night},
+    "wild": {"night": town.night},
 }
 
 

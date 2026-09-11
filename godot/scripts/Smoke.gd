@@ -392,13 +392,16 @@ func _run() -> void:
 	guard["maxhp"] = 1000
 	main.battle.lantern = false
 	main.battle.apply_damage(guard, 100, false)
-	_expect(int(guard["hp"]) == 950, "a cold thing in the dark takes half")
+	_expect(int(guard["hp"]) == 1000 - int(ceil(100.0 * float(Dat.lantern["shroud"]))),
+		"a cold thing in the dark takes less (x%s)" % str(Dat.lantern["shroud"]))
 	var can_light := false
 	for cmd in main.battle.commands_for(Gs.party[0]):
 		if cmd["id"] == "light":
 			can_light = true
 	_expect(can_light, "and Light is on the menu while it is out")
 	main.battle.resolve_hero_action(Gs.party[0], {"kind": "light"})
+	# Called outside an action, so the record it filled in is nobody's: clear it.
+	main.battle.acting = {}
 	_expect(main.battle.lantern, "and lighting it works")
 	main.finish_battle("win", "")
 	await _until(func(): return main.mode == "field")
@@ -747,6 +750,103 @@ func _run() -> void:
 	jf.store_string(kept_auto)
 	jf.close()
 	Gs.load_game()
+
+	_say("chapter three")
+	# Chapter two left the game on its hook screen. A confirm there starts a
+	# new game, so the field has to be the one taking input before anyone talks.
+	main.mode = "field"
+	await _settle()
+	main.field.enter_map("hollow", 21, 31)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(str(main.field.msg.get("speaker", "")) == "Kestrel Vail",
+		"Kestrel comes up out of the mere with news")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("roadDark", false)), "the lake road has gone dark")
+	var kestrel_up := false
+	for n in main.field.npcs:
+		if str(n["name"]) == "Kestrel Vail":
+			kestrel_up = true
+	_expect(kestrel_up, "and she stays in Hollowmere")
+
+	main.field.enter_map("shore", 3, 14)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Art.picture_variant("shore") == "night", "the road wears its night picture")
+	_expect(not main.field.msg.is_empty(), "and the road says so")
+	await _read_msg()
+	_expect(await _talk_to("Bram"), "Bram is out on it and can be talked to")
+	await _step(4)
+	_expect(Gs.find_hero("bram") != null, "which brings him back")
+
+	main.field.enter_map("wild", 28, 3)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Art.picture_variant("wild") == "night", "the wilds are dark too")
+	await _read_msg()
+	_expect(bool(Gs.flags.get("wildDark", false)), "and you can see the wall lamps from them")
+
+	main.field.enter_map("town", 20, 20)
+	Gs.steps_to_encounter = 9999
+	await _step(8)
+	_expect(Art.picture_variant("town") == "night", "Rivenbrook at night")
+	await _shot("town_night")
+	_expect(await _wait_for_choice(), "Aldric has one order to give")
+	if not main.field.msg.is_empty() and not (main.field.msg["choice"] as Dictionary).is_empty():
+		main.field.msg["choice"]["index"] = 1
+	await _press("confirm", 3)
+	await _read_msg()
+	_expect(bool(Gs.flags.get("wallDark", false)) and not bool(Gs.flags.get("wallLit", false)),
+		"and the wall goes dark")
+	var walker := false
+	for n in main.field.npcs:
+		if str(n["boss"]) == "walker":
+			walker = true
+	_expect(walker, "the Walker is at the gate")
+	Gs.px = 20
+	Gs.py = 26
+	Gs.dir = "down"
+	await _step(2)
+	main.field.on_step_complete()
+	await _step(6)
+	_expect(str(main.field.msg.get("speaker", "")) == "The Walker", "stepping up to it stops it")
+	_expect(await _wait_for_choice(), "and it asks")
+	await _press("confirm")
+	_expect(await _until(func(): return main.mode == "battle"), "it fights")
+	await _until(func(): return main.battle.phase != "intro")
+	_expect(not main.battle.lantern, "in the dark, because you chose the dark")
+	_expect(Snd._track == "boss", "to the boss theme")
+	await _shot("walker")
+	for e in main.battle.enemies:
+		main.battle.apply_damage(e, 99999, false)
+	_expect(await _until(func(): return main.battle.phase == "result"), "killing it ends the fight")
+	_expect(bool(Gs.flags.get("walkerDown", false)), "and it does not get past")
+	var walker_pages := 0
+	while main.mode == "battle" and main.battle.phase == "result" and walker_pages < 30:
+		await _press("confirm", 3)
+		walker_pages += 1
+	await _settle()
+	_expect(await _until(func(): return main.mode == "ending"), "the chapter closes")
+	_expect(main.ending.which == "three", "on chapter three's ending")
+	_expect(Gs.map_id == "town", "at home")
+	var remembered := false
+	var forgot := false
+	for b in main.ending.beats():
+		var when: Array = b.get("when", [])
+		if when.has("wallDark"):
+			remembered = true
+		if when.has("wallLit"):
+			forgot = true
+	_expect(remembered and not forgot, "and the ending remembers the order you gave")
+	for i in 30:
+		if main.ending.phase != "beats":
+			break
+		main.ending.chars = 9999.0
+		await _press("confirm", 3)
+	_expect(main.ending.phase != "beats", "the beats give way to the card")
+	_expect(str(main.ending.ending().get("subtitle", "")) == "WHAT THE LAMPS WERE FOR",
+		"and it is the right card")
+	await _shot("end3_card")
 
 	if failures.is_empty():
 		_say("SMOKE OK  (%d screenshots)" % shots)

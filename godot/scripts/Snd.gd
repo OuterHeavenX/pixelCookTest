@@ -14,50 +14,12 @@ var _music_player: AudioStreamPlayer
 var _music_cache := {}
 var _track := ""
 
-const THEMES := {
-	"town": {
-		"bpm": 340,
-		"lead": [523, 0, 659, 0, 784, 0, 659, 0, 587, 0, 698, 0, 880, 0, 698, 0,
-			523, 0, 659, 0, 784, 659, 523, 0, 494, 0, 587, 0, 494, 0, 440, 0],
-		"bass": [131, 0, 196, 0, 131, 0, 196, 0, 147, 0, 220, 0, 147, 0, 220, 0,
-			131, 0, 196, 0, 131, 0, 196, 0, 123, 0, 185, 0, 110, 0, 110, 0],
-	},
-	"field": {
-		"bpm": 380,
-		"lead": [440, 494, 523, 587, 659, 587, 523, 494, 440, 0, 523, 0, 659, 0, 523, 0,
-			392, 440, 494, 523, 587, 523, 494, 440, 392, 0, 494, 0, 392, 0, 330, 0],
-		"bass": [110, 0, 165, 0, 110, 0, 165, 0, 131, 0, 196, 0, 131, 0, 196, 0,
-			98, 0, 147, 0, 98, 0, 147, 0, 110, 0, 165, 0, 110, 110, 110, 0],
-	},
-	"battle": {
-		"bpm": 480,
-		"lead": [659, 0, 659, 622, 659, 0, 784, 0, 587, 0, 587, 523, 587, 0, 698, 0,
-			659, 0, 659, 622, 659, 784, 880, 784, 659, 587, 523, 494, 440, 494, 523, 587],
-		"bass": [165, 165, 0, 165, 165, 0, 165, 0, 147, 147, 0, 147, 147, 0, 147, 0,
-			165, 165, 0, 165, 165, 0, 165, 0, 110, 110, 110, 110, 147, 147, 165, 165],
-	},
-	"inn": {
-		"bpm": 260,
-		"lead": [659, 0, 784, 0, 880, 0, 784, 0, 659, 0, 587, 0, 523, 0, 587, 0],
-		"bass": [131, 0, 131, 0, 175, 0, 175, 0, 196, 0, 196, 0, 131, 0, 131, 0],
-	},
-	"hollow": {
-		"bpm": 250,
-		"lead": [523, 0, 587, 0, 494, 0, 440, 0, 523, 0, 659, 0, 587, 0, 523, 0,
-			466, 0, 523, 0, 440, 0, 392, 0, 440, 0, 523, 0, 466, 0, 0, 0],
-		"bass": [131, 0, 0, 0, 131, 0, 0, 0, 156, 0, 0, 0, 156, 0, 0, 0,
-			117, 0, 0, 0, 117, 0, 0, 0, 131, 0, 0, 0, 98, 0, 0, 0],
-	},
-	# Slow, minor, and low: the barrow should feel like somewhere you are
-	# trespassing rather than somewhere you are adventuring.
-	"barrow": {
-		"bpm": 210,
-		"lead": [392, 0, 0, 0, 466, 0, 0, 0, 440, 0, 0, 0, 349, 0, 0, 0,
-			392, 0, 0, 0, 523, 0, 466, 0, 440, 0, 392, 0, 330, 0, 0, 0],
-		"bass": [98, 0, 0, 0, 98, 0, 0, 0, 117, 0, 0, 0, 117, 0, 0, 0,
-			110, 0, 0, 0, 110, 0, 0, 0, 87, 0, 0, 0, 87, 0, 87, 0],
-	},
-}
+## The note tables live in the data (datacook THEMES), so both engines play
+## the same tunes. Three voices: the tune on a triangle wave, a bass under it,
+## and a quiet harmony in the middle, all soft enough to sit under an hour of
+## play.
+func _themes() -> Dictionary:
+	return Dat.themes
 
 
 func _ready() -> void:
@@ -190,18 +152,22 @@ func sfx(name: String) -> void:
 # --- music ------------------------------------------------------------------
 
 func _build_theme(name: String) -> AudioStreamWAV:
-	var theme: Dictionary = THEMES[name]
+	var theme: Dictionary = _themes()[name]
 	var step_samples := int(60.0 / float(theme["bpm"]) * RATE)
 	var lead: Array = theme["lead"]
-	var bass: Array = theme["bass"]
+	var bass: Array = theme.get("bass", [])
+	var harm: Array = theme.get("harm", [])
 	var total := step_samples * lead.size()
 	var data := PackedByteArray()
 	data.resize(total * 2)
 	data.fill(0)
 	for i in lead.size():
 		var at := i * step_samples
-		_render_note(data, at, step_samples, float(lead[i]), "square", 0.30)
-		_render_note(data, at, step_samples, float(bass[i % bass.size()]), "triangle", 0.34)
+		_render_note(data, at, mini(step_samples * 2, total - at), float(lead[i]), "triangle", 0.26)
+		if not bass.is_empty():
+			_render_note(data, at, mini(step_samples * 3, total - at), float(bass[i % bass.size()]), "triangle", 0.24)
+		if not harm.is_empty():
+			_render_note(data, at, mini(step_samples * 4, total - at), float(harm[i % harm.size()]), "sine", 0.14)
 	var w := _make_stream(total, true)
 	w.data = data
 	return w
@@ -211,7 +177,7 @@ func play(name: String) -> void:
 	if _track == name:
 		return
 	_track = name
-	if not THEMES.has(name):
+	if not _themes().has(name):
 		_music_player.stop()
 		return
 	if not _music_cache.has(name):

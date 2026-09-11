@@ -47,6 +47,29 @@ def chill(img, strength=0.88, lift=0.30):
     return out
 
 
+# The Walker: the Drowned Warden's shape with the light taken out of it. Not
+# frost this time - shadow. Darker everywhere, the blues pushed toward black,
+# and the brightest points left as pale grey so it still reads as a figure.
+DARK_VARIANTS = {"e_walker": "e_warden"}
+
+
+def darken(img, strength=0.7):
+    out = Image(img.width, img.height)
+    for y in range(img.height):
+        for x in range(img.width):
+            p = img.get(x, y)
+            if not p[3]:
+                continue
+            lum = 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]
+            k = 1.0 - strength * (1.0 - lum / 255.0) ** 0.5
+            r = (p[0] * 0.5 + lum * 0.5) * k * 0.55
+            g = (p[1] * 0.5 + lum * 0.5) * k * 0.6
+            b = (p[2] * 0.5 + lum * 0.5) * k * 0.8 + 14
+            out.set(x, y, (max(0, min(255, int(r))), max(0, min(255, int(g))),
+                           max(0, min(255, int(b))), p[3]))
+    return out
+
+
 def cook(sprites):
     """Called with everything cooked so far, so it can recolour the finished
     sprite whether that came from a plotter or from Blender."""
@@ -54,4 +77,7 @@ def cook(sprites):
     for name, source in ICE_VARIANTS.items():
         if source in sprites:
             out[name] = chill(sprites[source])
+    for name, source in DARK_VARIANTS.items():
+        if source in sprites:
+            out[name] = darken(sprites[source])
     return out
