@@ -14,7 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 DIR = os.path.join(ROOT, "art", "backdrops")
 
 # mood -> sprite name the battle renderer asks for.
-MOODS = {"dusk": "bg_dusk", "night": "bg_night"}
+MOODS = {"dusk": "bg_dusk", "night": "bg_night", "barrow": "bg_barrow", "mere": "bg_mere"}
 
 
 def cook():

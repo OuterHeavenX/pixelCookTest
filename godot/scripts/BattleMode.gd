@@ -48,7 +48,9 @@ func start(group: Array, boss: String) -> void:
 	is_boss = boss
 	# The backdrop follows the place you were standing, so a fight in the
 	# barrow is not lit by a sunset that is four floors above you.
-	backdrop = "night" if boss != "" else str(main.field.map.get("battle_bg", "dusk"))
+	# A map that names its own backdrop keeps it for its boss too: the
+	# chieftain's barrow is a barrow, not a hillside at night.
+	backdrop = str(main.field.map.get("battle_bg", "night" if boss != "" else "dusk"))
 	escapable = boss == ""
 	popups = []
 	fx = []

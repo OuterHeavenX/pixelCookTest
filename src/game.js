@@ -1664,7 +1664,9 @@ function startEncounter(group, isBoss) {
     Battle.boss = isBoss || '';
     // The backdrop follows the place you were standing, so a fight in the
     // barrow is not lit by a sunset that is four floors above you.
-    Battle.bg = isBoss ? 'night' : ((Field.map && Field.map.battle_bg) || 'dusk');
+    // A map that names its own backdrop keeps it for its boss too: the
+    // chieftain's barrow is a barrow, not a hillside at night.
+    Battle.bg = (Field.map && Field.map.battle_bg) || (isBoss ? 'night' : 'dusk');
     Battle.escapable = !isBoss;
     Battle.popups = []; Battle.fx = []; Battle.shake = 0;
     Battle.actor = null; Battle.acting = null; Battle.pending = [];

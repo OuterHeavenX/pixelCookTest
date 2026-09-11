@@ -1,6 +1,6 @@
 {
  "barrow1": {
-  "battle_bg": "night",
+  "battle_bg": "barrow",
   "encounter": 18,
   "encounters": "barrow",
   "ground": "t_crypt",
@@ -65,7 +65,7 @@
   ]
  },
  "barrow2": {
-  "battle_bg": "night",
+  "battle_bg": "barrow",
   "boss": {
    "id": "chieftain",
    "x": 18,
@@ -238,7 +238,7 @@
   ]
  },
  "mere1": {
-  "battle_bg": "night",
+  "battle_bg": "mere",
   "encounter": 16,
   "encounters": "mere",
   "ground": "t_drowned",
@@ -303,7 +303,7 @@
   ]
  },
  "mere2": {
-  "battle_bg": "night",
+  "battle_bg": "mere",
   "boss": {
    "id": "drowned",
    "x": 18,

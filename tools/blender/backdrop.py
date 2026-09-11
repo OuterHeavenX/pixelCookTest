@@ -63,6 +63,156 @@ MOODS = {
 }
 
 
+# Two interiors, built the same way - flat emissive shapes, no lights - so
+# they sit on the atlas beside the outdoor ones as the same kind of picture.
+# A fight in the barrow happens in the barrow; the ridges and the sunset are
+# four floors up.
+MOODS["barrow"] = {
+    "interior": True,
+    "wall": "2c2740", "block_a": "3d3656", "block_b": "463f62", "mortar": "241f34",
+    "arch": "0e0b16", "pillar": "352e4c", "pillar_hi": "4b4368",
+    "floor": ["3a3450", "443d5c", "4e4768", "585174"], "flag": "2e2842",
+    "brazier": "1d1a28", "flame": "ffb347", "flame_hi": "fff0b0", "glow": "4a3b52",
+    "bones": "c9bfa8",
+}
+MOODS["mere"] = {
+    "interior": True,
+    "wall": "1a3440", "block_a": "244a58", "block_b": "2b5666", "mortar": "142830",
+    "arch": "081218", "pillar": "1f404d", "pillar_hi": "2c5a6a",
+    "floor": ["24485a", "2c5568", "356276", "3f6f84"], "flag": "1e3e4e",
+    "water": "10283a", "water_hi": "2a5f7a",
+    "brazier": "1a1c22", "flame": "ffd75a", "flame_hi": "fff6c8", "glow": "3a5a60",
+}
+
+
+def slab(name, x, y, z, sx, sy, sz, material):
+    """An axis-aligned box: the interiors are made of nothing else."""
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(x, y, z))
+    o = bpy.context.object
+    o.name = name
+    o.scale = (sx, sy, sz)
+    o.data.materials.append(material)
+    return o
+
+
+def build_interior(mood_name):
+    """A stone hall seen from the party's side of it: a wall of blocks at the
+    back with a dark way through, pillars either side, a floor of flagstone
+    bands that lighten toward the camera, and fire or lamplight because the
+    lantern is the whole point of a fight down here."""
+    m = MOODS[mood_name]
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    scene = bpy.context.scene
+    world = bpy.data.worlds.new("dark")
+    scene.world = world
+    world.use_nodes = True
+    bg = world.node_tree.nodes["Background"]
+    bg.inputs["Color"].default_value = hex_rgb(m["wall"])
+    bg.inputs["Strength"].default_value = 1.0
+
+    # --- the back wall: mortar first, then the blocks over it -----------------
+    wall_y = 40.0
+    slab("mortar", 0, wall_y + 0.2, 8, 80, 0.2, 18, emission("mortar", m["mortar"]))
+    block_a = emission("block_a", m["block_a"])
+    block_b = emission("block_b", m["block_b"])
+    rng = random.Random(3)
+    z = 0.0
+    row = 0
+    while z < 16.0:
+        h = 1.15
+        x = -40.0 + (1.6 if row % 2 else 0.0)
+        while x < 40.0:
+            w = rng.uniform(2.4, 3.6)
+            slab("block%d_%d" % (row, int(x * 10)), x + w / 2.0, wall_y, z + h / 2.0,
+                 w - 0.25, 0.2, h - 0.2, block_a if rng.random() < 0.6 else block_b)
+            x += w
+        z += h
+        row += 1
+    # The way down, or through: a dark arch at the centre of the wall.
+    slab("arch", 0, wall_y - 0.3, 3.4, 7.0, 0.3, 6.8, emission("arch", m["arch"]))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=3.5, depth=0.3,
+                                        location=(0, wall_y - 0.3, 6.8))
+    top = bpy.context.object
+    top.rotation_euler = (math.pi / 2, 0, 0)
+    top.data.materials.append(emission("arch_top", m["arch"]))
+
+    # --- pillars, with a lit edge -------------------------------------------
+    pillar = emission("pillar", m["pillar"])
+    pillar_hi = emission("pillar_hi", m["pillar_hi"])
+    for px in (-16.0, 16.0):
+        slab("pillar%d" % px, px, 30.0, 7.0, 3.0, 3.0, 14.0, pillar)
+        slab("pillar_hi%d" % px, px + (0.9 if px < 0 else -0.9), 28.4, 7.0, 0.7, 0.2, 14.0, pillar_hi)
+        slab("cap%d" % px, px, 30.0, 14.2, 3.8, 3.8, 0.6, pillar_hi)
+        slab("foot%d" % px, px, 30.0, 0.3, 3.8, 3.8, 0.6, pillar_hi)
+
+    # --- the floor: bands that lighten toward the camera, cut into flags -----
+    bands_y = [26, 12, -2, -20]
+    bands_d = [14, 14, 14, 18]
+    flag = emission("flag", m["flag"])
+    for i, color in enumerate(m["floor"]):
+        y0, depth = bands_y[i], bands_d[i]
+        slab("floor%d" % i, 0, y0 + depth / 2.0, -0.05 + i * 0.01, 120, depth, 0.1,
+             emission("floor%d" % i, color))
+        # Flag lines: across, then along, thinner and closer the further away.
+        for k in range(3):
+            y = y0 + depth * (k + 0.5) / 3.0
+            slab("line%d_%d" % (i, k), 0, y, 0.02 + i * 0.01, 120, 0.18 + 0.04 * i, 0.06, flag)
+        step = 6.0 + i * 1.5
+        x = -60.0 + (step / 2.0 if i % 2 else 0.0)
+        while x < 60.0:
+            slab("col%d_%d" % (i, int(x)), x, y0 + depth / 2.0, 0.02 + i * 0.01, 0.16 + 0.04 * i, depth, 0.06, flag)
+            x += step
+
+    if m.get("water"):
+        # The drowned hall: a pool across the back of the room, lamplight on it.
+        slab("pool", 0, 24.0, 0.06, 120, 10.0, 0.1, emission("water", m["water"]))
+        hi = emission("water_hi", m["water_hi"])
+        for i, (wy, ww) in enumerate(((21.5, 26), (24.0, 18), (26.5, 34), (28.5, 12))):
+            slab("ripple%d" % i, rng.uniform(-14, 14), wy, 0.12, ww, 0.35, 0.05, hi)
+
+    # --- fire: braziers in the barrow, keepers' lamps in the mere -----------
+    brazier = emission("brazier", m["brazier"])
+    flame = emission("flame", m["flame"], 2.0)
+    flame_hi = emission("flame_hi", m["flame_hi"], 2.6)
+    glow = emission("glow", m["glow"])
+    for fx in (-9.0, 9.0):
+        y = 34.0
+        if m.get("water"):
+            slab("post%d" % fx, fx, y, 3.0, 0.9, 0.9, 6.0, brazier)
+            slab("lamp%d" % fx, fx, y - 0.6, 6.6, 1.8, 1.0, 2.0, flame)
+            slab("lamp_hi%d" % fx, fx, y - 1.2, 6.9, 0.8, 0.4, 0.8, flame_hi)
+            slab("lamp_cap%d" % fx, fx, y, 7.9, 2.4, 2.4, 0.5, brazier)
+        else:
+            slab("stand%d" % fx, fx, y, 1.6, 0.8, 0.8, 3.2, brazier)
+            slab("bowl%d" % fx, fx, y, 3.4, 3.0, 3.0, 1.0, brazier)
+            slab("fire%d" % fx, fx, y - 0.4, 4.6, 2.0, 1.2, 1.6, flame)
+            slab("fire_hi%d" % fx, fx + 0.3, y - 0.8, 5.4, 0.9, 0.6, 1.2, flame_hi)
+            slab("fire_tip%d" % fx, fx - 0.4, y - 0.6, 5.9, 0.6, 0.4, 0.9, flame)
+        # Painted light: a warm disc on the wall behind and a pool on the floor
+        # below, because nothing here casts any. Only a step warmer than the
+        # stone, or it reads as a box nailed to the wall.
+        bpy.ops.mesh.primitive_circle_add(vertices=20, radius=4.2, fill_type='NGON',
+                                          location=(fx, wall_y - 0.15, 6.2))
+        wg = bpy.context.object
+        wg.rotation_euler = (math.pi / 2, 0, 0)
+        wg.scale = (1.0, 0.8, 1.0)
+        wg.data.materials.append(glow)
+        bpy.ops.mesh.primitive_circle_add(vertices=20, radius=4.0, fill_type='NGON',
+                                          location=(fx, y - 3.0, 0.16))
+        fg = bpy.context.object
+        fg.scale = (1.0, 0.55, 1.0)
+        fg.data.materials.append(glow)
+
+    if m.get("bones"):
+        bones = emission("bones", m["bones"])
+        for i, (bx, by, bl) in enumerate(((-22, 18, 2.2), (-19.5, 17.2, 1.4), (24, 9, 2.6), (26, 10.4, 1.2))):
+            slab("bone%d" % i, bx, by, 0.2, bl, 0.35, 0.3, bones)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=6, radius=0.7, location=(-24.5, 18.6, 0.6))
+        bpy.context.object.data.materials.append(bones)
+
+    return scene
+
+
 def hex_rgb(h):
     h = h.lstrip("#")
     # Blender works in linear light; these are sRGB values from the palette.
@@ -188,6 +338,8 @@ def castle(x, y, z, scale, material):
 
 def build(mood_name):
     m = MOODS[mood_name]
+    if m.get("interior"):
+        return build_interior(mood_name)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
 
